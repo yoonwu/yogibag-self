@@ -422,6 +422,8 @@
     color: var(--gray-1); transition: all .13s; line-height: 1.2; flex: 1 0 auto; min-width: 106px;
   }
   .opt-pill .op-name { font-size: 13px; font-weight: 700; }
+  .opt-pill .op-price { font-size: 11px; font-weight: 600; color: var(--blue); margin-left: 5px; }
+  .opt-pill.active .op-price { color: rgba(255,255,255,.9); }
   .opt-pill .op-use { font-size: 10.5px; font-weight: 500; opacity: .6; margin-top: 1px; }
   .opt-pill:hover { border-color: var(--gray-3); }
   .opt-pill.active { background: var(--blue); border-color: var(--blue); color: var(--white); }
@@ -951,7 +953,7 @@ function printSurchargeBySize(type, sizeObj){
 }
 const OPTION_PRICE = {
   "안주머니":600,"안주머니인쇄":600,"똑딱이":550,"자석":650,
-  "지퍼":850,"크로스끈":1200,"이름표":250,"OPP개별포장":250,
+  "지퍼":850,"크로스끈":1200,"이름표":250,"OPP개별포장":250,"양면인쇄800":800,
 };
 function calcPrice(bagId, colorName, webbingName, options, qty, printSizes){
   const p = PRICING[bagId];
@@ -980,6 +982,7 @@ function currentPrice(qty){
   const cn = (typeof bagColorName === "function") ? bagColorName().replace(/[●\s]/g,"") : "아이보리";
   const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "아이보리";
   const opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+  if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄800");
   let sizes = [];
   try { if (typeof measurePrintObjs === "function"){ const s = measurePrintObjs(); if (s) sizes = [s]; } } catch(e){}
   return calcPrice(currentBag.id, cn, wn, opts, qty, sizes);
@@ -990,6 +993,7 @@ function updatePriceBar(){
   const cn = (typeof bagColorName === "function") ? bagColorName().replace(/[●\s]/g,"") : "아이보리";
   const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "아이보리";
   const opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+  if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄800");
   let sizes = [];
   try { if (typeof measurePrintObjs === "function"){ const s = measurePrintObjs(); if (s) sizes = [s]; } } catch(e){}
   const r20  = calcPrice(currentBag.id, cn, wn, opts, 20,  sizes);
@@ -2117,7 +2121,7 @@ const optButtons = {};
 OPTIONS.forEach(opt => {
   const el = document.createElement('button');
   el.className = 'opt-pill';
-  el.innerHTML = `<span class="op-name">${opt}</span><span class="op-use">${(OPTION_META[opt] && OPTION_META[opt].use) || ''}</span>`;
+  el.innerHTML = `<span class="op-name">${opt}<span class="op-price">+${((typeof OPTION_PRICE!=='undefined'&&OPTION_PRICE[opt])||0).toLocaleString()}</span></span><span class="op-use">${(OPTION_META[opt] && OPTION_META[opt].use) || ''}</span>`;
   el.dataset.opt = opt;
   optButtons[opt] = el;
   el.addEventListener('click', () => {
@@ -2276,7 +2280,7 @@ function captureAllSides() {
 // 양면 인쇄 토글 버튼 (옵션 영역)
 const dualBtn = document.createElement('button');
 dualBtn.className = 'opt-pill';
-dualBtn.innerHTML = '<span class="op-name">양면 인쇄</span><span class="op-use">앞·뒤 양쪽 인쇄</span>';
+dualBtn.innerHTML = '<span class="op-name">양면 인쇄<span class="op-price">+800</span></span><span class="op-use">앞·뒤 양쪽 인쇄</span>';
 dualBtn.addEventListener('click', () => {
   if (!twoSided) {
     twoSided = true;
@@ -2295,6 +2299,7 @@ dualBtn.addEventListener('click', () => {
     sideTabs.style.display = 'none';
     showToast('양면 인쇄 OFF');
   }
+  if (typeof updatePriceBar === 'function') updatePriceBar();
 });
 optToggles.appendChild(dualBtn);
 
