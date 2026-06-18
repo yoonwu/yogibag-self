@@ -963,6 +963,13 @@ const OPTION_PRICE = {
   "안주머니":600,"안주머니인쇄":600,"똑딱이":550,"자석":650,
   "지퍼":850,"크로스끈":1200,"이름표":250,"OPP개별포장":250,"양면인쇄800":800,
 };
+// 컬러에 따라 가격이 달라지는 옵션 (안주머니: 아이보리 600 / 블랙·네이비 800)
+function optionPrice(opt, colorName){
+  if (opt === "안주머니") {
+    return (colorName === "블랙" || colorName === "네이비") ? 800 : 600;
+  }
+  return OPTION_PRICE[opt] || 0;
+}
 function calcPrice(bagId, colorName, webbingName, options, qty, printSizes){
   const p = PRICING[bagId];
   if (!p) return null;
@@ -980,7 +987,7 @@ function calcPrice(bagId, colorName, webbingName, options, qty, printSizes){
   (printSizes || []).forEach(s => { printSur += printSurchargeBySize(p.type, s); });
   per += printSur;
   let optSum = 0;
-  (options || []).forEach(o => { optSum += OPTION_PRICE[o] || 0; });
+  (options || []).forEach(o => { optSum += optionPrice(o, colorName); });
   per += optSum;
   return { per, total: per * q, qty: q, min: p.min, optSum, printSur };
 }
@@ -1931,6 +1938,7 @@ function renderColorGridForBag() {
           saveState();
         }
         showToast(c.name + ' 원단으로 바꿨어요');
+        if (typeof updateOptionsForBag === 'function') updateOptionsForBag();
         if (typeof updatePriceBar === 'function') updatePriceBar();
       });
       grid.appendChild(el);
@@ -2188,7 +2196,8 @@ function updateOptionsForBag() {
       pill.style.display = '';
       const label = (conf.rename && conf.rename[opt]) || opt;
       const isLocked = conf.locked && conf.locked.indexOf(opt) >= 0;
-      const price = (typeof OPTION_PRICE !== 'undefined' && OPTION_PRICE[opt]) || 0;
+      const curColor = (typeof bagColorName === 'function') ? bagColorName().replace(/[●\s]/g,'') : '아이보리';
+      const price = (typeof optionPrice === 'function') ? optionPrice(opt, curColor) : ((typeof OPTION_PRICE !== 'undefined' && OPTION_PRICE[opt]) || 0);
       const priceHtml = isLocked
         ? '<span class="op-price op-free">기본포함</span>'
         : '<span class="op-price">+' + price.toLocaleString() + '</span>';
