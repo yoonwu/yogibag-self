@@ -942,10 +942,18 @@ const PRICING = {
   poly_v: { type:"poly",   min:1,  base:{q20:4000,q100:3800,q300:3800,q500:3800}, small:{lt10:6500,lt20:4500} },
   poly_h: { type:"poly",   min:1,  base:{q20:4000,q100:3800,q300:3800,q500:3800}, small:{lt10:6500,lt20:4500} },
 };
-function colorSurcharge(type, colorName, webbingName){
+function colorSurcharge(type, colorName, webbingName, qty){
   let sur = 0;
   if (type === "ecobag" && (colorName === "블랙" || colorName === "네이비")) sur += 700;
-  if (webbingName && webbingName !== "없음" && webbingName !== "아이보리") sur += 300;
+  const webbingChanged = webbingName && webbingName !== "없음" && webbingName !== "아이보리";
+  if (webbingChanged) {
+    // 폴리는 손잡이 색상 변경이 50개 이상부터 가능 → 그 미만이면 미적용
+    if (type === "poly") {
+      if ((qty || 0) >= 50) sur += 300;
+    } else {
+      sur += 300;
+    }
+  }
   return sur;
 }
 // DTF 필름 폭(58cm) 기준 인쇄비: 짧은변 배치 → 3장이상=0, 2장=+700, 1장=+1000
@@ -982,7 +990,7 @@ function calcPrice(bagId, colorName, webbingName, options, qty, printSizes){
   } else {
     per = p.base[qtyTier(q)];
   }
-  per += colorSurcharge(p.type, colorName, webbingName);
+  per += colorSurcharge(p.type, colorName, webbingName, q);
   let printSur = 0;
   (printSizes || []).forEach(s => { printSur += printSurchargeBySize(p.type, s); });
   per += printSur;
@@ -1316,10 +1324,11 @@ function drawBag() {
   const imgMap = {
     cross:  BAG_IMAGES[id+'_cross']  || null,
     handle: BAG_IMAGES[id+'_handle'] || null,
+    zipper: BAG_IMAGES[id+'_zipper'] || null,
     body:   BAG_IMAGES[id+'_body']   || null,
   };
   const pa = PRINT_AREAS[id] || { cx:0.5, cy:0.72, w:0.58, h:0.42 };
-  const layers = ['handle','body'].filter(p => imgMap[p]); // 크로스끈은 옵션에서 처리
+  const layers = ['handle','zipper','body'].filter(p => imgMap[p]); // 크로스끈은 옵션에서 처리
   let loaded = 0;
 
   function finalize() {
@@ -1396,9 +1405,12 @@ function clearColorTint(img) {
 
 
 function reorderBag() {
-  // 레이어 순서(뒤→앞): 손잡이 → 몸통 → 크로스끈 → 인쇄영역 → 사용자 디자인
+  // 레이어 순서(뒤→앞): 손잡이 → 몸통 → 지퍼 → 크로스끈 → 인쇄영역 → 사용자 디자인
   webbingPaths.forEach(p => canvas.sendToBack(p));   // 손잡이 맨 뒤
   if (bagBodyRect) canvas.bringToFront(bagBodyRect);  // 몸통
+  // 파우치 지퍼는 몸통 위에 보이게
+  const zipper = canvas.getObjects().find(o => o.bagPart === 'zipper');
+  if (zipper) canvas.bringToFront(zipper);
   const cross = (typeof optionVisuals !== 'undefined') ? optionVisuals['크로스끈'] : null;
   if (cross) canvas.bringToFront(cross);              // 크로스끈(옵션)
   if (printArea) canvas.bringToFront(printArea);      // 인쇄영역 점선
@@ -1897,9 +1909,25 @@ function renderColorGridForBag() {
   grid.innerHTML = '';
   const nameEl = document.getElementById('bagColorName');
   const isPoly = bagCategory(currentBag) === 'poly';
-  // 폴리백은 손잡이가 단색 PNG라 끈 색 변경 불가 → 끈 색상 섹션 숨김
+  // 손잡이 색상 섹션: 폴리/에코백 모두 표시 (폴리는 50개 이상부터 가능 고지)
   const ws = document.getElementById('webbingSection');
-  if (ws) ws.style.display = isPoly ? 'none' : '';
+  if (ws) ws.style.display = (isPoly || bagCategory(currentBag) === 'ecobag') ? '' : 'none';
+  // 폴리 손잡이 최소수량 안내 토글
+  var polyNote = document.getElementById('webbingPolyNote');
+  if (isPoly) {
+    if (!polyNote && ws) {
+      polyNote = document.createElement('div');
+      polyNote.id = 'webbingPolyNote';
+      polyNote.style.cssText = 'font-size:11.5px;color:var(--gray-2);margin:-4px 0 8px;line-height:1.4;';
+      polyNote.textContent = '※ 손잡이 색상 변경은 50개 이상 주문 시 가능해요';
+      var wlabel = ws.querySelector('.section-label');
+      if (wlabel && wlabel.nextSibling) ws.insertBefore(polyNote, wlabel.nextSibling);
+      else ws.appendChild(polyNote);
+    }
+    if (polyNote) polyNote.style.display = '';
+  } else if (polyNote) {
+    polyNote.style.display = 'none';
+  }
 
   if (isPoly) {
     POLY_COLORS.forEach((c) => {
