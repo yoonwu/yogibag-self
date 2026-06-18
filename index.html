@@ -1,0 +1,5612 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>요기백 · 셀프 시안 에디터</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316a34a'/%3E%3Cpath d='M11 12v-2a5 5 0 0 1 10 0v2' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M7 12h18l-1.5 13.4a1.3 1.3 0 0 1-1.3 1.1H9.8a1.3 1.3 0 0 1-1.3-1.1z' fill='white'/%3E%3Ctext x='16' y='22.4' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='8.5' font-weight='bold' fill='%2316a34a'%3EYO%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Black+Han+Sans&family=Do+Hyeon&family=Gugi&family=Hi+Melody&family=Poor+Story&family=Single+Day&family=Song+Myung&family=Stylish&family=Sunflower:wght@300;500;700&family=Yeon+Sung&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      as="style"
+      crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      if (window.pdfjsLib)
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    </script>
+    <style>
+      /* ── Supabase 커스텀 폰트 ── */
+      @font-face {
+        font-family: "SeoulNamsanEB";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/SeoulNamsanEB.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SeoulNamsanL";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/SeoulNamsanL.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SeoulNamsan";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/SeoulNamsanM.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "HamBakNoon";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/SF_HamBakNoon-TTF.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SsaRockNoon";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/SFSsaRockNoon-TTF.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SinYoungBok";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/Tlab_SinYoungBok.otf")
+          format("opentype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TwayAir";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/tway_air.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TwayFly";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/tway_fly.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TwaySky";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/tway_sky.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeeHyeki";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20Hyeki.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeeHyeki";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20Hyeki%20Bold.ttf")
+          format("truetype");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeeMiMi";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20MiMi.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeeMiMi";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20MiMi%20Bold.ttf")
+          format("truetype");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeeMysen";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20mysen.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeeMysen";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20mysen%20Bold.ttf")
+          format("truetype");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeePuding";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20puding.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeePuding";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBee%20puding%20Bold.ttf")
+          format("truetype");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "UhBeeZZIBA";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/UhBeeZZIBA-Regular.ttf")
+          format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "WantedSans";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/WantedSans-Regular.otf")
+          format("opentype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "WantedSans";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/WantedSans-Bold.otf")
+          format("opentype");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "WantedSansBlack";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/WantedSans-Black.otf")
+          format("opentype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Yeongdo";
+        src: url("https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/font/YeongdoOTF.otf")
+          format("opentype");
+        font-display: swap;
+      }
+      :root {
+        --blue: #3182f6;
+        --blue-dark: #1b64da;
+        --blue-light: #e8f1fe;
+        --blue-pale: #f4f8ff;
+        --ink: #191f28;
+        --gray-1: #4e5968;
+        --gray-2: #8b95a1;
+        --gray-3: #b0b8c1;
+        --gray-4: #d1d6db;
+        --gray-5: #e5e8eb;
+        --gray-6: #f2f4f6;
+        --gray-7: #f9fafb;
+        --white: #ffffff;
+        --red: #f04452;
+        --canvas-bg: #fbfcfd;
+        --radius: 16px;
+        --radius-sm: 10px;
+        --shadow-sm:
+          0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.12);
+        --font:
+          "Pretendard", -apple-system, BlinkMacSystemFont,
+          "Apple SD Gothic Neo", "Nanum Gothic", sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        font-family: var(--font);
+        background: var(--gray-6);
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: inherit;
+      }
+      input,
+      textarea {
+        font-family: inherit;
+      }
+
+      /* ============ HEADER ============ */
+      .header {
+        height: 62px;
+        background: var(--white);
+        border-bottom: 1px solid var(--gray-5);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: relative;
+        z-index: 50;
+      }
+      .logo {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: var(--blue);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .logo span {
+        font-size: 26px;
+      }
+      .current-bag {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--gray-7);
+        border: 1px solid var(--gray-5);
+        padding: 7px 14px 7px 10px;
+        border-radius: 999px;
+        transition: all 0.15s;
+        margin-left: 6px;
+      }
+      .current-bag:hover {
+        background: var(--blue-light);
+        border-color: var(--blue);
+      }
+      .current-bag .mini-bag {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        background: linear-gradient(135deg, #efe7d6, #e2d5bd);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+      }
+      .current-bag .cb-text {
+        text-align: left;
+        line-height: 1.2;
+      }
+      .current-bag .cb-label {
+        font-size: 11px;
+        color: var(--gray-2);
+        font-weight: 600;
+      }
+      .current-bag .cb-name {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .current-bag .cb-arrow {
+        color: var(--gray-3);
+        font-size: 12px;
+        margin-left: 2px;
+      }
+
+      .header-spacer {
+        flex: 1;
+      }
+      .btn-ghost {
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-size: 14.5px;
+        font-weight: 600;
+        color: var(--gray-1);
+        background: var(--gray-6);
+        transition: all 0.15s;
+      }
+      .btn-ghost:hover {
+        background: var(--gray-5);
+      }
+      .btn-primary {
+        padding: 10px 22px;
+        border-radius: 10px;
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--white);
+        background: var(--blue);
+        transition: all 0.15s;
+        box-shadow: 0 2px 8px rgba(49, 130, 246, 0.3);
+      }
+      .btn-primary:hover {
+        background: var(--blue-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(49, 130, 246, 0.4);
+      }
+
+      /* ============ BODY ============ */
+      .body {
+        display: flex;
+        height: calc(100vh - 62px);
+      }
+
+      /* ---- Tool rail ---- */
+      .tool-rail {
+        width: 84px;
+        background: var(--white);
+        border-right: 1px solid var(--gray-5);
+        display: flex;
+        flex-direction: column;
+        padding: 12px 0;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .tool-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        padding: 13px 4px;
+        margin: 0 8px;
+        border-radius: 14px;
+        color: var(--gray-2);
+        transition: all 0.15s;
+        position: relative;
+      }
+      .tool-btn svg {
+        width: 25px;
+        height: 25px;
+      }
+      .tool-btn span {
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+      .tool-btn:hover {
+        background: var(--gray-7);
+        color: var(--gray-1);
+      }
+      .tool-btn.active {
+        background: var(--blue-light);
+        color: var(--blue);
+      }
+
+      /* ---- Option panel ---- */
+      .option-panel {
+        width: 300px;
+        background: var(--white);
+        border-right: 1px solid var(--gray-5);
+        overflow-y: auto;
+        flex-shrink: 0;
+        padding: 20px 18px 40px;
+      }
+      .option-panel::-webkit-scrollbar {
+        width: 6px;
+      }
+      .option-panel::-webkit-scrollbar-thumb {
+        background: var(--gray-4);
+        border-radius: 3px;
+      }
+      .panel-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin-bottom: 5px;
+        letter-spacing: -0.4px;
+      }
+      .panel-sub {
+        font-size: 14px;
+        color: var(--gray-2);
+        margin-bottom: 18px;
+        font-weight: 500;
+      }
+      .opt-section {
+        display: none;
+      }
+      .opt-section.active {
+        display: block;
+      }
+
+      .upload-btn {
+        width: 100%;
+        padding: 22px;
+        border: 2px dashed var(--blue);
+        border-radius: var(--radius);
+        background: var(--blue-pale);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 9px;
+        transition: all 0.15s;
+        margin-bottom: 12px;
+      }
+      .upload-btn:hover {
+        background: var(--blue-light);
+      }
+      .upload-btn svg {
+        width: 30px;
+        height: 30px;
+        color: var(--blue);
+      }
+      .upload-btn .ub-main {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--blue);
+      }
+      .upload-btn .ub-sub {
+        font-size: 11.5px;
+        color: var(--gray-2);
+      }
+
+      .action-row {
+        width: 100%;
+        padding: 13px 15px;
+        border-radius: 12px;
+        background: var(--gray-7);
+        border: 1px solid var(--gray-5);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        transition: all 0.15s;
+        margin-bottom: 9px;
+        text-align: left;
+      }
+      .action-row:hover {
+        background: var(--gray-6);
+        border-color: var(--gray-4);
+      }
+      .action-row svg {
+        width: 20px;
+        height: 20px;
+        color: var(--gray-1);
+        flex-shrink: 0;
+      }
+      .action-row .ar-text {
+        flex: 1;
+      }
+      .action-row .ar-main {
+        font-size: 13.5px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .action-row .ar-sub {
+        font-size: 11px;
+        color: var(--gray-2);
+        margin-top: 1px;
+      }
+      .badge-ai {
+        font-size: 9.5px;
+        font-weight: 800;
+        color: var(--white);
+        background: linear-gradient(135deg, #7c3aed, #3182f6);
+        padding: 2px 6px;
+        border-radius: 5px;
+        letter-spacing: 0.3px;
+      }
+      .ar-current {
+        font-size: 11px;
+        color: var(--blue);
+        font-weight: 700;
+        background: var(--blue-light);
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
+
+      .section-label {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--gray-1);
+        margin: 22px 0 12px;
+      }
+
+      .design-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 7px;
+      }
+      .design-item {
+        aspect-ratio: 1;
+        border-radius: 11px;
+        background: var(--gray-7);
+        border: 1px solid var(--gray-5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        transition: all 0.15s;
+        overflow: hidden;
+      }
+      .design-item:hover {
+        border-color: var(--blue);
+        transform: scale(1.05);
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* Text input */
+      .text-input {
+        width: 100%;
+        min-height: 80px;
+        padding: 14px;
+        border: 2px solid var(--gray-5);
+        border-radius: 12px;
+        font-size: 15px;
+        resize: none;
+        transition: all 0.15s;
+        line-height: 1.5;
+        margin-bottom: 14px;
+      }
+      .text-input:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+      .add-text-btn {
+        width: 100%;
+        padding: 13px;
+        border-radius: 11px;
+        background: var(--blue);
+        color: var(--white);
+        font-size: 14px;
+        font-weight: 700;
+        transition: all 0.15s;
+        box-shadow: 0 2px 8px rgba(49, 130, 246, 0.25);
+        margin-bottom: 8px;
+      }
+      .add-text-btn:hover {
+        background: var(--blue-dark);
+      }
+
+      .font-list {
+        max-height: 188px;
+        overflow-y: auto;
+        border: 1px solid var(--gray-5);
+        border-radius: 12px;
+        padding: 5px;
+      }
+      .font-list::-webkit-scrollbar {
+        width: 5px;
+      }
+      .font-list::-webkit-scrollbar-thumb {
+        background: var(--gray-4);
+        border-radius: 3px;
+      }
+      .font-item {
+        padding: 9px 12px;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.12s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .font-item:hover {
+        background: var(--gray-7);
+      }
+      .font-item.active {
+        background: var(--blue-light);
+        color: var(--blue);
+      }
+      .font-item .fi-check {
+        opacity: 0;
+        font-size: 13px;
+      }
+      .font-item.active .fi-check {
+        opacity: 1;
+      }
+
+      .size-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .size-control input[type="range"] {
+        flex: 1;
+      }
+      .size-num {
+        width: 62px;
+        padding: 8px;
+        border: 1.5px solid var(--gray-5);
+        border-radius: 8px;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .size-num:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+
+      /* sliders */
+      input[type="range"] {
+        -webkit-appearance: none;
+        height: 6px;
+        background: var(--gray-5);
+        border-radius: 3px;
+        outline: none;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--white);
+        border: 2px solid var(--blue);
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        transition: transform 0.1s;
+      }
+      input[type="range"]::-webkit-slider-thumb:active {
+        transform: scale(1.15);
+      }
+
+      /* color swatches */
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+      }
+      .color-sw {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.12s;
+        border: 2px solid var(--gray-5);
+        position: relative;
+      }
+      .color-sw:hover {
+        transform: scale(1.12);
+      }
+      .color-sw.active {
+        border-color: var(--blue);
+        border-width: 3px;
+      }
+      .color-sw.active::after {
+        content: "✓";
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 17px;
+        font-weight: 800;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      }
+
+      /* order confirm modal */
+      .order-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        z-index: 200;
+        overflow-y: auto;
+        padding: 32px 16px;
+      }
+      .order-overlay.show {
+        display: flex;
+      }
+      .order-card {
+        background: var(--white);
+        border-radius: 22px;
+        width: 100%;
+        max-width: 420px;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+      }
+      .order-hero {
+        background: linear-gradient(135deg, #3182f6, #1b64da);
+        color: #fff;
+        padding: 30px 24px 26px;
+        text-align: center;
+        position: relative;
+      }
+      .order-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        font-size: 15px;
+      }
+      .order-hero-emoji {
+        font-size: 30px;
+        margin-bottom: 6px;
+      }
+      .order-hero-title {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+      .order-hero-sub {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-top: 5px;
+      }
+      .order-body {
+        padding: 22px;
+      }
+      .order-num-box {
+        background: var(--gray-7);
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 18px;
+      }
+      .order-num-label {
+        font-size: 12px;
+        color: var(--gray-2);
+        font-weight: 600;
+      }
+      .order-num-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 4px;
+      }
+      .order-num {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--blue);
+        letter-spacing: -0.5px;
+      }
+      .order-copy {
+        background: var(--blue);
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .order-date {
+        font-size: 12px;
+        color: var(--gray-2);
+        margin-top: 8px;
+      }
+      .order-spec-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 9px;
+      }
+      .order-specs {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin-bottom: 18px;
+      }
+      .order-spec {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13.5px;
+        padding: 9px 13px;
+        background: var(--gray-7);
+        border-radius: 9px;
+      }
+      .order-spec b {
+        color: var(--gray-1);
+        font-weight: 600;
+      }
+      .order-spec span {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .order-preview {
+        text-align: center;
+        margin-bottom: 18px;
+        background: var(--gray-7);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .order-preview img {
+        max-width: 200px;
+        max-height: 240px;
+      }
+      .order-form-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .req-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--red);
+        border-radius: 2px;
+        display: inline-block;
+      }
+      .req-text {
+        color: var(--red);
+        font-size: 12px;
+      }
+      .order-form input {
+        width: 100%;
+        padding: 13px 15px;
+        border: 1px solid var(--gray-4);
+        border-radius: 11px;
+        font-size: 14px;
+        margin-bottom: 9px;
+        background: var(--white);
+      }
+      .order-form input:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+      .order-errors {
+        font-size: 12px;
+        color: var(--red);
+        line-height: 1.7;
+        margin-bottom: 4px;
+      }
+      .order-submit {
+        width: 100%;
+        padding: 15px;
+        background: var(--blue);
+        color: #fff;
+        border-radius: 13px;
+        font-size: 15.5px;
+        font-weight: 700;
+        margin-top: 10px;
+        transition: all 0.15s;
+      }
+      .order-submit:hover {
+        background: var(--blue-dark);
+      }
+      .order-submit:disabled {
+        background: var(--gray-4);
+        cursor: default;
+      }
+
+      /* sticker grid */
+      .sticker-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      .sticker-item {
+        aspect-ratio: 1;
+        border-radius: 11px;
+        background: var(--gray-7);
+        border: 1px solid var(--gray-5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        transition: all 0.15s;
+      }
+      .sticker-item:hover {
+        border-color: var(--blue);
+        transform: scale(1.1);
+        background: var(--blue-pale);
+      }
+
+      /* ============ CANVAS AREA ============ */
+      .canvas-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        background: var(--canvas-bg);
+        background-image: radial-gradient(var(--gray-5) 1px, transparent 1px);
+        background-size: 22px 22px;
+        overflow: hidden;
+      }
+      .floating-toolbar {
+        position: absolute;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--white);
+        border-radius: 14px;
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        align-items: center;
+        padding: 7px;
+        gap: 3px;
+        z-index: 20;
+        border: 1px solid var(--gray-5);
+      }
+      .ft-btn {
+        width: 46px;
+        height: 46px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        color: var(--gray-1);
+        transition: all 0.12s;
+      }
+      .ft-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+      .ft-btn span {
+        font-size: 9px;
+        font-weight: 600;
+      }
+      .ft-btn:hover:not(:disabled) {
+        background: var(--gray-6);
+        color: var(--ink);
+      }
+      .ft-btn:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .ft-btn.danger:hover {
+        background: #fef0f1;
+        color: var(--red);
+      }
+      .ft-divider {
+        width: 1px;
+        height: 30px;
+        background: var(--gray-5);
+        margin: 0 4px;
+      }
+
+      .canvas-wrap {
+        position: relative;
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+        background: var(--white);
+      }
+      #editor-canvas {
+        display: block;
+      }
+
+      .zoom-ctrl {
+        position: absolute;
+        bottom: 18px;
+        right: 18px;
+        background: var(--white);
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        align-items: center;
+        padding: 5px;
+        gap: 2px;
+        z-index: 20;
+        border: 1px solid var(--gray-5);
+      }
+      .zoom-ctrl button {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-1);
+        font-size: 18px;
+        transition: all 0.12s;
+      }
+      .zoom-ctrl button:hover {
+        background: var(--gray-6);
+      }
+      .zoom-ctrl .zoom-val {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--gray-1);
+        min-width: 46px;
+        text-align: center;
+      }
+
+      .canvas-hint {
+        position: absolute;
+        bottom: 18px;
+        left: 18px;
+        background: rgba(25, 31, 40, 0.78);
+        color: var(--white);
+        font-size: 12px;
+        font-weight: 500;
+        padding: 8px 14px;
+        border-radius: 9px;
+        z-index: 20;
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      /* ============ PROPERTY PANEL ============ */
+      .prop-panel {
+        width: 224px;
+        background: var(--white);
+        border-left: 1px solid var(--gray-5);
+        overflow-y: auto;
+        flex-shrink: 0;
+        padding: 20px 17px 40px;
+      }
+      .prop-panel::-webkit-scrollbar {
+        width: 6px;
+      }
+      .prop-panel::-webkit-scrollbar-thumb {
+        background: var(--gray-4);
+        border-radius: 3px;
+      }
+      .prop-card {
+        background: var(--gray-7);
+        border-radius: 14px;
+        padding: 15px;
+        margin-bottom: 14px;
+      }
+      .prop-card-title {
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .prop-card.option-highlight {
+        border: 2px solid var(--blue);
+        background: #f4f8ff;
+      }
+      .prop-card.option-highlight .prop-card-title {
+        font-size: 17px;
+        color: var(--blue);
+        letter-spacing: -0.4px;
+        margin-bottom: 5px;
+      }
+      .option-highlight .option-toggles {
+        gap: 7px;
+      }
+      .prop-row {
+        margin-bottom: 14px;
+      }
+      .prop-row:last-child {
+        margin-bottom: 0;
+      }
+      .prop-row-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gray-1);
+        margin-bottom: 7px;
+      }
+      .prop-row-label .val {
+        color: var(--blue);
+        font-weight: 700;
+      }
+      .prop-row input[type="range"] {
+        width: 100%;
+      }
+      .prop-empty {
+        text-align: center;
+        color: var(--gray-3);
+        font-size: 12.5px;
+        padding: 18px 0;
+        font-weight: 500;
+        line-height: 1.6;
+      }
+
+      .option-toggles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .opt-pill {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        padding: 7px 12px;
+        border-radius: 12px;
+        background: var(--white);
+        border: 1.5px solid var(--gray-5);
+        color: var(--gray-1);
+        transition: all 0.13s;
+        line-height: 1.2;
+        flex: 1 0 auto;
+        min-width: 106px;
+      }
+      .opt-pill .op-name {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .opt-pill .op-use {
+        font-size: 10.5px;
+        font-weight: 500;
+        opacity: 0.6;
+        margin-top: 1px;
+      }
+      .opt-pill:hover {
+        border-color: var(--gray-3);
+      }
+      .opt-pill.active {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: var(--white);
+      }
+      .opt-pill.active .op-use {
+        opacity: 0.85;
+      }
+
+      .saved-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .saved-item {
+        aspect-ratio: 1;
+        border-radius: 11px;
+        background: var(--gray-6);
+        border: 1px solid var(--gray-5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-3);
+        font-size: 11px;
+        font-weight: 600;
+        transition: all 0.15s;
+        overflow: hidden;
+        position: relative;
+      }
+      .saved-item.has-img {
+        border-style: solid;
+      }
+      .saved-item:hover {
+        border-color: var(--blue);
+      }
+      .saved-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .saved-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(25, 31, 40, 0.62);
+        opacity: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: opacity 0.15s;
+      }
+      .saved-item:hover .saved-overlay {
+        opacity: 1;
+      }
+      .saved-load {
+        background: var(--blue);
+        color: #fff;
+        font-size: 11.5px;
+        font-weight: 700;
+        padding: 6px 13px;
+        border-radius: 7px;
+      }
+      .saved-del {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--red);
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .saved-add {
+        border: 1.5px dashed var(--gray-4);
+        color: var(--gray-3);
+      }
+      .saved-add:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-pale);
+      }
+
+      /* ============ MODAL ============ */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(25, 31, 40, 0.5);
+        backdrop-filter: blur(3px);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .modal-overlay.show {
+        display: flex;
+        animation: fadeIn 0.18s;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .modal {
+        background: var(--white);
+        border-radius: 24px;
+        width: 100%;
+        max-width: 760px;
+        max-height: 86vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: var(--shadow-lg);
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(24px) scale(0.97);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+      .modal-head {
+        padding: 26px 28px 18px;
+      }
+      .modal-head h2 {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+      .modal-head p {
+        font-size: 14px;
+        color: var(--gray-2);
+        margin-top: 5px;
+        font-weight: 500;
+      }
+      .modal-close {
+        position: absolute;
+        top: 22px;
+        right: 24px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--gray-6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-1);
+        font-size: 18px;
+        transition: all 0.15s;
+      }
+      .modal-close:hover {
+        background: var(--gray-5);
+      }
+      .modal-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 0 28px 8px;
+      }
+      .modal-tab {
+        padding: 9px 17px;
+        border-radius: 999px;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--gray-2);
+        background: var(--gray-6);
+        transition: all 0.13s;
+      }
+      .modal-tab.active {
+        background: var(--ink);
+        color: var(--white);
+      }
+      .modal-body {
+        padding: 18px 28px 28px;
+        overflow-y: auto;
+      }
+      .bag-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .bag-card {
+        border: 2px solid var(--gray-5);
+        border-radius: 16px;
+        padding: 16px;
+        transition: all 0.15s;
+        text-align: center;
+        position: relative;
+        background: var(--white);
+      }
+      .bag-card:hover {
+        border-color: var(--blue);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+      }
+      .bag-card.selected {
+        border-color: var(--blue);
+        background: var(--blue-pale);
+      }
+      .bag-card.selected::before {
+        content: "✓ 선택중";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: var(--blue);
+        color: #fff;
+        font-size: 10.5px;
+        font-weight: 800;
+        padding: 3px 9px;
+        border-radius: 7px;
+      }
+      .bag-preview {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 12px;
+        margin-bottom: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #faf8f3, #f0ebe0);
+      }
+      .bag-card .bc-name {
+        font-size: 14.5px;
+        font-weight: 800;
+      }
+      .bag-card .bc-size {
+        font-size: 11.5px;
+        color: var(--gray-2);
+        margin-top: 2px;
+        font-weight: 500;
+      }
+      .bag-card .bc-price {
+        font-size: 12.5px;
+        color: var(--blue);
+        font-weight: 700;
+        margin-top: 4px;
+      }
+
+      /* toast */
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--ink);
+        color: #fff;
+        padding: 13px 22px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 200;
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+      .toast svg {
+        width: 18px;
+        height: 18px;
+        color: #4ade80;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* 시트 닫기 핸들 (모바일 전용, 기본 숨김) */
+      .sheet-handle {
+        display: none;
+      }
+
+      /* tablet / fold */
+      @media (max-width: 880px) {
+        .option-panel {
+          width: 220px;
+        }
+        .prop-panel {
+          display: none;
+        }
+      }
+
+      /* ============ MOBILE PHONE ============ */
+      @media (max-width: 600px) {
+        .header {
+          height: 54px;
+          padding: 0 12px;
+          gap: 8px;
+        }
+        .logo {
+          font-size: 17px;
+          gap: 5px;
+        }
+        .logo span {
+          font-size: 19px;
+        }
+        .current-bag {
+          padding: 5px 10px 5px 7px;
+          margin-left: 2px;
+        }
+        .current-bag .cb-label {
+          display: none;
+        }
+        .current-bag .cb-name {
+          font-size: 12px;
+        }
+        .current-bag .mini-bag {
+          width: 24px;
+          height: 24px;
+          font-size: 13px;
+        }
+        .current-bag .cb-arrow {
+          font-size: 10px;
+        }
+        .btn-ghost {
+          padding: 7px 10px;
+          font-size: 12.5px;
+        }
+        .btn-primary {
+          padding: 7px 13px;
+          font-size: 12.5px;
+        }
+
+        /* 명시적 레이아웃: 캔버스 전체 + 도구바 하단 고정 */
+        .body {
+          display: block;
+          position: relative;
+          height: calc(100vh - 54px);
+          height: calc(100dvh - 54px);
+        }
+
+        .canvas-area {
+          width: 100%;
+          height: 100%;
+          padding-bottom: 66px; /* 하단 도구바 공간 */
+          box-sizing: border-box;
+        }
+
+        /* 도구 모음 → 하단 고정 가로 바 */
+        .tool-rail {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          height: auto;
+          flex-direction: row;
+          border-right: none;
+          border-top: 1px solid var(--gray-5);
+          padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+          gap: 2px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          z-index: 60;
+          background: var(--white);
+        }
+        .tool-rail::-webkit-scrollbar {
+          display: none;
+        }
+        .tool-btn {
+          margin: 0;
+          padding: 7px 4px;
+          flex: 1 0 auto;
+          min-width: 58px;
+          border-radius: 10px;
+        }
+        .tool-btn svg {
+          width: 20px;
+          height: 20px;
+        }
+        .tool-btn span {
+          font-size: 9.5px;
+          white-space: nowrap;
+        }
+
+        /* 옵션 패널 → 하단 시트 (닫힘 시 화면 밖 + 클릭 통과) */
+        .option-panel {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          top: auto;
+          width: 100%;
+          max-height: 70vh;
+          max-height: 70dvh;
+          border-right: none;
+          border-top: 1px solid var(--gray-5);
+          border-radius: 20px 20px 0 0;
+          box-shadow: 0 -6px 26px rgba(0, 0, 0, 0.2);
+          transform: translateY(110%);
+          pointer-events: none;
+          transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 80;
+          padding: 34px 16px calc(34px + env(safe-area-inset-bottom));
+          background: var(--white);
+        }
+        .option-panel.sheet-open {
+          transform: translateY(0);
+          pointer-events: auto;
+        }
+        .sheet-handle {
+          display: flex;
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 32px;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+        .sheet-grabber {
+          width: 42px;
+          height: 4px;
+          background: var(--gray-4);
+          border-radius: 2px;
+        }
+
+        /* 플로팅 툴바 축소 */
+        .floating-toolbar {
+          top: 8px;
+          padding: 4px;
+          gap: 1px;
+          max-width: 94vw;
+          overflow-x: auto;
+        }
+        .floating-toolbar::-webkit-scrollbar {
+          display: none;
+        }
+        .ft-btn {
+          width: 40px;
+          height: 40px;
+          flex-shrink: 0;
+        }
+        .ft-btn svg {
+          width: 17px;
+          height: 17px;
+        }
+        .ft-btn span {
+          font-size: 8px;
+        }
+        .ft-divider {
+          height: 26px;
+        }
+
+        .zoom-ctrl {
+          bottom: 76px;
+          right: 10px;
+          padding: 3px;
+        }
+        .zoom-ctrl button {
+          width: 30px;
+          height: 30px;
+          font-size: 16px;
+        }
+        .canvas-hint {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <header class="header">
+      <div class="logo"><span>🎒</span>요기백</div>
+      <button class="current-bag" id="currentBagBtn">
+        <div class="mini-bag" id="miniBag">🛍️</div>
+        <div class="cb-text">
+          <div class="cb-label">지금 꾸미는 가방</div>
+          <div class="cb-name" id="cbName">데일리 에코백</div>
+        </div>
+        <span class="cb-arrow">▼</span>
+      </button>
+      <div class="header-spacer"></div>
+      <button class="btn-ghost" id="saveBtn">임시저장</button>
+      <button class="btn-primary" id="orderBtn">주문하기</button>
+    </header>
+
+    <div class="body">
+      <!-- TOOL RAIL -->
+      <nav class="tool-rail">
+        <button class="tool-btn active" data-tool="photo">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="M21 15l-5-5L5 21" />
+          </svg>
+          <span>이미지</span>
+        </button>
+        <button class="tool-btn" data-tool="text">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M4 7V4h16v3M9 20h6M12 4v16" />
+          </svg>
+          <span>글자</span>
+        </button>
+        <button class="tool-btn" data-tool="sticker">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M21 3v8a10 10 0 01-10 10A10 10 0 0121 3z" />
+            <path d="M21 3L9 15" />
+            <circle cx="9" cy="9" r="1" />
+          </svg>
+          <span>스티커</span>
+        </button>
+        <button class="tool-btn" data-tool="design">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          <span>추천 도안</span>
+        </button>
+        <button class="tool-btn" data-tool="color">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="13.5" cy="6.5" r="2.5" />
+            <circle cx="17.5" cy="10.5" r="2.5" />
+            <circle cx="8.5" cy="7.5" r="2.5" />
+            <circle cx="6.5" cy="12.5" r="2.5" />
+            <path
+              d="M12 2a10 10 0 000 20 2 2 0 002-2 2 2 0 00-.5-1.3 2 2 0 01-.5-1.3 2 2 0 012-2H17a5 5 0 005-5 10 10 0 00-10-8z"
+            />
+          </svg>
+          <span>가방/손잡이 색상</span>
+        </button>
+      </nav>
+
+      <!-- OPTION PANEL -->
+      <aside class="option-panel">
+        <div class="sheet-handle" id="sheetHandle">
+          <div class="sheet-grabber"></div>
+        </div>
+        <!-- PHOTO -->
+        <div class="opt-section active" data-panel="photo">
+          <div class="panel-title">이미지 꾸미기</div>
+          <div class="panel-sub">내 이미지를 올리거나 도안을 골라보세요</div>
+          <button class="upload-btn" id="uploadBtn">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
+              />
+            </svg>
+            <div class="ub-main">이미지 · PDF 올리기</div>
+            <div class="ub-sub">JPG, PNG, SVG, PDF · 최대 20MB</div>
+          </button>
+          <input
+            type="file"
+            id="fileInput"
+            accept="image/*,image/svg+xml,.svg,application/pdf,.pdf"
+            class="hidden"
+          />
+          <button class="action-row" id="removeBgBtn">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
+            </svg>
+            <div class="ar-text">
+              <div class="ar-main">
+                배경 지우기 <span class="badge-ai">AI</span>
+              </div>
+              <div class="ar-sub">선택한 이미지 배경을 자동 제거</div>
+            </div>
+          </button>
+          <button class="action-row" id="changeBagBtn">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"
+              />
+            </svg>
+            <div class="ar-text">
+              <div class="ar-main">다른 가방 고르기</div>
+              <div class="ar-sub">
+                현재 · <span id="arBagName">데일리 에코백</span>
+              </div>
+            </div>
+          </button>
+          <div class="prop-card option-highlight" style="margin-top: 20px">
+            <div class="prop-card-title">✨ 추가 옵션</div>
+            <div
+              class="prop-card-sub"
+              style="
+                font-size: 13px;
+                color: var(--gray-2);
+                margin: 0 0 12px;
+                font-weight: 500;
+              "
+            >
+              제작 시 함께 추가할 수 있어요 · 탭하면 미리보기
+            </div>
+            <div class="option-toggles" id="optionToggles"></div>
+          </div>
+
+          <div class="prop-card" id="optPreviewCard" style="display: none">
+            <div class="prop-card-title">👀 옵션 미리보기</div>
+            <div
+              class="prop-card-sub"
+              style="
+                font-size: 12.5px;
+                color: var(--gray-2);
+                margin: -2px 0 10px;
+              "
+            >
+              실제 부착 시 이렇게 생겼어요
+            </div>
+            <div
+              id="optPreviewGrid"
+              style="display: flex; flex-wrap: wrap; gap: 10px"
+            ></div>
+          </div>
+
+          <div class="prop-card">
+            <div class="prop-card-title">📁 내 시안 보관함</div>
+            <div class="saved-grid" id="savedGrid">
+              <button class="saved-item saved-add" id="saveDesignBtn">
+                ＋ 저장
+              </button>
+            </div>
+          </div>
+
+          <div class="prop-card" id="adjustCard">
+            <div class="prop-card-title">🎚️ 이미지 다듬기</div>
+            <div id="adjustContent">
+              <div class="prop-empty">
+                캔버스에서 이미지나<br />글자를 선택해보세요
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESIGN (추천 도안) -->
+        <div class="opt-section" data-panel="design">
+          <div class="panel-title">추천 도안</div>
+          <div class="panel-sub">마음에 드는 도안을 골라보세요</div>
+          <div class="design-grid" id="designGrid"></div>
+        </div>
+
+        <!-- TEXT -->
+        <div class="opt-section" data-panel="text">
+          <div class="panel-title">글자 넣기</div>
+          <div class="panel-sub">문구를 입력하고 폰트를 골라보세요</div>
+          <textarea
+            class="text-input"
+            id="textInput"
+            placeholder="여기에 글자를 입력하세요&#10;예) 우리 가족 소풍 가방"
+          ></textarea>
+          <button class="add-text-btn" id="addTextBtn">＋ 글자 추가하기</button>
+          <div class="section-label">폰트</div>
+          <div class="font-list" id="fontList"></div>
+          <div class="section-label">글씨 크기</div>
+          <div class="size-control">
+            <input
+              type="range"
+              id="fontSizeSlider"
+              min="10"
+              max="200"
+              value="48"
+            />
+            <input
+              type="number"
+              id="fontSizeNum"
+              class="size-num"
+              min="10"
+              max="400"
+              value="48"
+            />
+          </div>
+          <div class="section-label">색깔</div>
+          <div class="color-grid" id="textColorGrid"></div>
+        </div>
+
+        <!-- STICKER -->
+        <div class="opt-section" data-panel="sticker">
+          <div class="panel-title">스티커</div>
+          <div class="panel-sub">탭하면 가방에 붙어요</div>
+          <div class="section-label">자주 쓰는 스티커</div>
+          <div class="sticker-grid" id="stickerGrid"></div>
+          <div class="section-label">도형</div>
+          <div class="sticker-grid" id="shapeGrid"></div>
+        </div>
+
+        <!-- COLOR -->
+        <div class="opt-section" data-panel="color">
+          <div class="panel-title">가방 색상</div>
+          <div class="panel-sub">원단과 끈 색을 바꿔보세요</div>
+          <div class="section-label">가방 색상</div>
+          <div
+            id="bagColorName"
+            style="
+              font-size: 15px;
+              font-weight: 700;
+              color: var(--blue);
+              margin: -4px 0 10px;
+            "
+          ></div>
+          <div class="color-grid" id="bagColorGrid"></div>
+          <div id="webbingSection">
+            <div class="section-label">손잡이 · 끈 색상</div>
+            <div
+              id="webbingColorName"
+              style="
+                font-size: 15px;
+                font-weight: 700;
+                color: var(--blue);
+                margin: -4px 0 10px;
+              "
+            ></div>
+            <div class="color-grid" id="webbingColorGrid"></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CANVAS -->
+      <main class="canvas-area">
+        <div class="floating-toolbar">
+          <button
+            class="ft-btn"
+            id="undoBtn"
+            disabled
+            title="되돌리기 (Ctrl+Z)"
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M9 14L4 9l5-5" />
+              <path d="M4 9h11a5 5 0 015 5v0a5 5 0 01-5 5H9" />
+            </svg>
+            <span>되돌리기</span>
+          </button>
+          <button
+            class="ft-btn"
+            id="redoBtn"
+            disabled
+            title="다시 실행 (Ctrl+Y)"
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M15 14l5-5-5-5" />
+              <path d="M20 9H9a5 5 0 00-5 5v0a5 5 0 005 5h6" />
+            </svg>
+            <span>다시</span>
+          </button>
+          <div class="ft-divider"></div>
+          <button class="ft-btn" id="frontBtn" title="맨 앞으로">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <rect x="7" y="7" width="12" height="12" rx="2" />
+              <path d="M5 15V5h10" />
+            </svg>
+            <span>맨앞</span>
+          </button>
+          <button class="ft-btn" id="backBtn" title="맨 뒤로">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <rect x="5" y="5" width="12" height="12" rx="2" />
+              <path d="M19 9v10H9" />
+            </svg>
+            <span>맨뒤</span>
+          </button>
+          <button class="ft-btn" id="flipBtn" title="좌우 반전">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" />
+            </svg>
+            <span>반전</span>
+          </button>
+          <button
+            class="ft-btn"
+            id="bagCenterBtn"
+            title="가방 정중앙으로 이동"
+            style="color: var(--blue)"
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+              <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+            </svg>
+            <span>정중앙</span>
+          </button>
+          <button class="ft-btn" id="dupBtn" title="복제">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <rect x="9" y="9" width="11" height="11" rx="2" />
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg>
+            <span>복제</span>
+          </button>
+          <div class="ft-divider"></div>
+          <button class="ft-btn danger" id="deleteBtn" title="삭제">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
+              />
+            </svg>
+            <span>삭제</span>
+          </button>
+        </div>
+
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="editor-canvas"></canvas>
+        </div>
+
+        <div class="canvas-hint">
+          <svg
+            width="15"
+            height="15"
+            fill="none"
+            stroke="#4ade80"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+          </svg>
+          <span id="printSizeHint">인쇄 가능 영역</span>
+        </div>
+
+        <div class="zoom-ctrl">
+          <button id="zoomOut">−</button>
+          <span class="zoom-val" id="zoomVal">100%</span>
+          <button id="zoomIn">＋</button>
+        </div>
+      </main>
+
+      <!-- PROPERTY PANEL 제거됨 — 사진 탭으로 통합 -->
+    </div>
+
+    <!-- BAG SELECT MODAL -->
+    <div class="modal-overlay" id="bagModal">
+      <div class="modal">
+        <div class="modal-head">
+          <h2>어떤 가방을 꾸밀까요?</h2>
+          <p>가방을 고르면 바로 꾸미기를 시작할 수 있어요</p>
+          <button class="modal-close" id="modalClose">✕</button>
+        </div>
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-cat="ecobag">에코백</button>
+          <button class="modal-tab" data-cat="pouch">파우치</button>
+          <button class="modal-tab" data-cat="poly">폴리백</button>
+        </div>
+        <div class="modal-body">
+          <div class="bag-grid" id="bagGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">
+      <svg
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        viewBox="0 0 24 24"
+      >
+        <path d="M20 6L9 17l-5-5" /></svg
+      ><span id="toastMsg">저장되었어요</span>
+    </div>
+
+    <!-- ORDER CONFIRM MODAL -->
+    <div class="order-overlay" id="orderModal">
+      <div class="order-card">
+        <div class="order-hero">
+          <button class="order-close" id="orderClose">✕</button>
+          <div class="order-hero-emoji">🎉</div>
+          <div class="order-hero-title">시안이 확정되었습니다!</div>
+          <div class="order-hero-sub">정보를 입력하고 주문을 접수해 주세요</div>
+        </div>
+        <div class="order-body">
+          <div class="order-num-box" style="display: none">
+            <div class="order-num-label">시안 번호</div>
+            <div class="order-num-row">
+              <span class="order-num" id="orderNum"></span>
+              <button class="order-copy" id="orderCopy">⧉ 복사</button>
+            </div>
+            <div class="order-date" id="orderDate"></div>
+          </div>
+
+          <div
+            id="ordPrintWarn"
+            style="
+              display: none;
+              background: #fff0ed;
+              color: #d92d20;
+              border: 1.5px solid #ffb4a6;
+              padding: 11px 14px;
+              border-radius: 11px;
+              font-size: 13px;
+              font-weight: 700;
+              margin-bottom: 14px;
+              line-height: 1.45;
+            "
+          >
+            ⚠️ 디자인이 인쇄 영역을 벗어났어요.<br /><span
+              style="font-weight: 500"
+              >이대로 주문하면 벗어난 부분이 잘릴 수 있어요.</span
+            >
+          </div>
+          <div class="order-spec-title">선택한 옵션</div>
+          <div class="order-specs" id="orderSpecs"></div>
+
+          <div class="order-preview">
+            <img id="orderPreview" alt="시안 미리보기" />
+          </div>
+
+          <div class="order-form">
+            <div class="order-form-title">
+              <span class="req-dot"></span> 제작 수량
+              <span class="req-text">*필수</span>
+            </div>
+            <input
+              type="number"
+              id="ordQty"
+              placeholder="제작 수량 입력 (예: 100)"
+              min="1"
+              style="font-size: 16px"
+            />
+            <div class="order-form-title" style="margin-top: 4px">
+              <span class="req-dot"></span> 주문자 정보
+              <span class="req-text">*필수</span>
+            </div>
+            <input type="text" id="ordName" placeholder="성함 (필수)" />
+            <input
+              type="tel"
+              id="ordPhone"
+              placeholder="전화번호 (필수, 010-1234-5678)"
+            />
+            <input
+              type="email"
+              id="ordEmail"
+              placeholder="이메일 (필수, name@example.com)"
+            />
+            <div class="order-form-title" style="margin-top: 12px">
+              📝 고객 요청 사항
+            </div>
+            <textarea
+              id="ordRequest"
+              placeholder="요청사항을 자유롭게 적어주세요 (예: 인쇄 위치 조정, 색감 요청 등)"
+              style="
+                width: 100%;
+                min-height: 70px;
+                padding: 13px 15px;
+                border: 1px solid var(--gray-4);
+                border-radius: 11px;
+                font-size: 14px;
+                resize: vertical;
+                line-height: 1.5;
+              "
+            ></textarea>
+            <div class="order-errors" id="ordErrors"></div>
+          </div>
+
+          <button class="order-submit" id="orderSubmit">주문 접수하기</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* =========================================================
+   DATA
+========================================================= */
+      const BAG_MODELS = {
+        ecobag: [
+          {
+            id: "small",
+            name: "스몰 에코백",
+            size: "20×22cm",
+            price: "",
+            ratio: 0.91,
+            emoji: "🛍️",
+          },
+          {
+            id: "sgak_s",
+            name: "사각 S",
+            size: "29×33cm",
+            price: "",
+            ratio: 0.88,
+            emoji: "🛍️",
+          },
+          {
+            id: "kids",
+            name: "키즈 에코백",
+            size: "33×33×8cm",
+            price: "",
+            ratio: 1.0,
+            emoji: "🎒",
+          },
+          {
+            id: "sgak_m",
+            name: "사각 M",
+            size: "33×36cm",
+            price: "",
+            ratio: 0.92,
+            emoji: "🛍️",
+          },
+          {
+            id: "daily",
+            name: "데일리 에코백",
+            size: "36×36×10cm",
+            price: "",
+            ratio: 1.0,
+            emoji: "🛍️",
+          },
+          {
+            id: "market",
+            name: "마켓 에코백",
+            size: "43×30cm",
+            price: "",
+            ratio: 1.43,
+            emoji: "🧺",
+          },
+          {
+            id: "sgak_l",
+            name: "사각 L",
+            size: "36×40cm",
+            price: "",
+            ratio: 0.9,
+            emoji: "🛍️",
+          },
+        ],
+        pouch: [
+          {
+            id: "minja",
+            name: "민자 파우치",
+            size: "20×15cm",
+            price: "",
+            ratio: 1.33,
+            emoji: "👝",
+          },
+          {
+            id: "mitdan",
+            name: "밑단 파우치",
+            size: "23×15cm",
+            price: "",
+            ratio: 1.53,
+            emoji: "👝",
+          },
+          {
+            id: "tumbler",
+            name: "텀블러 파우치",
+            size: "19×20cm",
+            price: "",
+            ratio: 0.95,
+            emoji: "🥤",
+          },
+        ],
+        poly: [
+          {
+            id: "poly_v",
+            name: "폴리백 세로",
+            size: "세로형",
+            price: "",
+            ratio: 0.75,
+            emoji: "🛍️",
+          },
+          {
+            id: "poly_h",
+            name: "폴리백 가로",
+            size: "가로형",
+            price: "",
+            ratio: 1.33,
+            emoji: "🛍️",
+          },
+        ],
+      };
+
+      /* Cafe24 상품번호(product_no) → 에디터 가방 id */
+      const PRODUCT_BAG_MAP = {
+        392: "small",
+        394: "sgak_s",
+        725: "sgak_s",
+        388: "kids",
+        395: "sgak_m",
+        727: "sgak_m",
+        397: "daily",
+        231: "daily",
+        398: "market",
+        711: "market",
+        396: "sgak_l",
+        534: "minja",
+        537: "minja",
+        536: "mitdan",
+        538: "mitdan",
+        276: "tumbler",
+        719: "poly_v",
+        710: "poly_h",
+      };
+
+      function findBagById(id) {
+        if (!id) return null;
+        for (const cat of ["ecobag", "pouch", "poly"]) {
+          const b = BAG_MODELS[cat].find((x) => x.id === id);
+          if (b) return b;
+        }
+        return null;
+      }
+      /* URL 파라미터로 시작 가방 결정: ?bag=daily 직접 지정 또는 ?product_no=397 */
+      function resolveStartBagId() {
+        const p = new URLSearchParams(location.search);
+        const bag = p.get("bag");
+        if (bag) return bag;
+        const pno = p.get("product_no") || p.get("productno") || p.get("pno");
+        if (pno && PRODUCT_BAG_MAP[pno]) return PRODUCT_BAG_MAP[pno];
+        return null;
+      }
+
+      const FONTS = [
+        { name: "프리텐다드", css: "'Pretendard', sans-serif" },
+        { name: "나눔고딕", css: "'Nanum Gothic', sans-serif" },
+        { name: "나눔명조", css: "'Nanum Myeongjo', serif" },
+        { name: "검은고딕", css: "'Black Han Sans', sans-serif" },
+        { name: "주아체", css: "'Jua', sans-serif" },
+        { name: "고운돋움", css: "'Gowun Dodum', sans-serif" },
+        { name: "도현체", css: "'Do Hyeon', sans-serif" },
+        { name: "구기체", css: "'Gugi', sans-serif" },
+        { name: "하이멜로디", css: "'Hi Melody', cursive" },
+        { name: "푸어스토리", css: "'Poor Story', cursive" },
+        { name: "싱글데이", css: "'Single Day', cursive" },
+        { name: "송명체", css: "'Song Myung', serif" },
+        { name: "스타일리시", css: "'Stylish', sans-serif" },
+        { name: "해바라기", css: "'Sunflower', sans-serif" },
+        { name: "연성체", css: "'Yeon Sung', cursive" },
+        { name: "서울남산 EB", css: "'SeoulNamsanEB', sans-serif" },
+        { name: "서울남산 L", css: "'SeoulNamsanL', sans-serif" },
+        { name: "서울남산 M", css: "'SeoulNamsan', sans-serif" },
+        { name: "함박눈", css: "'HamBakNoon', sans-serif" },
+        { name: "싸락눈", css: "'SsaRockNoon', sans-serif" },
+        { name: "신영복", css: "'SinYoungBok', serif" },
+        { name: "티웨이 에어", css: "'TwayAir', sans-serif" },
+        { name: "티웨이 플라이", css: "'TwayFly', sans-serif" },
+        { name: "티웨이 스카이", css: "'TwaySky', sans-serif" },
+        { name: "어비 히키", css: "'UhBeeHyeki', sans-serif" },
+        { name: "어비 미미", css: "'UhBeeMiMi', sans-serif" },
+        { name: "어비 마이센", css: "'UhBeeMysen', sans-serif" },
+        { name: "어비 푸딩", css: "'UhBeePuding', sans-serif" },
+        { name: "어비 지바", css: "'UhBeeZZIBA', sans-serif" },
+        { name: "원티드산스", css: "'WantedSans', sans-serif" },
+        { name: "원티드산스 블랙", css: "'WantedSansBlack', sans-serif" },
+        { name: "영도체", css: "'Yeongdo', sans-serif" },
+      ];
+
+      const TEXT_COLORS = [
+        "#191f28",
+        "#ffffff",
+        "#f04452",
+        "#ff8a3d",
+        "#ffd43b",
+        "#51cf66",
+        "#3182f6",
+        "#9775fa",
+        "#f06595",
+        "#a0522d",
+        "#495057",
+        "#e64980",
+      ];
+      const BAG_COLORS = [
+        { name: "아이보리", hex: null, display: "#f5f0e8" },
+        { name: "블랙", hex: "#1a1a1a", display: "#1a1a1a" },
+        { name: "네이비", hex: "#1a2a4a", display: "#1a2a4a" },
+      ];
+      // 폴리백 전용 색상 (PNG 교체 방식)
+      const POLY_COLORS = [
+        { name: "블랙", key: "black", display: "#1a1a1a" },
+        { name: "네이비", key: "navy", display: "#1a2a4a" },
+        { name: "그린", key: "green", display: "#104727" },
+      ];
+      const WEBBING_COLORS = [
+        { name: "없음", hex: null, display: "#e5e7eb" },
+        { name: "아이보리", hex: "#FFFFF0", display: "#FFFFF0" },
+        { name: "레드", hex: "#c2141c", display: "#c2141c" },
+        { name: "오렌지", hex: "#ed721e", display: "#ed721e" },
+        { name: "라이트핑크", hex: "#f7c9dd", display: "#f7c9dd" },
+        { name: "옐로우", hex: "#f5c632", display: "#f5c632" },
+        { name: "다크브라운", hex: "#3a2b15", display: "#3a2b15" },
+        { name: "와인", hex: "#7b2633", display: "#7b2633" },
+        { name: "퍼플", hex: "#927ab6", display: "#927ab6" },
+        { name: "바이올렛", hex: "#431e41", display: "#431e41" },
+        { name: "핫핑크", hex: "#c84488", display: "#c84488" },
+        { name: "그린", hex: "#104727", display: "#104727" },
+        { name: "라이트그린", hex: "#158d3b", display: "#158d3b" },
+        { name: "옐로우그린", hex: "#5bb531", display: "#5bb531" },
+        { name: "블랙", hex: "#040000", display: "#040000" },
+        { name: "다크그레이", hex: "#3f3f3f", display: "#3f3f3f" },
+        { name: "스카이블루", hex: "#87ceeb", display: "#87ceeb" },
+        { name: "아쿠아마린", hex: "#1498b8", display: "#1498b8" },
+        { name: "코발트블루", hex: "#0a3a80", display: "#0a3a80" },
+        { name: "네이비", hex: "#0c1531", display: "#0c1531" },
+        { name: "카키", hex: "#3c3d1f", display: "#3c3d1f" },
+      ];
+      const STICKERS = [
+        "❤️",
+        "⭐",
+        "🌸",
+        "🌿",
+        "☀️",
+        "🌈",
+        "✨",
+        "🎀",
+        "🐱",
+        "🐶",
+        "🌷",
+        "🍃",
+        "🦋",
+        "🍓",
+        "🌙",
+        "☁️",
+      ];
+      const SHAPES = [
+        { type: "circle", emoji: "⬤" },
+        { type: "rect", emoji: "⬛" },
+        { type: "triangle", emoji: "▲" },
+        { type: "star", emoji: "★" },
+        { type: "heart", emoji: "♥" },
+        { type: "line", emoji: "╱" },
+      ];
+      const DESIGNS = ["🌻", "🐻", "🍋", "🌊", "🎨", "🌵", "🍰", "🐰", "🌹"];
+      const OPTIONS = [
+        "안주머니",
+        "안주머니인쇄",
+        "똑딱이",
+        "자석",
+        "지퍼",
+        "크로스끈",
+        "이름표",
+        "OPP개별포장",
+      ];
+
+      const IMG_BASE = "https://ghkstlr2.cafe24.com/editor/ecobag-type/";
+      const BAG_IMAGES = {
+        small_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/small_20-22_ivory_body.png?v=2",
+        small_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/small_20-22_ivory_handle.png?v=2",
+        small_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/small_20-22_cross_buckle-removed.png?v=2",
+        sgak_s_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square-s_29-33_ivory_body.png",
+        sgak_s_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square-s_29-33_ivory_handle.png",
+        sgak_s_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square-s_29-33_cross_buckle-removed.png",
+        kids_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/kids_33-33-8_ivory_body.png",
+        kids_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/kids_33-33-8_ivory_handle.png",
+        kids_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/kids_33-33-8_cross_buckle-removed.png",
+        sgak_m_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square_33-36_ivory_body.png",
+        sgak_m_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square_33-36_ivory_handle.png",
+        sgak_m_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square-m_33-36_cross_buckle-removed.png",
+        daily_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/daily_36-36-10_ivory_body.png",
+        daily_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/daily_36-36-10_ivory_handle.png",
+        daily_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/daily_36-36-10_cross_buckle-removed.png",
+        market_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/market_43-30-10_ivory_body.png",
+        market_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/market_43-30-10_ivory_handle.png",
+        market_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/market_43-30-10_cross_buckle-removed.png",
+        sgak_l_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square-l_36-40_ivory_body.png",
+        sgak_l_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square-l_36-40_ivory_handle.png",
+        sgak_l_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/square-l_36-40_cross_buckle-removed.png",
+        minja_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/pouch-flat_20-15_ivory_body.png",
+        minja_zipper:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/pouch-flat_20-15_ivory_zipper.png",
+        mitdan_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/pouch-bottom_23-15-6_ivory_body.png",
+        mitdan_zipper:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/pouch-bottom_23-15-6_ivory_zipper.png",
+        tumbler_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/tumbler_19-20-9_ivory_body.png",
+        tumbler_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/tumbler_19-20-9_ivory_handle.png",
+        tumbler_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/tumbler_19-20-9_cross_buckle-removed.png",
+        poly_h_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-h_black_body.png",
+        poly_h_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-h_handle.png",
+        poly_h_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly_cross_buckle-removed.png",
+        poly_v_body:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-v_black_body.png",
+        poly_v_handle:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-v_handle.png",
+        poly_v_cross:
+          "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly_cross_buckle-removed.png",
+      };
+      // 폴리백 색상별 몸통 (기본=블랙). 색 바꾸려면 poly_*_body 를 아래 값으로 교체
+      const POLY_BODY = {
+        poly_h: {
+          black:
+            "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-h_black_body.png",
+          navy: "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-h_navy_body.png",
+          green:
+            "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-h_green_body.png",
+        },
+        poly_v: {
+          black:
+            "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-v_black_body.png",
+          navy: "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-v_navy_body.png",
+          green:
+            "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-type/poly-v_green_body.png",
+        },
+      };
+      // 원격 이미지 로더 — Supabase public bucket CORS 허용, crossOrigin 필수
+      // 다운스케일된 이미지 엘리먼트 캐시 (같은 가방 재로드 시 즉시 사용)
+      const _imgCache = {};
+      function loadImg(url, cb) {
+        if (_imgCache[url]) {
+          fabric.Image.fromURL(_imgCache[url], (img) => cb(img));
+          return;
+        }
+        fabric.Image.fromURL(
+          url,
+          (img) => {
+            if (!img || !img.getElement()) {
+              console.error("Image load error:", url);
+              cb(null);
+              return;
+            }
+            const el = img.getElement();
+            const ow = el.naturalWidth || el.width,
+              oh = el.naturalHeight || el.height;
+            const MAX = 1000; // 필터 성능을 위해 긴 변 1000px로 제한
+            if (Math.max(ow, oh) > MAX) {
+              const s = MAX / Math.max(ow, oh);
+              const c = document.createElement("canvas");
+              c.width = Math.round(ow * s);
+              c.height = Math.round(oh * s);
+              c.getContext("2d").drawImage(el, 0, 0, c.width, c.height);
+              try {
+                const dataUrl = c.toDataURL("image/png");
+                _imgCache[url] = dataUrl;
+                fabric.Image.fromURL(dataUrl, (small) => cb(small));
+              } catch (e) {
+                cb(img);
+              } // tainted 등 예외 시 원본 사용
+            } else {
+              cb(img);
+            }
+          },
+          { crossOrigin: "anonymous" },
+        );
+      }
+
+      const PRINT_AREAS = {
+        daily: { cx: 0.5, cy: 0.73, w: 0.56, h: 0.42 },
+        market: { cx: 0.5, cy: 0.74, w: 0.68, h: 0.36 },
+        sgak_s: { cx: 0.5, cy: 0.72, w: 0.58, h: 0.44 },
+        sgak_m: { cx: 0.5, cy: 0.72, w: 0.58, h: 0.44 },
+        sgak_l: { cx: 0.5, cy: 0.73, w: 0.58, h: 0.44 },
+        small: { cx: 0.5, cy: 0.68, w: 0.56, h: 0.5 },
+        kids: { cx: 0.5, cy: 0.72, w: 0.6, h: 0.42 },
+        tumbler: { cx: 0.5, cy: 0.66, w: 0.54, h: 0.56 },
+        minja: { cx: 0.5, cy: 0.66, w: 0.7, h: 0.5 },
+        mitdan: { cx: 0.5, cy: 0.66, w: 0.7, h: 0.5 },
+        soft: { cx: 0.5, cy: 0.7, w: 0.6, h: 0.44 },
+      };
+
+      /* =========================================================
+   STATE
+========================================================= */
+      let canvas;
+      let currentBag = BAG_MODELS.ecobag[4]; // daily
+      let currentFont = FONTS[0];
+      let currentTextColor = "#191f28";
+      let bagBodyColor = null; // null = 원본(아이보리), 오버레이 없음
+      let webbingColor = null; // null = 오버레이 없음
+      let bagBodyRect,
+        webbingPaths = [],
+        printArea;
+      let bagScale = 0.5,
+        bagOffX = 0,
+        bagOffY = 0; // 몸통 배율·위치 (크로스끈 정렬용)
+      let undoStack = [],
+        redoStack = [];
+      let isRestoring = false;
+      const activeOptions = new Set();
+
+      const CW = 560,
+        CH = 720;
+
+      /* =========================================================
+   INIT CANVAS
+========================================================= */
+      function initCanvas() {
+        canvas = new fabric.Canvas("editor-canvas", {
+          width: CW,
+          height: CH,
+          backgroundColor: "#ffffff",
+          preserveObjectStacking: true,
+        });
+        drawBag();
+        canvas.on("selection:created", onSelect);
+        canvas.on("selection:updated", onSelect);
+        canvas.on("selection:cleared", onDeselect);
+        canvas.on("object:modified", saveState);
+        canvas.on("object:scaling", (e) => {
+          if (e.target) updateDesignSizeHint(e.target);
+        });
+        // 인쇄 영역 이탈 경고
+        canvas.on("object:modified", checkPrintBounds);
+        canvas.on("object:moving", checkPrintBounds);
+        canvas.on("object:scaling", checkPrintBounds);
+        canvas.on("object:rotating", checkPrintBounds);
+        canvas.on("object:added", checkPrintBounds);
+        // 캔버스에서 기존 객체를 직접 클릭 → 사진 탭 열기(사진 다듬기 노출). 새 추가는 영향 없음
+        canvas.on("mouse:down", (e) => {
+          if (e.target && e.target.isUserObject) switchToPhotoTab();
+        });
+        saveState();
+      }
+
+      /* 사진 탭 열기 (이미 열려있으면 무시) */
+      function switchToPhotoTab() {
+        const btn = document.querySelector('.tool-btn[data-tool="photo"]');
+        if (btn && !btn.classList.contains("active")) btn.click();
+        else if (typeof isMobileView === "function" && isMobileView())
+          openSheet();
+        // 이미지 다듬기가 맨 아래에 있으므로 그쪽으로 부드럽게 스크롤
+        const ac = document.getElementById("adjustCard");
+        if (ac)
+          setTimeout(
+            () => ac.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+            80,
+          );
+      }
+
+      /* 인쇄 영역 이탈 경고 배너 */
+      const printWarn = document.createElement("div");
+      printWarn.id = "printWarn";
+      printWarn.style.cssText =
+        "display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);" +
+        "z-index:35;background:#fff0ed;color:#d92d20;border:1.5px solid #ffb4a6;padding:8px 15px;" +
+        "border-radius:11px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(217,45,32,.18);white-space:nowrap;";
+      printWarn.textContent = "⚠️ 인쇄 영역을 벗어났어요";
+      (function () {
+        const ca = document.querySelector(".canvas-area");
+        (ca || document.body).appendChild(printWarn);
+      })();
+
+      /* 디자인이 인쇄 영역을 벗어났는지 확인 → 배너 토글, 벗어남 여부 반환 */
+      function checkPrintBounds() {
+        const warn = document.getElementById("printWarn");
+        if (!printArea) {
+          if (warn) warn.style.display = "none";
+          return false;
+        }
+        const pa = printArea.getBoundingRect();
+        const tol = 2;
+        let out = false;
+        canvas
+          .getObjects()
+          .filter((o) => o.isUserObject)
+          .forEach((o) => {
+            const b = o.getBoundingRect();
+            if (
+              b.left < pa.left - tol ||
+              b.top < pa.top - tol ||
+              b.left + b.width > pa.left + pa.width + tol ||
+              b.top + b.height > pa.top + pa.height + tol
+            )
+              out = true;
+          });
+        if (warn) warn.style.display = out ? "block" : "none";
+        return out;
+      }
+
+      /* draw the bag with real PNG layers */
+      let drawBagToken = 0;
+      function drawBag() {
+        const myToken = ++drawBagToken; // 이 호출의 세대 번호 (최신 호출만 반영)
+        canvas
+          .getObjects()
+          .filter((o) => o.bagPart)
+          .forEach((o) => canvas.remove(o));
+        webbingPaths = [];
+        bagBodyRect = null;
+        printArea = null;
+        if (typeof optionVisuals !== "undefined") {
+          Object.keys(optionVisuals).forEach((opt) => {
+            canvas.remove(optionVisuals[opt]);
+            delete optionVisuals[opt];
+          });
+        }
+
+        const id = currentBag.id;
+        const imgMap = {
+          cross: BAG_IMAGES[id + "_cross"] || null,
+          handle: BAG_IMAGES[id + "_handle"] || null,
+          body: BAG_IMAGES[id + "_body"] || null,
+        };
+        const pa = PRINT_AREAS[id] || { cx: 0.5, cy: 0.72, w: 0.58, h: 0.42 };
+        const layers = ["handle", "body"].filter((p) => imgMap[p]); // 크로스끈은 옵션에서 처리
+        let loaded = 0;
+
+        function finalize() {
+          if (myToken !== drawBagToken) return; // 더 새로운 호출이 있으면 중단
+          // 인쇄영역을 몸통 이미지의 실제 화면 위치 기준으로 배치
+          const br = bagBodyRect
+            ? bagBodyRect.getBoundingRect()
+            : { left: 0, top: 0, width: CW, height: CH };
+          const pw = br.width * pa.w,
+            ph = br.height * pa.h;
+          printArea = new fabric.Rect({
+            left: br.left + br.width * pa.cx - pw / 2,
+            top: br.top + br.height * pa.cy - ph / 2,
+            width: pw,
+            height: ph,
+            fill: "transparent",
+            stroke: "transparent",
+            strokeWidth: 0,
+            rx: 4,
+            ry: 4,
+            selectable: false,
+            evented: false,
+            bagPart: "print",
+            visible: false,
+          });
+          canvas.add(printArea);
+          reorderBag();
+          updatePrintSizeHint();
+          if (typeof activeOptions !== "undefined")
+            activeOptions.forEach((opt) => addOptionVisual(opt));
+          canvas.requestRenderAll();
+        }
+
+        if (layers.length === 0) {
+          finalize();
+          return;
+        }
+
+        layers.forEach((part) => {
+          loadImg(imgMap[part], (img) => {
+            if (myToken !== drawBagToken) return; // 이미 다른 가방으로 바뀜 → 버림
+            if (!img) {
+              loaded++;
+              if (loaded === layers.length) finalize();
+              return;
+            }
+            cleanEdges(img); // 검정 매트 가장자리(투명블랙) 제거
+            // 가방은 캔버스 가로 74%, 세로 64% 내로. 위쪽은 크로스끈 공간(약 24%),
+            // 아래쪽은 12% 여백을 둬서 모바일에서 '밑에 붙어 잘린 느낌'이 안 나게 함
+            const maxW = CW * 0.74,
+              maxH = CH * 0.64;
+            const sc = Math.min(maxW / img.width, maxH / img.height);
+            const dw = img.width * sc,
+              dh = img.height * sc;
+            const left = (CW - dw) / 2;
+            const top = CH - dh - CH * 0.12;
+            img.set({
+              left,
+              top,
+              scaleX: sc,
+              scaleY: sc,
+              selectable: false,
+              evented: false,
+              bagPart: part,
+            });
+            if (part === "body") {
+              if (bagBodyColor) applyColorTint(img, bagBodyColor, 0.85);
+              bagBodyRect = img;
+              bagScale = sc;
+              bagOffX = left;
+              bagOffY = top;
+            }
+            if (part === "handle") {
+              if (webbingColor) applyColorTint(img, webbingColor, 0.85);
+              webbingPaths.push(img);
+            }
+            canvas.add(img);
+            loaded++;
+            if (loaded === layers.length) finalize();
+          });
+        });
+      }
+
+      function applyColorTint(img, hex, strength) {
+        if (!img || !img.applyFilters) return;
+        const BlendColor = fabric.Image.filters.BlendColor;
+        // 기존 색상 필터만 제거 (DematteEdge 등은 유지). Tint는 이 버전에 없으므로 참조 안 함
+        img.filters = (img.filters || []).filter(
+          (f) => !(BlendColor && f instanceof BlendColor),
+        );
+        img.filters.push(
+          new BlendColor({ color: hex, mode: "multiply", alpha: strength }),
+        );
+        img.applyFilters();
+        if (typeof canvas !== "undefined") canvas.requestRenderAll();
+      }
+      function clearColorTint(img) {
+        if (!img || !img.applyFilters) return;
+        const BlendColor = fabric.Image.filters.BlendColor;
+        // 색상 필터만 제거, 가장자리 정리(DematteEdge)는 유지
+        img.filters = (img.filters || []).filter(
+          (f) => !(BlendColor && f instanceof BlendColor),
+        );
+        img.applyFilters();
+        if (typeof canvas !== "undefined") canvas.requestRenderAll();
+      }
+
+      function reorderBag() {
+        // 레이어 순서(뒤→앞): 손잡이 → 몸통 → 크로스끈 → 인쇄영역 → 사용자 디자인
+        webbingPaths.forEach((p) => canvas.sendToBack(p)); // 손잡이 맨 뒤
+        if (bagBodyRect) canvas.bringToFront(bagBodyRect); // 몸통
+        const cross =
+          typeof optionVisuals !== "undefined"
+            ? optionVisuals["크로스끈"]
+            : null;
+        if (cross) canvas.bringToFront(cross); // 크로스끈(옵션)
+        if (printArea) canvas.bringToFront(printArea); // 인쇄영역 점선
+        canvas.getObjects().forEach((o) => {
+          if (o.isUserObject) canvas.bringToFront(o);
+        }); // 사용자 디자인
+      }
+
+      /* 인쇄 가능 영역(cm) = 가방 몸통 가로/세로 각 -2cm */
+      function updatePrintSizeHint() {
+        const hint = document.getElementById("printSizeHint");
+        if (!hint) return;
+        const m = (currentBag.size || "").match(/(\d+)\s*[×xX]\s*(\d+)/);
+        if (!m) {
+          hint.textContent = "인쇄 가능 영역";
+          return;
+        }
+        const W = +m[1],
+          H = +m[2];
+        const pw = Math.max(1, W - 2),
+          ph = Math.max(1, H - 2);
+        hint.textContent = `인쇄 가능 영역: 약 ${pw} × ${ph} cm`;
+      }
+
+      /* 캔버스 1px가 실제 몇 cm인지 (가방 몸통 천 폭 = 가방 실제 가로) */
+      function getCmPerPx() {
+        if (!bagBodyRect) return null;
+        const m = (currentBag.size || "").match(/(\d+)\s*[×xX]\s*(\d+)/);
+        if (!m) return null;
+        const bagWcm = +m[1];
+        const bsc = bagBodyRect.scaleX;
+        const bBox = getOpaqueBBox(
+          bagBodyRect.getElement(),
+          currentBag.id + "_body",
+        );
+        const bodyWpx = bBox.w * bsc;
+        if (!bodyWpx) return null;
+        return bagWcm / bodyWpx;
+      }
+
+      /* 선택한 디자인의 실제 인쇄 크기(cm)를 하단에 표시 */
+      function updateDesignSizeHint(obj) {
+        const hint = document.getElementById("printSizeHint");
+        if (!hint) return;
+        if (!obj || !obj.isUserObject) {
+          updatePrintSizeHint();
+          return;
+        }
+        const cpp = getCmPerPx();
+        if (!cpp) {
+          updatePrintSizeHint();
+          return;
+        }
+        const wcm = obj.getScaledWidth() * cpp;
+        const hcm = obj.getScaledHeight() * cpp;
+        hint.textContent = `🖼️ 선택한 디자인 인쇄 크기: ${wcm.toFixed(1)} × ${hcm.toFixed(1)} cm`;
+      }
+
+      /* =========================================================
+   STATE / UNDO-REDO
+========================================================= */
+      function saveState() {
+        if (isRestoring) return;
+        redoStack = [];
+        const json = JSON.stringify(
+          canvas.toJSON([
+            "isUserObject",
+            "isOptionVisual",
+            "optName",
+            "bagPart",
+            "selectable",
+            "evented",
+            "uploadId",
+            "isCustomerUpload",
+          ]),
+        );
+        undoStack.push(json);
+        if (undoStack.length > 40) undoStack.shift();
+        updateUndoRedo();
+      }
+      function updateUndoRedo() {
+        document.getElementById("undoBtn").disabled = undoStack.length <= 1;
+        document.getElementById("redoBtn").disabled = redoStack.length === 0;
+      }
+      function undo() {
+        if (undoStack.length <= 1) return;
+        redoStack.push(undoStack.pop());
+        restore(undoStack[undoStack.length - 1]);
+      }
+      function redo() {
+        if (redoStack.length === 0) return;
+        const json = redoStack.pop();
+        undoStack.push(json);
+        restore(json);
+      }
+      function restore(json) {
+        isRestoring = true;
+        canvas.loadFromJSON(json, () => {
+          // rebind bag refs
+          rebindBagRefs();
+          canvas.renderAll();
+          isRestoring = false;
+          updateUndoRedo();
+        });
+      }
+      function rebindBagRefs() {
+        const objs = canvas.getObjects();
+        bagBodyRect = objs.find((o) => o.bagPart === "body");
+        printArea = objs.find((o) => o.bagPart === "print");
+        webbingPaths = objs.filter(
+          (o) => o.bagPart === "handle" || o.bagPart === "band",
+        );
+        // 옵션 비주얼 재매핑
+        if (typeof optionVisuals !== "undefined") {
+          Object.keys(optionVisuals).forEach((k) => delete optionVisuals[k]);
+          objs
+            .filter((o) => o.isOptionVisual && o.optName)
+            .forEach((o) => {
+              optionVisuals[o.optName] = o;
+            });
+        }
+      }
+
+      /* =========================================================
+   TOOL SWITCHING
+========================================================= */
+      /* 모바일 하단 시트 제어 (뒤로가기 = 시트 닫기) */
+      function isMobileView() {
+        return window.matchMedia("(max-width: 600px)").matches;
+      }
+      function openSheet() {
+        const p = document.querySelector(".option-panel");
+        if (!p) return;
+        if (!p.classList.contains("sheet-open")) {
+          p.classList.add("sheet-open");
+          if (isMobileView()) {
+            try {
+              history.pushState({ ygSheet: 1 }, "");
+            } catch (e) {}
+          }
+        }
+      }
+      function closeSheet(fromPop) {
+        const p = document.querySelector(".option-panel");
+        if (!p) return;
+        if (p.classList.contains("sheet-open")) {
+          p.classList.remove("sheet-open");
+          // 직접 닫기면 pushState 했던 히스토리 정리 (뒤로가기로 닫은 경우는 이미 pop됨)
+          if (
+            !fromPop &&
+            isMobileView() &&
+            history.state &&
+            history.state.ygSheet
+          ) {
+            try {
+              history.back();
+            } catch (e) {}
+          }
+        }
+      }
+      // 뒤로가기: 시트 열려있으면 페이지 이동 대신 시트만 닫기
+      window.addEventListener("popstate", () => {
+        const p = document.querySelector(".option-panel");
+        if (p && p.classList.contains("sheet-open")) closeSheet(true);
+      });
+
+      document.querySelectorAll(".tool-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tool = btn.dataset.tool;
+          const wasActive = btn.classList.contains("active");
+          document
+            .querySelectorAll(".tool-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          document
+            .querySelectorAll(".opt-section")
+            .forEach((s) => s.classList.remove("active"));
+          document
+            .querySelector(`.opt-section[data-panel="${tool}"]`)
+            .classList.add("active");
+          // 모바일: 같은 도구 다시 누르면 시트 닫기, 아니면 열기
+          if (isMobileView()) {
+            const open = document
+              .querySelector(".option-panel")
+              .classList.contains("sheet-open");
+            if (wasActive && open) closeSheet();
+            else openSheet();
+          }
+        });
+      });
+
+      // 시트 닫기: 핸들 클릭 / 캔버스 터치
+      const _sh = document.getElementById("sheetHandle");
+      if (_sh) _sh.addEventListener("click", closeSheet);
+      document
+        .querySelector(".canvas-area")
+        .addEventListener("pointerdown", () => {
+          if (isMobileView()) closeSheet();
+        });
+
+      /* =========================================================
+   PHOTO: upload, designs, remove-bg
+========================================================= */
+      document
+        .getElementById("uploadBtn")
+        .addEventListener("click", () =>
+          document.getElementById("fileInput").click(),
+        );
+
+      /* 고객이 처음 올린 '원본 파일'을 보관 (배경제거가 잘못돼도 직원이 원본으로 재작업).
+   큰 dataURL은 히스토리에 넣지 않고 이 Map에만 보관 → 객체엔 작은 uploadId만 붙임 */
+      const originalUploads = new Map(); // uploadId -> { dataURL, name, mime, bgRemoved }
+      function newUploadId() {
+        return (
+          "up_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7)
+        );
+      }
+      function fileToDataURL(file) {
+        return new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = () => rej(new Error("read-fail"));
+          r.readAsDataURL(file);
+        });
+      }
+      function extFromMime(mime) {
+        const m = {
+          "image/png": ".png",
+          "image/jpeg": ".jpg",
+          "image/jpg": ".jpg",
+          "image/webp": ".webp",
+          "image/gif": ".gif",
+          "image/svg+xml": ".svg",
+          "application/pdf": ".pdf",
+        };
+        return m[mime] || "";
+      }
+
+      // 캔버스에 이미지(dataURL)를 디자인 객체로 추가. uploadId가 있으면 고객 업로드로 표시
+      function addUploadedImage(dataURL, msg, uploadId) {
+        fabric.Image.fromURL(dataURL, (img) => {
+          if (!img) {
+            showToast("이미지를 불러오지 못했어요");
+            return;
+          }
+          const scale = Math.min(220 / img.width, 220 / img.height, 1);
+          const ctr = bagBodyCenter();
+          img.set({
+            left: ctr.x,
+            top: ctr.y,
+            originX: "center",
+            originY: "center",
+            scaleX: scale,
+            scaleY: scale,
+          });
+          img.isUserObject = true;
+          if (uploadId) {
+            img.uploadId = uploadId;
+            img.isCustomerUpload = true;
+          }
+          canvas.add(img);
+          canvas.setActiveObject(img);
+          canvas.requestRenderAll();
+          saveState();
+          showToast(msg || "이미지를 올렸어요");
+        });
+      }
+
+      // PDF 첫 페이지를 고해상도 이미지(dataURL)로 변환
+      async function pdfFileToDataURL(file) {
+        if (!window.pdfjsLib) throw new Error("pdf-lib-missing");
+        const buf = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        const page = await pdf.getPage(1);
+        let scale = 3; // 인쇄용 고해상도
+        let viewport = page.getViewport({ scale });
+        const MAX = 2400; // 너무 큰 PDF 방지
+        if (Math.max(viewport.width, viewport.height) > MAX) {
+          scale = (scale * MAX) / Math.max(viewport.width, viewport.height);
+          viewport = page.getViewport({ scale });
+        }
+        const c = document.createElement("canvas");
+        c.width = Math.ceil(viewport.width);
+        c.height = Math.ceil(viewport.height);
+        const ctx = c.getContext("2d");
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        return c.toDataURL("image/png");
+      }
+
+      document
+        .getElementById("fileInput")
+        .addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const isPdf =
+            file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+          const isSvg =
+            file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
+
+          // 고객 원본 파일을 그대로 보관 (배경제거·변환 전). 주문 시 메일에 함께 첨부됨
+          const uploadId = newUploadId();
+          try {
+            const originalDataURL = await fileToDataURL(file);
+            originalUploads.set(uploadId, {
+              dataURL: originalDataURL,
+              name: file.name || "upload",
+              mime: file.type || "",
+              bgRemoved: false,
+            });
+          } catch (_) {
+            /* 원본 보관 실패해도 업로드 자체는 진행 */
+          }
+
+          if (isPdf) {
+            showToast("PDF를 불러오는 중…");
+            try {
+              const dataURL = await pdfFileToDataURL(file);
+              addUploadedImage(dataURL, "PDF를 올렸어요 (1페이지)", uploadId);
+            } catch (err) {
+              console.error(err);
+              showToast("PDF를 불러오지 못했어요. 이미지로 변환해 올려주세요");
+            }
+          } else if (isSvg) {
+            try {
+              const text = await file.text();
+              fabric.loadSVGFromString(text, (objects, options) => {
+                if (!objects || !objects.length) {
+                  showToast("SVG를 불러오지 못했어요");
+                  return;
+                }
+                const obj = fabric.util.groupSVGElements(objects, options);
+                const w = obj.width || 220,
+                  h = obj.height || 220;
+                const scale = Math.min(220 / w, 220 / h, 1);
+                const ctr = bagBodyCenter();
+                obj.set({
+                  left: ctr.x,
+                  top: ctr.y,
+                  originX: "center",
+                  originY: "center",
+                  scaleX: scale,
+                  scaleY: scale,
+                });
+                obj.isUserObject = true;
+                obj.uploadId = uploadId;
+                obj.isCustomerUpload = true;
+                canvas.add(obj);
+                canvas.setActiveObject(obj);
+                canvas.requestRenderAll();
+                saveState();
+                showToast("SVG를 올렸어요 (벡터)");
+              });
+            } catch (err) {
+              console.error(err);
+              showToast("SVG를 불러오지 못했어요");
+            }
+          } else {
+            const orig = originalUploads.get(uploadId);
+            if (orig && orig.dataURL)
+              addUploadedImage(orig.dataURL, undefined, uploadId);
+            else {
+              const reader = new FileReader();
+              reader.onload = (ev) =>
+                addUploadedImage(ev.target.result, undefined, uploadId);
+              reader.readAsDataURL(file);
+            }
+          }
+          e.target.value = "";
+        });
+
+      const DESIGN_BASE =
+        "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/free-desings";
+      const designGrid = document.getElementById("designGrid");
+      // 1~187 + 알려진 변형/특수 파일명. 없는 번호는 이미지 로드 실패 시 자동 숨김.
+      const designIds = [];
+      for (let i = 1; i <= 187; i++) designIds.push(String(i));
+      [
+        "86-1",
+        "89-1",
+        "siar_cat_awkward",
+        "siar_cat_sleep",
+        "siar_cat_tears",
+        "siar_cat_ugly",
+      ].forEach((v) => designIds.push(v));
+      designIds.forEach((id) => {
+        const el = document.createElement("button");
+        el.className = "design-item";
+        el.style.cssText = "padding:0;overflow:hidden;";
+        const im = document.createElement("img");
+        im.src = `${DESIGN_BASE}/${id}.png`;
+        im.loading = "lazy";
+        im.crossOrigin = "anonymous";
+        im.style.cssText = "width:100%;height:100%;object-fit:contain;";
+        im.onerror = () => {
+          el.style.display = "none";
+        }; // 존재하지 않는 도안 숨김
+        el.appendChild(im);
+        el.addEventListener("click", () =>
+          addDesignImage(`${DESIGN_BASE}/${id}.png`),
+        );
+        designGrid.appendChild(el);
+      });
+
+      /* 가방 몸통 정중앙 좌표 (정중앙 버튼과 동일 위치) */
+      function bagBodyCenter() {
+        try {
+          if (!bagBodyRect) return { x: CW / 2, y: CH / 2 };
+          const bsc = bagBodyRect.scaleX;
+          const bBox = getOpaqueBBox(
+            bagBodyRect.getElement(),
+            currentBag.id + "_body",
+          );
+          return {
+            x: bagBodyRect.left + (bBox.x + bBox.w / 2) * bsc,
+            y: bagBodyRect.top + (bBox.y + bBox.h / 2) * bsc,
+          };
+        } catch (e) {
+          return { x: CW / 2, y: CH / 2 };
+        }
+      }
+
+      function addDesignImage(url) {
+        loadImg(url, (img) => {
+          if (!img) {
+            showToast("도안을 불러오지 못했어요");
+            return;
+          }
+          const cpp = getCmPerPx();
+          let sc;
+          if (cpp && cpp > 0) {
+            // 18×18cm 박스에 맞춤 (긴 변 기준, 추가요금 방지 기본값)
+            const scW = 18 / (img.width * cpp);
+            const scH = 18 / (img.height * cpp);
+            sc = Math.min(scW, scH);
+          } else {
+            sc =
+              Math.min((CW * 0.42) / img.width, (CH * 0.42) / img.height) * 0.7;
+          }
+          const ctr = bagBodyCenter(); // 가방 정중앙 로드
+          img.set({
+            left: ctr.x,
+            top: ctr.y,
+            originX: "center",
+            originY: "center",
+            scaleX: sc,
+            scaleY: sc,
+            isUserObject: true,
+            selectable: true,
+            evented: true,
+          });
+          canvas.add(img);
+          canvas.setActiveObject(img);
+          canvas.requestRenderAll();
+          saveState();
+          showToast("도안을 추가했어요 (18×18cm)");
+        });
+      }
+
+      document.getElementById("removeBgBtn").addEventListener("click", () => {
+        const obj = canvas.getActiveObject();
+        if (!obj || obj.type !== "image") {
+          showToast("먼저 이미지를 선택해주세요");
+          return;
+        }
+        showToast("AI가 배경을 지우고 있어요…");
+        setTimeout(() => removeBackground(obj), 250);
+      });
+
+      /* 실제 배경 제거: 모서리 색을 배경으로 보고 비슷한 색 픽셀을 투명 처리 */
+      function removeBackground(imgObj) {
+        const imgEl = imgObj._element;
+        const w = imgEl.naturalWidth || imgEl.width;
+        const h = imgEl.naturalHeight || imgEl.height;
+        const tmp = document.createElement("canvas");
+        tmp.width = w;
+        tmp.height = h;
+        const ctx = tmp.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(imgEl, 0, 0, w, h);
+        let imageData;
+        try {
+          imageData = ctx.getImageData(0, 0, w, h);
+        } catch (err) {
+          showToast("이 이미지는 배경 제거가 어려워요");
+          return;
+        }
+        const d = imageData.data;
+
+        // 네 모서리 색 평균 = 배경색 추정
+        const corners = [
+          [0, 0],
+          [w - 1, 0],
+          [0, h - 1],
+          [w - 1, h - 1],
+        ];
+        let br = 0,
+          bg = 0,
+          bb = 0;
+        corners.forEach(([x, y]) => {
+          const i = (y * w + x) * 4;
+          br += d[i];
+          bg += d[i + 1];
+          bb += d[i + 2];
+        });
+        br /= 4;
+        bg /= 4;
+        bb /= 4;
+
+        const TH = 48; // 임계값
+        const SOFT = 28; // 가장자리 부드럽게
+        for (let i = 0; i < d.length; i += 4) {
+          const dr = d[i] - br,
+            dg = d[i + 1] - bg,
+            db = d[i + 2] - bb;
+          const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+          if (dist < TH) d[i + 3] = 0;
+          else if (dist < TH + SOFT)
+            d[i + 3] = Math.round(((dist - TH) / SOFT) * 255);
+        }
+        ctx.putImageData(imageData, 0, 0);
+
+        fabric.Image.fromURL(tmp.toDataURL(), (ni) => {
+          ni.set({
+            left: imgObj.left,
+            top: imgObj.top,
+            scaleX: imgObj.scaleX,
+            scaleY: imgObj.scaleY,
+            angle: imgObj.angle,
+            originX: imgObj.originX,
+            originY: imgObj.originY,
+            opacity: imgObj.opacity,
+          });
+          ni.isUserObject = true;
+          // 배경제거 후에도 '고객 원본' 연결을 유지 (직원 재작업용). 원본 자체는 원본Map에 그대로 보관
+          if (imgObj.uploadId) {
+            ni.uploadId = imgObj.uploadId;
+            ni.isCustomerUpload = true;
+            const o = originalUploads.get(imgObj.uploadId);
+            if (o) o.bgRemoved = true;
+          }
+          canvas.remove(imgObj);
+          canvas.add(ni);
+          canvas.setActiveObject(ni);
+          canvas.requestRenderAll();
+          saveState();
+          showToast("배경을 지웠어요 ✨");
+        });
+      }
+
+      /* =========================================================
+   TEXT
+========================================================= */
+      const fontList = document.getElementById("fontList");
+      FONTS.forEach((f, i) => {
+        const el = document.createElement("div");
+        el.className = "font-item" + (i === 0 ? " active" : "");
+        el.style.fontFamily = f.css;
+        el.innerHTML = `<span>${f.name}</span><span class="fi-check">✓</span>`;
+        el.addEventListener("click", () => {
+          document
+            .querySelectorAll(".font-item")
+            .forEach((x) => x.classList.remove("active"));
+          el.classList.add("active");
+          currentFont = f;
+          const obj = canvas.getActiveObject();
+          if (obj && obj.type === "i-text") {
+            obj.set("fontFamily", f.css);
+            canvas.requestRenderAll();
+            // 웹폰트가 늦게 로드돼도 적용되도록 로드 완료 후 재렌더링
+            const fontName = f.css.split(",")[0].replace(/['"]/g, "").trim();
+            if (document.fonts && document.fonts.load) {
+              document.fonts
+                .load(`16px "${fontName}"`)
+                .then(() => canvas.requestRenderAll())
+                .catch(() => {});
+            }
+            saveState();
+          }
+        });
+        fontList.appendChild(el);
+      });
+
+      const textColorGrid = document.getElementById("textColorGrid");
+      TEXT_COLORS.forEach((c, i) => {
+        const el = document.createElement("button");
+        el.className = "color-sw" + (i === 0 ? " active" : "");
+        el.style.background = c;
+        if (c === "#ffffff") el.style.borderColor = "var(--gray-4)";
+        el.addEventListener("click", () => {
+          document
+            .querySelectorAll("#textColorGrid .color-sw")
+            .forEach((x) => x.classList.remove("active"));
+          el.classList.add("active");
+          currentTextColor = c;
+          const obj = canvas.getActiveObject();
+          if (obj && obj.type === "i-text") {
+            obj.set("fill", c);
+            canvas.requestRenderAll();
+            saveState();
+          }
+        });
+        textColorGrid.appendChild(el);
+      });
+
+      document.getElementById("addTextBtn").addEventListener("click", () => {
+        const txt =
+          document.getElementById("textInput").value.trim() ||
+          "글자를 입력하세요";
+        const t = new fabric.IText(txt, {
+          left: CW / 2,
+          top: CH / 2,
+          originX: "center",
+          originY: "center",
+          fontFamily: currentFont.css,
+          fontSize: parseInt(document.getElementById("fontSizeNum").value),
+          fill: currentTextColor,
+          textAlign: "center",
+        });
+        t.isUserObject = true;
+        canvas.add(t);
+        canvas.setActiveObject(t);
+        canvas.requestRenderAll();
+        saveState();
+        document.getElementById("textInput").value = "";
+        showToast("글자를 추가했어요");
+      });
+
+      const fontSlider = document.getElementById("fontSizeSlider");
+      const fontNum = document.getElementById("fontSizeNum");
+      function syncFontSize(v) {
+        v = Math.max(10, Math.min(400, parseInt(v) || 48));
+        fontSlider.value = Math.min(200, v);
+        fontNum.value = v;
+        const obj = canvas.getActiveObject();
+        if (obj && obj.type === "i-text") {
+          obj.set("fontSize", v);
+          canvas.requestRenderAll();
+        }
+      }
+      fontSlider.addEventListener("input", (e) => syncFontSize(e.target.value));
+      fontNum.addEventListener("input", (e) => syncFontSize(e.target.value));
+      fontNum.addEventListener("change", saveState);
+
+      /* =========================================================
+   STICKERS & SHAPES
+========================================================= */
+      function addEmoji(emoji, size = 70) {
+        const t = new fabric.IText(emoji, {
+          left: CW / 2,
+          top: CH / 2,
+          originX: "center",
+          originY: "center",
+          fontSize: size,
+        });
+        t.isUserObject = true;
+        canvas.add(t);
+        canvas.setActiveObject(t);
+        canvas.requestRenderAll();
+        saveState();
+      }
+      const stickerGrid = document.getElementById("stickerGrid");
+      STICKERS.forEach((s) => {
+        const el = document.createElement("button");
+        el.className = "sticker-item";
+        el.textContent = s;
+        el.addEventListener("click", () => addEmoji(s));
+        stickerGrid.appendChild(el);
+      });
+
+      const shapeGrid = document.getElementById("shapeGrid");
+      SHAPES.forEach((sh) => {
+        const el = document.createElement("button");
+        el.className = "sticker-item";
+        el.textContent = sh.emoji;
+        el.addEventListener("click", () => addShape(sh.type));
+        shapeGrid.appendChild(el);
+      });
+      function addShape(type) {
+        let obj;
+        const common = {
+          left: CW / 2,
+          top: CH / 2,
+          originX: "center",
+          originY: "center",
+          fill: currentTextColor,
+        };
+        if (type === "circle")
+          obj = new fabric.Circle({ ...common, radius: 45 });
+        else if (type === "rect")
+          obj = new fabric.Rect({ ...common, width: 90, height: 90, rx: 6 });
+        else if (type === "triangle")
+          obj = new fabric.Triangle({ ...common, width: 95, height: 90 });
+        else if (type === "line")
+          obj = new fabric.Rect({ ...common, width: 120, height: 8, rx: 4 });
+        else if (type === "star") {
+          addEmoji("★", 90);
+          return;
+        } else if (type === "heart") {
+          addEmoji("♥", 90);
+          return;
+        }
+        obj.isUserObject = true;
+        canvas.add(obj);
+        canvas.setActiveObject(obj);
+        canvas.requestRenderAll();
+        saveState();
+      }
+
+      /* =========================================================
+   BAG / WEBBING COLOR
+========================================================= */
+      const bagColorGrid = document.getElementById("bagColorGrid");
+      let polyBodyKey = "black"; // 현재 폴리백 몸통 색
+
+      /* 가방 카테고리에 맞춰 가방 색상 그리드 렌더링
+   - 폴리백: 블랙(기본)/네이비/그린 (몸통 PNG 교체)
+   - 그 외: 아이보리/블랙/네이비 (색상 틴트) */
+      function renderColorGridForBag() {
+        const grid = document.getElementById("bagColorGrid");
+        grid.innerHTML = "";
+        const nameEl = document.getElementById("bagColorName");
+        const isPoly = bagCategory(currentBag) === "poly";
+        // 폴리백은 손잡이가 단색 PNG라 끈 색 변경 불가 → 끈 색상 섹션 숨김
+        const ws = document.getElementById("webbingSection");
+        if (ws) ws.style.display = isPoly ? "none" : "";
+
+        if (isPoly) {
+          POLY_COLORS.forEach((c) => {
+            const el = document.createElement("button");
+            el.className =
+              "color-sw" + (c.key === polyBodyKey ? " active" : "");
+            el.style.background = c.display;
+            el.title = c.name;
+            el.addEventListener("click", () => {
+              grid
+                .querySelectorAll(".color-sw")
+                .forEach((x) => x.classList.remove("active"));
+              el.classList.add("active");
+              polyBodyKey = c.key;
+              bagBodyColor = null;
+              if (POLY_BODY[currentBag.id] && POLY_BODY[currentBag.id][c.key]) {
+                BAG_IMAGES[currentBag.id + "_body"] =
+                  POLY_BODY[currentBag.id][c.key];
+              }
+              nameEl.textContent = "● " + c.name;
+              drawBag();
+              saveState();
+              showToast(c.name + " 폴리백으로 바꿨어요");
+            });
+            grid.appendChild(el);
+          });
+          const cur =
+            POLY_COLORS.find((c) => c.key === polyBodyKey) || POLY_COLORS[0];
+          nameEl.textContent = "● " + cur.name;
+        } else {
+          BAG_COLORS.forEach((c, i) => {
+            const el = document.createElement("button");
+            el.className = "color-sw" + (i === 0 ? " active" : "");
+            el.style.background = c.display;
+            el.title = c.name;
+            el.addEventListener("click", () => {
+              grid
+                .querySelectorAll(".color-sw")
+                .forEach((x) => x.classList.remove("active"));
+              el.classList.add("active");
+              bagBodyColor = c.hex;
+              nameEl.textContent = "● " + c.name;
+              if (bagBodyRect) {
+                if (c.hex === null) {
+                  clearColorTint(bagBodyRect);
+                } else {
+                  applyColorTint(bagBodyRect, c.hex, 0.85);
+                }
+                saveState();
+              }
+              showToast(c.name + " 원단으로 바꿨어요");
+            });
+            grid.appendChild(el);
+          });
+          nameEl.textContent = "● " + BAG_COLORS[0].name;
+        }
+      }
+      renderColorGridForBag();
+
+      const webbingColorGrid = document.getElementById("webbingColorGrid");
+      WEBBING_COLORS.forEach((c, i) => {
+        const el = document.createElement("button");
+        el.className = "color-sw" + (i === 0 ? " active" : "");
+        el.style.background = c.display;
+        el.title = c.name;
+        el.addEventListener("click", () => {
+          document
+            .querySelectorAll("#webbingColorGrid .color-sw")
+            .forEach((x) => x.classList.remove("active"));
+          el.classList.add("active");
+          webbingColor = c.hex;
+          document.getElementById("webbingColorName").textContent =
+            "● " + c.name;
+          webbingPaths.forEach((p) => {
+            if (c.hex === null) {
+              clearColorTint(p);
+            } else {
+              applyColorTint(p, c.hex, 0.85);
+            }
+          });
+          if (optionVisuals["크로스끈"]) {
+            if (c.hex === null) {
+              clearColorTint(optionVisuals["크로스끈"]);
+            } else {
+              applyColorTint(optionVisuals["크로스끈"], c.hex, 0.85);
+            }
+          }
+          canvas.requestRenderAll();
+          saveState();
+          showToast(c.name + " 끈으로 바꿨어요");
+        });
+        webbingColorGrid.appendChild(el);
+      });
+      // 초기 색상 이름 표시
+      document.getElementById("bagColorName").textContent =
+        "● " + BAG_COLORS[0].name;
+      document.getElementById("webbingColorName").textContent =
+        "● " + WEBBING_COLORS[0].name;
+
+      /* =========================================================
+   FLOATING TOOLBAR
+========================================================= */
+      document.getElementById("undoBtn").addEventListener("click", undo);
+      document.getElementById("redoBtn").addEventListener("click", redo);
+      document.getElementById("frontBtn").addEventListener("click", () => {
+        const o = canvas.getActiveObject();
+        if (o) {
+          canvas.bringToFront(o);
+          canvas.requestRenderAll();
+          saveState();
+        } else needSelect();
+      });
+      document.getElementById("backBtn").addEventListener("click", () => {
+        const o = canvas.getActiveObject();
+        if (o) {
+          canvas.sendToBack(o);
+          reorderBag();
+          canvas.requestRenderAll();
+          saveState();
+        } else needSelect();
+      });
+      document.getElementById("flipBtn").addEventListener("click", () => {
+        const o = canvas.getActiveObject();
+        if (o) {
+          o.set("flipX", !o.flipX);
+          canvas.requestRenderAll();
+          saveState();
+        } else needSelect();
+      });
+
+      /* ── 가방 정중앙 버튼: 가방 몸통 기준 정중앙 ── */
+      document.getElementById("bagCenterBtn").addEventListener("click", () => {
+        const o = canvas.getActiveObject();
+        if (!o) {
+          needSelect();
+          return;
+        }
+        if (!bagBodyRect) {
+          showToast("가방을 먼저 로드해주세요");
+          return;
+        }
+        const bsc = bagBodyRect.scaleX;
+        const bBox = getOpaqueBBox(
+          bagBodyRect.getElement(),
+          currentBag.id + "_body",
+        );
+        const bodyCX = bagBodyRect.left + (bBox.x + bBox.w / 2) * bsc;
+        const bodyCY = bagBodyRect.top + (bBox.y + bBox.h / 2) * bsc;
+        o.set({
+          left: bodyCX,
+          top: bodyCY,
+          originX: "center",
+          originY: "center",
+        });
+        o.setCoords();
+        canvas.requestRenderAll();
+        saveState();
+        showToast("가방 정중앙으로 이동 ✓");
+      });
+      document.getElementById("dupBtn").addEventListener("click", () => {
+        const o = canvas.getActiveObject();
+        if (!o) {
+          needSelect();
+          return;
+        }
+        o.clone(
+          (cl) => {
+            cl.set({ left: o.left + 24, top: o.top + 24 });
+            cl.isUserObject = true;
+            canvas.add(cl);
+            canvas.setActiveObject(cl);
+            canvas.requestRenderAll();
+            saveState();
+          },
+          ["isUserObject"],
+        );
+      });
+      document.getElementById("deleteBtn").addEventListener("click", () => {
+        const objs = canvas.getActiveObjects();
+        if (!objs.length) {
+          needSelect();
+          return;
+        }
+        objs.forEach((o) => canvas.remove(o));
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        saveState();
+      });
+      function needSelect() {
+        showToast("먼저 이미지나 글자를 선택해주세요");
+      }
+
+      /* keyboard */
+      document.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")
+          return;
+        if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+          e.preventDefault();
+          undo();
+        } else if (
+          (e.ctrlKey || e.metaKey) &&
+          (e.key === "y" || (e.shiftKey && e.key === "z"))
+        ) {
+          e.preventDefault();
+          redo();
+        } else if (e.key === "Delete" || e.key === "Backspace") {
+          const objs = canvas.getActiveObjects();
+          if (objs.length) {
+            e.preventDefault();
+            objs.forEach((o) => canvas.remove(o));
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+            saveState();
+          }
+        }
+      });
+
+      /* =========================================================
+   PROPERTY PANEL (adjust selected object)
+========================================================= */
+      function onSelect() {
+        const obj = canvas.getActiveObject();
+        if (!obj) return;
+        const content = document.getElementById("adjustContent");
+        const isText = obj.type === "i-text";
+        content.innerHTML = `
+    <div class="prop-row">
+      <div class="prop-row-label"><span>크기</span><span class="val" id="valScale">100%</span></div>
+      <input type="range" id="scaleSlider" min="10" max="300" value="${Math.round((obj.scaleX || 1) * 100)}">
+    </div>
+    <div class="prop-row">
+      <div class="prop-row-label"><span>투명도</span><span class="val" id="valOpacity">${Math.round((obj.opacity ?? 1) * 100)}%</span></div>
+      <input type="range" id="opacitySlider" min="0" max="100" value="${Math.round((obj.opacity ?? 1) * 100)}">
+    </div>
+    <div class="prop-row">
+      <div class="prop-row-label"><span>회전</span><span class="val" id="valAngle">${Math.round(obj.angle || 0)}°</span></div>
+      <input type="range" id="angleSlider" min="0" max="360" value="${Math.round(obj.angle || 0)}">
+    </div>
+  `;
+        const scaleS = document.getElementById("scaleSlider");
+        const opaS = document.getElementById("opacitySlider");
+        const angS = document.getElementById("angleSlider");
+        scaleS.addEventListener("input", (e) => {
+          const v = e.target.value / 100;
+          obj.set({ scaleX: v, scaleY: v });
+          obj.setCoords();
+          document.getElementById("valScale").textContent =
+            e.target.value + "%";
+          canvas.requestRenderAll();
+          updateDesignSizeHint(obj);
+        });
+        scaleS.addEventListener("change", saveState);
+        opaS.addEventListener("input", (e) => {
+          obj.set("opacity", e.target.value / 100);
+          document.getElementById("valOpacity").textContent =
+            e.target.value + "%";
+          canvas.requestRenderAll();
+        });
+        opaS.addEventListener("change", saveState);
+        angS.addEventListener("input", (e) => {
+          obj.set("angle", parseInt(e.target.value));
+          document.getElementById("valAngle").textContent =
+            e.target.value + "°";
+          canvas.requestRenderAll();
+        });
+        angS.addEventListener("change", saveState);
+
+        // sync text controls
+        if (isText) {
+          fontNum.value = Math.round(obj.fontSize);
+          fontSlider.value = Math.min(200, Math.round(obj.fontSize));
+        }
+        updateDesignSizeHint(obj);
+      }
+      function onDeselect() {
+        document.getElementById("adjustContent").innerHTML =
+          '<div class="prop-empty">캔버스에서 이미지나<br>글자를 선택해보세요</div>';
+        updatePrintSizeHint();
+      }
+
+      /* =========================================================
+   OPTION TOGGLES
+========================================================= */
+      const optToggles = document.getElementById("optionToggles");
+      const optionVisuals = {}; // 옵션별 캔버스 객체 저장
+
+      // Supabase 옵션 이미지 + 가방 대비 배치(중심 cx,cy / 폭 w, 가방 bounding box 기준 비율)
+      const _OPT_BASE =
+        "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/ecobag-option";
+      const OPTION_IMAGES = {
+        안주머니: _OPT_BASE + "/inner-pocket.png",
+        안주머니인쇄: _OPT_BASE + "/inner-pocket.png",
+        자석: _OPT_BASE + "/magnet.png",
+        이름표: _OPT_BASE + "/name-tag.png",
+        똑딱이: _OPT_BASE + "/snap.png",
+        지퍼: _OPT_BASE + "/zipper.png",
+      };
+      const OPTION_LAYOUT = {
+        똑딱이: { cx: 0.5, cy: 0.07, w: 0.21 },
+        자석: { cx: 0.5, cy: 0.07, w: 0.21 },
+        이름표: { cx: 0.78, cy: 0.84, w: 0.22 },
+        안주머니: { cx: 0.5, cy: 0.52, w: 0.52 },
+        안주머니인쇄: { cx: 0.5, cy: 0.5, w: 0.4 },
+        지퍼: { cx: 0.5, cy: 0.06, w: 0.74 },
+      };
+      // 캔버스에는 그리지 않고 옆 '미리보기'에만 보여줄 옵션
+      const PREVIEW_ONLY = ["안주머니", "지퍼", "이름표"];
+
+      function renderOptionPreviews() {
+        const card = document.getElementById("optPreviewCard");
+        const grid = document.getElementById("optPreviewGrid");
+        if (!card || !grid) return;
+        grid.innerHTML = "";
+        const shown = PREVIEW_ONLY.filter((o) => activeOptions.has(o));
+        if (shown.length === 0) {
+          card.style.display = "none";
+          return;
+        }
+        card.style.display = "block";
+        shown.forEach((opt) => {
+          const wrap = document.createElement("div");
+          wrap.style.cssText = "width:78px;text-align:center;";
+          const im = document.createElement("img");
+          im.src = OPTION_IMAGES[opt];
+          im.style.cssText =
+            "width:78px;height:78px;object-fit:contain;border:1px solid var(--gray-5);border-radius:10px;background:var(--gray-7);";
+          const lb = document.createElement("div");
+          lb.textContent = opt;
+          lb.style.cssText =
+            "font-size:12px;color:var(--gray-1);margin-top:4px;font-weight:600;";
+          wrap.appendChild(im);
+          wrap.appendChild(lb);
+          grid.appendChild(wrap);
+        });
+      }
+
+      const OPTION_META = {
+        안주머니: { emoji: "👜", desc: "안쪽 포켓", use: "소지품 정리용 포켓" },
+        안주머니인쇄: {
+          emoji: "🖨️",
+          desc: "안주머니 인쇄",
+          use: "안쪽에도 로고·문구",
+        },
+        똑딱이: { emoji: "🔘", desc: "스냅 단추", use: "입구 톡 여밈" },
+        자석: { emoji: "🧲", desc: "자석 잠금", use: "간편 자석 여밈" },
+        지퍼: { emoji: "🤐", desc: "지퍼 잠금", use: "완전 잠금·보안" },
+        크로스끈: { emoji: "🎒", desc: "어깨끈", use: "크로스백처럼 메기" },
+        이름표: { emoji: "🏷️", desc: "네임택", use: "이름표 부착" },
+        OPP개별포장: {
+          emoji: "📦",
+          desc: "개별 비닐포장",
+          use: "선물·낱개 포장",
+        },
+      };
+
+      /* 옵션 아이콘 (선형 SVG — 이름에 맞춤, 폰별 이모지 차이 제거) */
+      const _IC =
+        'viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+      const OPTION_ICONS = {
+        안주머니: `<svg ${_IC}><path d="M4 8h16l-1 11H5L4 8z"/><path d="M8 8V6.5a4 4 0 018 0V8"/><path d="M9 13h6"/></svg>`,
+        안주머니인쇄: `<svg ${_IC}><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><rect x="7" y="15" width="10" height="6" rx="1"/></svg>`,
+        똑딱이: `<svg ${_IC}><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg>`,
+        자석: `<svg ${_IC}><path d="M6 3v8a6 6 0 0012 0V3"/><line x1="6" y1="3" x2="10" y2="3"/><line x1="14" y1="3" x2="18" y2="3"/><line x1="6" y1="7.5" x2="10" y2="7.5"/><line x1="14" y1="7.5" x2="18" y2="7.5"/></svg>`,
+        지퍼: `<svg ${_IC}><line x1="12" y1="3" x2="12" y2="21"/><path d="M12 6l-3-1.6M12 6l3-1.6M12 10l-3-1.6M12 10l3-1.6M12 14l-3-1.6M12 14l3-1.6"/><circle cx="12" cy="18" r="1.6"/></svg>`,
+        크로스끈: `<svg ${_IC}><rect x="6" y="10" width="11" height="9" rx="1.5"/><path d="M6 11.5L18 4"/></svg>`,
+        이름표: `<svg ${_IC}><rect x="4" y="6" width="16" height="13" rx="2"/><path d="M9 6V4.5h6V6"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="14.5" x2="13" y2="14.5"/></svg>`,
+        OPP개별포장: `<svg ${_IC}><path d="M12 3l8 4v10l-8 4-8-4V7z"/><path d="M4 7l8 4 8-4"/><line x1="12" y1="11" x2="12" y2="21"/></svg>`,
+      };
+
+      const optButtons = {};
+      OPTIONS.forEach((opt) => {
+        const el = document.createElement("button");
+        el.className = "opt-pill";
+        el.innerHTML = `<span class="op-name">${opt}</span><span class="op-use">${(OPTION_META[opt] && OPTION_META[opt].use) || ""}</span>`;
+        el.dataset.opt = opt;
+        optButtons[opt] = el;
+        el.addEventListener("click", () => {
+          if (el.dataset.locked === "1") {
+            showToast("기본 옵션이에요 (해제 불가)");
+            return;
+          }
+          el.classList.toggle("active");
+          if (el.classList.contains("active")) {
+            // 똑딱이 ↔ 자석: 하나만 가능 (다른 하나는 자동 해제)
+            const exclusive = { 똑딱이: "자석", 자석: "똑딱이" };
+            const other = exclusive[opt];
+            if (other && activeOptions.has(other)) {
+              activeOptions.delete(other);
+              removeOptionVisual(other);
+              if (optButtons[other])
+                optButtons[other].classList.remove("active");
+              showToast(other + " 해제됨 (둘 중 하나만 가능)");
+            }
+            activeOptions.add(opt);
+            addOptionVisual(opt);
+            showToast(opt + " 추가 ✓");
+          } else {
+            activeOptions.delete(opt);
+            removeOptionVisual(opt);
+            showToast(opt + " 해제");
+          }
+          renderOptionChips();
+        });
+        optToggles.appendChild(el);
+      });
+
+      /* 가방 카테고리 판별 */
+      function bagCategory(bag) {
+        if (!bag) return "ecobag";
+        if (bag.id.indexOf("poly") === 0) return "poly";
+        if (["minja", "mitdan", "tumbler"].indexOf(bag.id) >= 0) return "pouch";
+        return "ecobag";
+      }
+
+      /* 가방별 사용 가능 옵션 구성
+   available: 표시할 옵션 / locked: 기본 장착(해제 불가) / rename: 표시 라벨 */
+      const BAG_OPT_CONF = {
+        ecobag: { available: OPTIONS.slice(), locked: [], rename: {} },
+        poly: {
+          available: ["안주머니인쇄", "크로스끈", "이름표", "OPP개별포장"],
+          locked: ["이름표"],
+          rename: { 이름표: "이름표(기본옵션)" },
+        },
+        pouch: {
+          available: ["지퍼", "OPP개별포장"],
+          locked: ["지퍼"],
+          rename: { 지퍼: "지퍼(기본옵션)" },
+        },
+      };
+
+      /* 현재 가방에 맞춰 옵션 버튼 표시/라벨/잠금 갱신 */
+      function updateOptionsForBag() {
+        const conf =
+          BAG_OPT_CONF[bagCategory(currentBag)] || BAG_OPT_CONF.ecobag;
+        OPTIONS.forEach((opt) => {
+          const pill = optButtons[opt];
+          if (!pill) return;
+          if (conf.available.indexOf(opt) >= 0) {
+            pill.style.display = "";
+            const label = (conf.rename && conf.rename[opt]) || opt;
+            const nameEl = pill.querySelector(".op-name");
+            if (nameEl) nameEl.textContent = label;
+            else pill.textContent = label;
+            if (conf.locked && conf.locked.indexOf(opt) >= 0) {
+              pill.dataset.locked = "1";
+              pill.classList.add("active");
+              pill.style.opacity = "0.85";
+              activeOptions.add(opt); // 실제 그리기는 drawBag finalize가 처리
+            } else {
+              pill.dataset.locked = "";
+              pill.style.opacity = "";
+            }
+          } else {
+            pill.style.display = "none";
+            pill.dataset.locked = "";
+          }
+        });
+        renderOptionChips();
+      }
+
+      /* =========================================================
+   양면 인쇄 (앞면/뒷면 — 디자인만 분리, 가방·손잡이·옵션 공유)
+========================================================= */
+      let twoSided = false;
+      let currentSide = "front";
+      const sideDesigns = { front: [], back: [] };
+
+      // 앞/뒤 전환 탭 (양면 ON 시 캔버스 바로 위에 표시)
+      const sideTabs = document.createElement("div");
+      sideTabs.style.cssText =
+        "display:none;gap:6px;background:#fff;padding:5px;border-radius:12px;" +
+        "box-shadow:0 3px 14px rgba(0,0,0,.18);margin-bottom:12px;z-index:20;";
+      ["front", "back"].forEach((side) => {
+        const b = document.createElement("button");
+        b.dataset.side = side;
+        b.textContent = side === "front" ? "앞면" : "뒷면";
+        b.style.cssText =
+          "padding:8px 22px;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px;";
+        b.addEventListener("click", () => switchSide(side));
+        sideTabs.appendChild(b);
+      });
+      (function placeSideTabs() {
+        const ca = document.querySelector(".canvas-area");
+        const cw = document.getElementById("canvasWrap");
+        if (ca && cw) ca.insertBefore(sideTabs, cw);
+        else document.body.appendChild(sideTabs);
+      })();
+
+      function updateSideTabUI() {
+        sideTabs.querySelectorAll("button").forEach((b) => {
+          const on = b.dataset.side === currentSide;
+          b.style.background = on ? "var(--blue, #3182f6)" : "#eef2f7";
+          b.style.color = on ? "#fff" : "#555";
+        });
+      }
+
+      function switchSide(side) {
+        if (!twoSided || side === currentSide) return;
+        // 현재 면 디자인 저장 후 캔버스에서 제거 (안주머니 디자인은 앞뒤 공통 → 면 전환서 제외)
+        const objs = canvas
+          .getObjects()
+          .filter((o) => o.isUserObject && !isInnerPocketObj(o));
+        sideDesigns[currentSide] = objs;
+        objs.forEach((o) => canvas.remove(o));
+        // 새 면 디자인 표시
+        currentSide = side;
+        sideDesigns[side].forEach((o) => canvas.add(o));
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        updateSideTabUI();
+        showToast(side === "front" ? "앞면" : "뒷면");
+        checkPrintBounds();
+      }
+
+      /* 안주머니인쇄 영역(좌상단)에 올린 디자인인지 — 양면 공통으로 다룸 */
+      function isInnerPocketObj(o) {
+        if (!o || !o.isUserObject) return false;
+        if (!activeOptions.has("안주머니인쇄")) return false;
+        const ip = optionVisuals["안주머니인쇄"];
+        if (!ip) return false;
+        const r = ip.getBoundingRect();
+        const b = o.getBoundingRect();
+        const cx = b.left + b.width / 2,
+          cy = b.top + b.height / 2;
+        return (
+          cx >= r.left &&
+          cx <= r.left + r.width &&
+          cy >= r.top &&
+          cy <= r.top + r.height
+        );
+      }
+
+      /* 작업지시서용: 양면이면 앞/뒤 각각 캡처, 단면이면 현재 화면 1장.
+   (안주머니인쇄 등 옵션 비주얼은 캔버스에 그대로 있어 캡처에 자동 포함) */
+      function captureAllSides() {
+        const shot = () => canvas.toDataURL({ format: "png", multiplier: 1 });
+        if (!twoSided) return [{ label: "", data: shot() }];
+
+        const saved = currentSide;
+        // 현재 면 디자인을 sideDesigns에 최신화 (안주머니는 공통이라 제외)
+        sideDesigns[saved] = canvas
+          .getObjects()
+          .filter((o) => o.isUserObject && !isInnerPocketObj(o));
+
+        const result = [];
+        ["front", "back"].forEach((side) => {
+          canvas
+            .getObjects()
+            .filter((o) => o.isUserObject && !isInnerPocketObj(o))
+            .forEach((o) => canvas.remove(o));
+          sideDesigns[side].forEach((o) => canvas.add(o));
+          canvas.discardActiveObject();
+          canvas.renderAll();
+          result.push({
+            label: side === "front" ? "앞면" : "뒷면",
+            data: shot(),
+          });
+        });
+        // 원래 보던 면 복원
+        canvas
+          .getObjects()
+          .filter((o) => o.isUserObject && !isInnerPocketObj(o))
+          .forEach((o) => canvas.remove(o));
+        sideDesigns[saved].forEach((o) => canvas.add(o));
+        currentSide = saved;
+        canvas.renderAll();
+        return result;
+      }
+
+      // 양면 인쇄 토글 버튼 (옵션 영역)
+      const dualBtn = document.createElement("button");
+      dualBtn.className = "opt-pill";
+      dualBtn.innerHTML =
+        '<span class="op-name">양면 인쇄</span><span class="op-use">앞·뒤 양쪽 인쇄</span>';
+      dualBtn.addEventListener("click", () => {
+        if (!twoSided) {
+          twoSided = true;
+          dualBtn.classList.add("active");
+          sideDesigns.front = canvas
+            .getObjects()
+            .filter((o) => o.isUserObject && !isInnerPocketObj(o));
+          sideDesigns.back = [];
+          currentSide = "front";
+          sideTabs.style.display = "flex";
+          updateSideTabUI();
+          showToast("양면 인쇄 ON · 앞면/뒷면 따로 디자인하세요");
+        } else {
+          if (currentSide === "back") switchSide("front");
+          sideDesigns.back = []; // 뒷면 디자인 폐기
+          twoSided = false;
+          dualBtn.classList.remove("active");
+          sideTabs.style.display = "none";
+          showToast("양면 인쇄 OFF");
+        }
+      });
+      optToggles.appendChild(dualBtn);
+
+      /* PNG 안에서 실제로 색이 칠해진(불투명) 픽셀의 경계를 구한다.
+   대지(투명 여백)를 무시하고 진짜 그려진 영역만 {x,y,w,h}로 반환. */
+      /* 누끼 PNG가 검정 배경에 합성돼 생긴 '어둡고 반투명한 가장자리(투명블랙)'를 투명 처리.
+   가방/끈은 밝은 천이라, 어두우면서(=검정매트 잔재) 완전 불투명이 아닌 픽셀만 지움.
+   → 가장자리 거뭇한 테두리 제거, 정상 그림/그림자는 보존 */
+      fabric.Image.filters.DematteEdge = fabric.util.createClass(
+        fabric.Image.filters.BaseFilter,
+        {
+          type: "DematteEdge",
+          applyTo2d: function (options) {
+            const d = options.imageData.data;
+            for (let i = 0; i < d.length; i += 4) {
+              const a = d[i + 3];
+              if (a === 0 || a === 255) continue;
+              const lum = (d[i] + d[i + 1] + d[i + 2]) / 3;
+              if ((lum < 110 && a < 240) || a < 28) d[i + 3] = 0; // 검정매트 잔재 / 거의 투명 → 투명
+            }
+          },
+        },
+      );
+      function cleanEdges(img) {
+        if (!img || !img.applyFilters) return;
+        if (
+          !fabric.filterBackend ||
+          !(fabric.filterBackend instanceof fabric.Canvas2dFilterBackend)
+        ) {
+          fabric.filterBackend = new fabric.Canvas2dFilterBackend(); // 커스텀 2D 필터 보장
+        }
+        if (
+          !(img.filters || []).some(
+            (f) => f instanceof fabric.Image.filters.DematteEdge,
+          )
+        ) {
+          img.filters = img.filters || [];
+          img.filters.unshift(new fabric.Image.filters.DematteEdge()); // 색입히기보다 먼저 적용
+          img.applyFilters();
+        }
+      }
+
+      const _bboxCache = {};
+      function getOpaqueBBox(imgEl, cacheKey) {
+        if (cacheKey && _bboxCache[cacheKey]) return _bboxCache[cacheKey];
+        const w = imgEl.naturalWidth || imgEl.width;
+        const h = imgEl.naturalHeight || imgEl.height;
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const cx = c.getContext("2d", { willReadFrequently: true });
+        cx.drawImage(imgEl, 0, 0, w, h);
+        let data;
+        try {
+          data = cx.getImageData(0, 0, w, h).data;
+        } catch (e) {
+          return { x: 0, y: 0, w, h };
+        } // 읽기 실패 시 전체 PNG 사용
+        const ALPHA = 10; // 이 값보다 진해야 '보이는' 픽셀
+        const WHITE = 248; // R,G,B가 모두 이 값 이상이면 흰색 배경으로 간주
+        let minX = w,
+          minY = h,
+          maxX = -1,
+          maxY = -1;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            const a = data[i + 3];
+            const r = data[i],
+              g = data[i + 1],
+              b = data[i + 2];
+            const isWhite = r >= WHITE && g >= WHITE && b >= WHITE;
+            if (a > ALPHA && !isWhite) {
+              // 보이고 + 흰배경 아님 = 실제 끈
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        const box =
+          maxX < 0
+            ? { x: 0, y: 0, w, h } // 전부 투명하면 전체
+            : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+        if (cacheKey) _bboxCache[cacheKey] = box;
+        return box;
+      }
+
+      /* 크로스끈 부착 기준점 계산:
+   - aL/aR  : '다리가 가장 넓게 벌어진 행'의 좌/우 끝 = 실제 가방에 붙는 폭 (V자 끈의 어깨선)
+   - legBottom : 다리 폭이 최대폭의 절반 이상 유지되는 가장 아래 행 = 다리 바닥
+                 (그 아래의 달랑거리는 버클/고리는 자동 제외됨)
+   전체 bbox 대신 이걸 쓰면 버클·대지 여백에 영향받지 않아 모든 가방이 한 공식으로 정렬됨 */
+      const _anchorCache = {};
+      function getStrapAnchor(imgEl, cacheKey) {
+        if (cacheKey && _anchorCache[cacheKey]) return _anchorCache[cacheKey];
+        const w = imgEl.naturalWidth || imgEl.width;
+        const h = imgEl.naturalHeight || imgEl.height;
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const cx = c.getContext("2d", { willReadFrequently: true });
+        cx.drawImage(imgEl, 0, 0, w, h);
+        let data;
+        try {
+          data = cx.getImageData(0, 0, w, h).data;
+        } catch (e) {
+          const b = getOpaqueBBox(imgEl);
+          return { aL: b.x, aR: b.x + b.w - 1, legBottom: b.y + b.h - 1 };
+        }
+        const ALPHA = 10,
+          WHITE = 248;
+        let maxSpan = -1,
+          aL = 0,
+          aR = w - 1;
+        const rows = []; // [y, l, r, span]
+        for (let y = 0; y < h; y++) {
+          let l = -1,
+            r = -1;
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            const vis =
+              data[i + 3] > ALPHA &&
+              !(
+                data[i] >= WHITE &&
+                data[i + 1] >= WHITE &&
+                data[i + 2] >= WHITE
+              );
+            if (vis) {
+              if (l < 0) l = x;
+              r = x;
+            }
+          }
+          if (l >= 0) {
+            const span = r - l + 1;
+            rows.push([y, l, r, span]);
+            if (span > maxSpan) {
+              maxSpan = span;
+              aL = l;
+              aR = r;
+            } // 가장 넓은 행 = 부착폭
+          }
+        }
+        // 다리 바닥: 폭이 최대폭의 50% 이상인 가장 아래 행 (버클 등 잡것 제외)
+        let legBottom = rows.length ? rows[rows.length - 1][0] : h - 1;
+        for (let k = rows.length - 1; k >= 0; k--) {
+          if (rows[k][3] >= maxSpan * 0.5) {
+            legBottom = rows[k][0];
+            break;
+          }
+        }
+        const out = { aL, aR, legBottom };
+        if (cacheKey) _anchorCache[cacheKey] = out;
+        return out;
+      }
+
+      /* 옵션을 가방 그림에 시각적으로 반영 */
+      function addOptionVisual(opt) {
+        // 크로스끈은 실제 이미지로 별도 처리
+        if (opt === "크로스끈") {
+          const url = BAG_IMAGES[currentBag.id + "_cross"];
+          if (url && bagBodyRect) {
+            loadImg(url, (img) => {
+              cleanEdges(img); // 검정 매트 가장자리(투명블랙) 제거
+              // 몸통: PNG 전체가 아니라 '실제 그려진 가방' 영역을 화면 좌표로 환산
+              const bsc = bagBodyRect.scaleX;
+              const bBox = getOpaqueBBox(
+                bagBodyRect.getElement(),
+                currentBag.id + "_body",
+              );
+              const bodyLeftS = bagBodyRect.left + bBox.x * bsc; // 실제 가방 좌측(화면)
+              const bodyTopS = bagBodyRect.top + bBox.y * bsc; // 실제 가방 상단(화면)
+              const bodyWidthS = bBox.w * bsc; // 실제 가방 폭(화면)
+              const bodyHeightS = bBox.h * bsc; // 실제 가방 높이(화면)
+
+              // 크로스끈: 버클·여백 무시하고 '다리 부착부'만 측정
+              const a = getStrapAnchor(
+                img.getElement(),
+                currentBag.id + "_cross",
+              );
+              const strapAttachW = a.aR - a.aL + 1; // 다리가 붙는 실제 폭
+              // ★ 끈 부착폭 = 가방 폭 (비율 유지), 전체 크기는 0.97로 살짝 축소
+              const sc = (bodyWidthS / strapAttachW) * 0.97;
+              img.set({
+                scaleX: sc,
+                scaleY: sc,
+                // 가로: 끈 부착 좌측 = 가방 좌측 + 5px (살짝 우측 보정)
+                left: bodyLeftS - a.aL * sc + 5,
+                // 세로: 끈 다리 바닥 = 가방 상단(살짝 4% 끼워 부착감) — 버클은 자동 제외
+                top: bodyTopS + bodyHeightS * 0.04 - a.legBottom * sc,
+                selectable: false,
+                evented: false,
+                isOptionVisual: true,
+                optName: "크로스끈",
+              });
+              if (webbingColor) applyColorTint(img, webbingColor, 0.85);
+              optionVisuals["크로스끈"] = img;
+              // 크로스끈 PNG에 이미 손잡이가 포함돼 있어, 별도 손잡이 레이어는 숨김(중복 방지)
+              webbingPaths.forEach((p) => {
+                p.set("visible", false);
+              });
+              canvas.add(img);
+              canvas.bringToFront(img);
+              if (printArea) canvas.bringToFront(printArea);
+              canvas.getObjects().forEach((o) => {
+                if (o.isUserObject) canvas.bringToFront(o);
+              });
+              canvas.requestRenderAll();
+            });
+          }
+          return;
+        }
+
+        if (!bagBodyRect) return;
+
+        // 안주머니/지퍼/이름표 → 캔버스엔 안 그리고 옆 미리보기에만 표시
+        if (PREVIEW_ONLY.includes(opt)) {
+          renderOptionPreviews();
+          return;
+        }
+
+        // 똑딱이/자석 → 가방에 실제 이미지로 부착
+        const url = OPTION_IMAGES[opt];
+        const lay = OPTION_LAYOUT[opt];
+        if (url && lay) {
+          loadImg(url, (img) => {
+            if (!img) return;
+            if (!activeOptions.has(opt)) return; // 그 사이 해제됨
+            cleanEdges(img);
+            // 실제 가방 천(불투명) 영역 기준 — 투명 여백/손잡이 공간 무시
+            const bsc = bagBodyRect.scaleX;
+            const bBox = getOpaqueBBox(
+              bagBodyRect.getElement(),
+              currentBag.id + "_body",
+            );
+            const bodyLeftS = bagBodyRect.left + bBox.x * bsc;
+            const bodyTopS = bagBodyRect.top + bBox.y * bsc;
+            const bodyWidthS = bBox.w * bsc;
+            const bodyHeightS = bBox.h * bsc;
+            const targetW = bodyWidthS * lay.w;
+            const sc = targetW / img.width;
+            const targetH = img.height * sc;
+            // 가로: lay.cx 기준 / 세로: 똑딱이·자석은 상단 고정, 안주머니인쇄는 캔버스 좌상단, 그 외 cy 중심
+            let left = bodyLeftS + bodyWidthS * (lay.cx ?? 0.5) - targetW / 2;
+            let top;
+            if (opt === "똑딱이" || opt === "자석") {
+              top = bodyTopS - 15; // 똑딱이·자석 동일 위치
+            } else if (opt === "안주머니인쇄") {
+              left = 12;
+              top = 12; // 캔버스 좌측 상단 (가방과 겹치지 않게)
+            } else {
+              top = bodyTopS + bodyHeightS * (lay.cy ?? 0.5) - targetH / 2;
+            }
+            img.set({
+              scaleX: sc,
+              scaleY: sc,
+              left,
+              top,
+              selectable: false,
+              evented: false,
+              isOptionVisual: true,
+              optName: opt,
+            });
+            optionVisuals[opt] = img;
+            canvas.add(img);
+            if (printArea) canvas.bringToFront(printArea);
+            canvas.getObjects().forEach((o) => {
+              if (o.isUserObject) canvas.bringToFront(o);
+            });
+            canvas.requestRenderAll();
+          });
+          return;
+        }
+        return;
+      }
+      function removeOptionVisual(opt) {
+        if (opt === "크로스끈") {
+          webbingPaths.forEach((p) => p.set("visible", true));
+        } // 손잡이 복원
+        if (optionVisuals[opt]) {
+          canvas.remove(optionVisuals[opt]);
+          delete optionVisuals[opt];
+          canvas.requestRenderAll();
+        }
+        if (PREVIEW_ONLY.includes(opt)) renderOptionPreviews(); // 미리보기 갱신
+      }
+
+      /* 캔버스 상단에 적용된 옵션 칩 표시 */
+      function renderOptionChips() {
+        let bar = document.getElementById("optionChipBar");
+        if (!bar) {
+          bar = document.createElement("div");
+          bar.id = "optionChipBar";
+          bar.style.cssText =
+            "position:absolute;left:18px;top:80px;display:flex;flex-direction:column;gap:6px;z-index:18;";
+          document.querySelector(".canvas-area").appendChild(bar);
+        }
+        bar.innerHTML = "";
+        if (activeOptions.size === 0) return;
+        const title = document.createElement("div");
+        title.style.cssText =
+          "font-size:10.5px;font-weight:700;color:#8b95a1;margin-bottom:2px;";
+        title.textContent = "적용된 옵션";
+        bar.appendChild(title);
+        activeOptions.forEach((opt) => {
+          const chip = document.createElement("div");
+          chip.style.cssText =
+            "background:#fff;border:1px solid #e5e8eb;border-radius:9px;padding:6px 11px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,.06);";
+          const ico =
+            OPTION_ICONS[opt] ||
+            `<span style="font-size:14px">${(OPTION_META[opt] || {}).emoji || "✓"}</span>`;
+          chip.innerHTML = `<span style="display:inline-flex;color:#3182f6">${ico}</span> ${opt}`;
+          bar.appendChild(chip);
+        });
+      }
+
+      /* =========================================================
+   SAVED DESIGNS
+========================================================= */
+      const savedDesigns = [];
+      document.getElementById("saveDesignBtn").addEventListener("click", () => {
+        saveCurrentDesign();
+        showToast("시안을 저장했어요 📁");
+      });
+      function saveCurrentDesign() {
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        const dataURL = canvas.toDataURL({ format: "png", multiplier: 0.45 });
+        savedDesigns.push({
+          url: dataURL,
+          bag: currentBag.name,
+          bagObj: currentBag,
+          json: canvas.toJSON([
+            "isUserObject",
+            "isOptionVisual",
+            "selectable",
+            "evented",
+            "uploadId",
+            "isCustomerUpload",
+          ]),
+          options: [...activeOptions],
+          bagBodyColor,
+          webbingColor,
+          date: new Date(),
+        });
+        renderSaved();
+      }
+      function renderSaved() {
+        const grid = document.getElementById("savedGrid");
+        grid
+          .querySelectorAll(".saved-item:not(.saved-add)")
+          .forEach((e) => e.remove());
+        savedDesigns.forEach((item, i) => {
+          const el = document.createElement("div");
+          el.className = "saved-item has-img";
+          el.title = `${item.bag} 시안 · 클릭하면 불러와요`;
+          el.innerHTML = `
+      <img src="${item.url}" alt="시안${i + 1}">
+      <div class="saved-overlay">
+        <button class="saved-load" data-i="${i}">불러오기</button>
+        <button class="saved-del" data-i="${i}">✕</button>
+      </div>`;
+          grid.insertBefore(el, document.getElementById("saveDesignBtn"));
+        });
+        // bind
+        grid.querySelectorAll(".saved-load").forEach((b) =>
+          b.addEventListener("click", (e) => {
+            e.stopPropagation();
+            loadDesign(+b.dataset.i);
+          }),
+        );
+        grid.querySelectorAll(".saved-del").forEach((b) =>
+          b.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteDesign(+b.dataset.i);
+          }),
+        );
+      }
+
+      function loadDesign(i) {
+        const item = savedDesigns[i];
+        if (!item) return;
+        isRestoring = true;
+        canvas.loadFromJSON(item.json, () => {
+          rebindBagRefs();
+          canvas.renderAll();
+          isRestoring = false;
+
+          // JS 상태 복원
+          currentBag = item.bagObj;
+          bagBodyColor = item.bagBodyColor;
+          webbingColor = item.webbingColor;
+          document.getElementById("cbName").textContent = currentBag.name;
+          document.getElementById("arBagName").textContent = currentBag.name;
+          document.getElementById("miniBag").textContent = currentBag.emoji;
+
+          // 옵션 상태 복원 (optionVisuals는 rebindBagRefs에서 이미 재매핑됨)
+          activeOptions.clear();
+          item.options.forEach((o) => activeOptions.add(o));
+          renderColorGridForBag();
+          updateOptionsForBag(); // 가방별 표시/라벨/잠금
+          // 저장된 옵션 active 반영 (data-opt 기준 — 라벨 변경 영향 없음)
+          document
+            .querySelectorAll("#optionToggles .opt-pill")
+            .forEach((pill) => {
+              if (pill.dataset.locked === "1") return;
+              pill.classList.toggle(
+                "active",
+                activeOptions.has(pill.dataset.opt),
+              );
+            });
+          renderOptionChips();
+
+          // 색상 스와치 UI 동기화
+          syncColorSwatches();
+
+          undoStack = [];
+          redoStack = [];
+          saveState();
+          showToast(`${item.bag} 시안을 불러왔어요 ✨`);
+        });
+      }
+
+      function deleteDesign(i) {
+        savedDesigns.splice(i, 1);
+        renderSaved();
+        showToast("시안을 삭제했어요");
+      }
+
+      function syncColorSwatches() {
+        document
+          .querySelectorAll("#bagColorGrid .color-sw")
+          .forEach((sw, idx) => {
+            sw.classList.toggle(
+              "active",
+              BAG_COLORS[idx] && BAG_COLORS[idx].hex === bagBodyColor,
+            );
+          });
+        document
+          .querySelectorAll("#webbingColorGrid .color-sw")
+          .forEach((sw, idx) => {
+            sw.classList.toggle(
+              "active",
+              WEBBING_COLORS[idx] && WEBBING_COLORS[idx].hex === webbingColor,
+            );
+          });
+      }
+
+      /* =========================================================
+   ZOOM
+========================================================= */
+      let zoom = 1;
+      function applyZoom() {
+        document.getElementById("canvasWrap").style.transform =
+          `scale(${zoom})`;
+        document.getElementById("zoomVal").textContent =
+          Math.round(zoom * 100) + "%";
+      }
+      /* 캔버스를 영역 크기에 맞게 자동 줌 (모바일 대응) */
+      function fitZoom() {
+        const area = document.querySelector(".canvas-area");
+        if (!area) return;
+        const cs = getComputedStyle(area);
+        const padB = parseFloat(cs.paddingBottom) || 0;
+        const padT = parseFloat(cs.paddingTop) || 0;
+        const availW = area.clientWidth - 24;
+        const availH = area.clientHeight - padB - padT - 24;
+        if (availW <= 0 || availH <= 0) return;
+        zoom = Math.max(0.3, Math.min(availW / CW, availH / CH, 1));
+        applyZoom();
+      }
+      document.getElementById("zoomIn").addEventListener("click", () => {
+        zoom = Math.min(2, zoom + 0.1);
+        applyZoom();
+      });
+      document.getElementById("zoomOut").addEventListener("click", () => {
+        zoom = Math.max(0.3, zoom - 0.1);
+        applyZoom();
+      });
+      window.addEventListener("resize", fitZoom);
+
+      /* =========================================================
+   BAG MODAL
+========================================================= */
+      const bagModal = document.getElementById("bagModal");
+      function openBagModal() {
+        bagModal.classList.add("show");
+        renderBagGrid("ecobag");
+      }
+      function closeBagModal() {
+        bagModal.classList.remove("show");
+      }
+      document
+        .getElementById("currentBagBtn")
+        .addEventListener("click", openBagModal);
+      document
+        .getElementById("changeBagBtn")
+        .addEventListener("click", openBagModal);
+      document
+        .getElementById("modalClose")
+        .addEventListener("click", closeBagModal);
+      bagModal.addEventListener("click", (e) => {
+        if (e.target === bagModal) closeBagModal();
+      });
+
+      document.querySelectorAll(".modal-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll(".modal-tab")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          renderBagGrid(tab.dataset.cat);
+        });
+      });
+
+      function renderBagGrid(cat) {
+        const grid = document.getElementById("bagGrid");
+        grid.innerHTML = "";
+        BAG_MODELS[cat].forEach((bag) => {
+          const card = document.createElement("div");
+          card.className =
+            "bag-card" + (bag.id === currentBag.id ? " selected" : "");
+          const bodyUrl = BAG_IMAGES[bag.id + "_body"] || "";
+          const handleUrl =
+            BAG_IMAGES[bag.id + "_handle"] ||
+            BAG_IMAGES[bag.id + "_zipper"] ||
+            "";
+          card.innerHTML = `
+      <div class="bag-preview" style="position:relative;background:var(--gray-7);">
+        ${handleUrl ? `<img src="${handleUrl}" loading="lazy" style="position:absolute;inset:6%;width:88%;height:88%;object-fit:contain;">` : ""}
+        ${bodyUrl ? `<img src="${bodyUrl}" loading="lazy" style="position:absolute;inset:6%;width:88%;height:88%;object-fit:contain;">` : ""}
+      </div>
+      <div class="bc-name">${bag.name}</div>
+      <div class="bc-size">${bag.size}</div>`;
+          card.addEventListener("click", () => selectBag(bag));
+          grid.appendChild(card);
+        });
+      }
+
+      function selectBag(bag, silent) {
+        currentBag = bag;
+        document.getElementById("cbName").textContent = bag.name;
+        document.getElementById("arBagName").textContent = bag.name;
+        document.getElementById("miniBag").textContent = bag.emoji;
+        // 가방 바꾸면 추가옵션 전부 초기화 (꼬임 방지)
+        activeOptions.forEach((opt) => removeOptionVisual(opt));
+        activeOptions.clear();
+        document
+          .querySelectorAll(".opt-pill")
+          .forEach((p) => p.classList.remove("active"));
+        // 폴리백이면 몸통 기본 블랙으로 리셋 + 끈 색 원본
+        if (bagCategory(bag) === "poly" && POLY_BODY[bag.id]) {
+          polyBodyKey = "black";
+          BAG_IMAGES[bag.id + "_body"] = POLY_BODY[bag.id].black;
+          webbingColor = null;
+        }
+        renderColorGridForBag(); // 폴리=블랙/네이비/그린, 그 외=아이보리/블랙/네이비
+        updateOptionsForBag(); // 가방별 옵션 표시/잠금 (activeOptions 세팅)
+        drawBag(); // finalize에서 activeOptions(잠금옵션 포함) 그림
+        if (typeof renderOptionPreviews === "function") renderOptionPreviews();
+        saveState();
+        closeBagModal();
+        if (!silent) showToast(bag.name + "으로 바꿨어요");
+      }
+
+      /* =========================================================
+   HEADER ACTIONS
+========================================================= */
+      document.getElementById("saveBtn").addEventListener("click", () => {
+        saveCurrentDesign();
+        showToast("임시저장 완료 · 보관함에 담았어요 💾");
+      });
+      let _lastOrderSpecs = [];
+
+      /* 인쇄용 파일 추출: 디자인 요소만(가방·옵션·배경 제외), 배경 투명
+   반환: { png(고화질 dataURL), svg(텍스트), full(가방포함 참고 dataURL) } */
+      function exportDesignFiles() {
+        const userObjs = canvas.getObjects().filter((o) => o.isUserObject);
+        // 참고용 전체 이미지(가방 포함) 먼저
+        const full = canvas.toDataURL({ format: "png", multiplier: 1 });
+        if (!userObjs.length) return { png: null, svg: null, full };
+
+        // 디자인 bounding box
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+        userObjs.forEach((o) => {
+          const b = o.getBoundingRect();
+          minX = Math.min(minX, b.left);
+          minY = Math.min(minY, b.top);
+          maxX = Math.max(maxX, b.left + b.width);
+          maxY = Math.max(maxY, b.top + b.height);
+        });
+        const pad = 8;
+        const left = Math.max(0, minX - pad),
+          top = Math.max(0, minY - pad);
+        const width = Math.min(CW - left, maxX - minX + pad * 2),
+          height = Math.min(CH - top, maxY - minY + pad * 2);
+
+        // 가방·옵션·인쇄영역 임시 숨김 + 배경 투명
+        const hidden = [];
+        canvas.getObjects().forEach((o) => {
+          if (!o.isUserObject && o.visible) {
+            hidden.push(o);
+            o.visible = false;
+          }
+        });
+        const origBg = canvas.backgroundColor;
+        canvas.backgroundColor = "";
+        canvas.renderAll();
+
+        // 고화질 PNG(3배) + SVG (디자인 영역만)
+        const png = canvas.toDataURL({
+          format: "png",
+          left,
+          top,
+          width,
+          height,
+          multiplier: 3,
+        });
+        const svg = canvas.toSVG({
+          viewBox: { x: left, y: top, width, height },
+          width,
+          height,
+        });
+
+        // 복원
+        hidden.forEach((o) => (o.visible = true));
+        canvas.backgroundColor = origBg;
+        canvas.renderAll();
+
+        return { png, svg, full };
+      }
+
+      function makeOrderNum(name) {
+        const d = new Date();
+        const ymd =
+          String(d.getFullYear()).slice(2) +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          String(d.getDate()).padStart(2, "0");
+        const nm =
+          name && name.trim() ? name.trim().replace(/\s+/g, "") : "고객";
+        const base = ymd + "-" + nm;
+        // 같은 날 동명이인이면 뒤에 -2, -3 … (브라우저에 발번 기록 저장)
+        let used = [];
+        try {
+          used = JSON.parse(localStorage.getItem("yg_ordernums") || "[]");
+        } catch (e) {}
+        let num = base,
+          n = 2;
+        while (used.includes(num)) {
+          num = base + "-" + n;
+          n++;
+        }
+        used.push(num);
+        if (used.length > 300) used = used.slice(-300);
+        try {
+          localStorage.setItem("yg_ordernums", JSON.stringify(used));
+        } catch (e) {}
+        return num;
+      }
+
+      function bagColorName() {
+        const c = BAG_COLORS.find((x) => x.hex === bagBodyColor);
+        return c ? c.name : "아이보리";
+      }
+      function webbingColorName() {
+        const c = WEBBING_COLORS.find((x) => x.hex === webbingColor);
+        return c ? c.name : "없음";
+      }
+
+      document.getElementById("orderBtn").addEventListener("click", () => {
+        openOrderModal();
+      });
+
+      /* 본판(인쇄영역 근처) 디자인만의 합산 크기(cm). 안주머니(좌상단)·옵션 비주얼은 제외 */
+      function measurePrintObjs() {
+        const cpp = getCmPerPx();
+        if (!cpp || !printArea) return null;
+        const pa = printArea.getBoundingRect();
+        const tol = 60; // 인쇄영역을 약간 벗어난 본판 디자인까지는 포함, 좌상단 안주머니는 제외
+        const objs = canvas.getObjects().filter((o) => {
+          if (!o.isUserObject) return false;
+          const b = o.getBoundingRect();
+          const cx = b.left + b.width / 2,
+            cy = b.top + b.height / 2;
+          return (
+            cx > pa.left - tol &&
+            cx < pa.left + pa.width + tol &&
+            cy > pa.top - tol &&
+            cy < pa.top + pa.height + tol
+          );
+        });
+        if (!objs.length) return null;
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+        objs.forEach((o) => {
+          const b = o.getBoundingRect();
+          minX = Math.min(minX, b.left);
+          minY = Math.min(minY, b.top);
+          maxX = Math.max(maxX, b.left + b.width);
+          maxY = Math.max(maxY, b.top + b.height);
+        });
+        return { w: (maxX - minX) * cpp, h: (maxY - minY) * cpp };
+      }
+
+      /* 인쇄 크기 — 단면이면 [앞면], 양면이면 [앞면, 뒷면] */
+      function calcSidePrintSizes() {
+        if (!twoSided)
+          return [{ label: "앞면 인쇄", size: measurePrintObjs() }];
+        const saved = currentSide;
+        sideDesigns[saved] = canvas.getObjects().filter((o) => o.isUserObject);
+        const out = [];
+        ["front", "back"].forEach((side) => {
+          canvas
+            .getObjects()
+            .filter((o) => o.isUserObject)
+            .forEach((o) => canvas.remove(o));
+          sideDesigns[side].forEach((o) => canvas.add(o));
+          canvas.renderAll();
+          canvas
+            .getObjects()
+            .filter((o) => o.isUserObject)
+            .forEach((o) => o.setCoords());
+          out.push({
+            label: side === "front" ? "앞면 인쇄" : "뒷면 인쇄",
+            size: measurePrintObjs(),
+          });
+        });
+        canvas
+          .getObjects()
+          .filter((o) => o.isUserObject)
+          .forEach((o) => canvas.remove(o));
+        sideDesigns[saved].forEach((o) => canvas.add(o));
+        currentSide = saved;
+        canvas.renderAll();
+        return out;
+      }
+
+      function openOrderModal() {
+        // 날짜(작업지시서 제작의뢰일용) — 시안번호는 주문 접수 시점에 성함 기반으로 생성
+        const now = new Date();
+        const ampm = now.getHours() < 12 ? "오전" : "오후";
+        const h12 = now.getHours() % 12 || 12;
+        document.getElementById("orderDate").textContent =
+          `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${ampm} ${String(h12).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+        // 선택한 옵션 모두 나열
+        const specs = [
+          {
+            label: "가방 종류",
+            value: currentBag.name + " (" + currentBag.size + ")",
+          },
+          { label: "가방 컬러", value: bagColorName() },
+          { label: "웨빙 컬러", value: webbingColorName() },
+        ];
+        if (activeOptions.size > 0)
+          specs.push({
+            label: "추가 옵션",
+            value: [...activeOptions].join(", "),
+          });
+        // 본판 인쇄 크기 — 안주머니 제외, 양면이면 앞/뒤 각각
+        calcSidePrintSizes().forEach((s) => {
+          specs.push({
+            label: s.label,
+            value: s.size
+              ? `${s.size.w.toFixed(1)} × ${s.size.h.toFixed(1)} cm`
+              : "디자인 없음",
+          });
+        });
+        _lastOrderSpecs = specs; // 메일 본문에서 재사용
+        document.getElementById("orderSpecs").innerHTML = specs
+          .map(
+            (s) =>
+              `<div class="order-spec"><b>${s.label}</b><span>${s.value}</span></div>`,
+          )
+          .join("");
+
+        // 시안 미리보기 (캔버스 캡쳐) — 인쇄영역 점선 숨김 상태로 캡쳐
+        try {
+          document.getElementById("orderPreview").src = canvas.toDataURL({
+            format: "png",
+            multiplier: 0.6,
+          });
+        } catch (e) {
+          document.getElementById("orderPreview").style.display = "none";
+        }
+
+        document.getElementById("ordErrors").textContent = "";
+        document.getElementById("ordPrintWarn").style.display =
+          checkPrintBounds() ? "block" : "none";
+        document.getElementById("orderModal").classList.add("show");
+      }
+
+      document.getElementById("orderClose").addEventListener("click", () => {
+        document.getElementById("orderModal").classList.remove("show");
+      });
+      document.getElementById("orderModal").addEventListener("click", (e) => {
+        if (e.target.id === "orderModal")
+          e.currentTarget.classList.remove("show");
+      });
+      document.getElementById("orderCopy").addEventListener("click", () => {
+        const num = document.getElementById("orderNum").textContent;
+        navigator.clipboard
+          ?.writeText(num)
+          .then(() => showToast("시안 번호 복사됨"))
+          .catch(() => showToast("복사 실패"));
+      });
+      /* =========================================================
+   손잡이 사이즈 매핑
+========================================================= */
+      const STRAP_SIZE = {
+        daily: "57cm(두른길이, 시접제외)",
+        market: "57cm(두른길이, 시접제외)",
+        sgak_s: "56cm(두른길이, 시접제외)",
+        sgak_m: "56cm(두른길이, 시접제외)",
+        sgak_l: "64cm(두른길이, 시접제외)",
+        small: "57cm(두른길이, 시접제외)",
+        kids: "48cm(두른길이, 시접제외)",
+        poly_h: "30cm(이중직)",
+        poly_v: "30cm(이중직)",
+        minja: "",
+        mitdan: "",
+        tumbler: "",
+      };
+      // 크로스끈 선택 시 손잡이 대체
+      const STRAP_CROSS = "120cm(이중직)";
+
+      /* =========================================================
+   인쇄 위치 계산
+========================================================= */
+      function calcPrintPosition() {
+        const userObjs = canvas.getObjects().filter((o) => o.isUserObject);
+        if (!userObjs.length || !bagBodyRect) return null;
+        const cpp = getCmPerPx();
+        if (!cpp) return null;
+
+        const bsc = bagBodyRect.scaleX;
+        const bBox = getOpaqueBBox(
+          bagBodyRect.getElement(),
+          currentBag.id + "_body",
+        );
+        const bodyLeft = bagBodyRect.left + bBox.x * bsc;
+        const bodyRight = bodyLeft + bBox.w * bsc;
+        const bodyBottom = bagBodyRect.top + (bBox.y + bBox.h) * bsc;
+        const bodyCX = (bodyLeft + bodyRight) / 2;
+        const bodyWidthCm = bBox.w * bsc * cpp;
+        const bodyHeightCm = bBox.h * bsc * cpp;
+
+        // 전체 사용자 오브젝트의 바운딩 박스
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+        userObjs.forEach((o) => {
+          const b = o.getBoundingRect();
+          minX = Math.min(minX, b.left);
+          minY = Math.min(minY, b.top);
+          maxX = Math.max(maxX, b.left + b.width);
+          maxY = Math.max(maxY, b.top + b.height);
+        });
+
+        const designCX = (minX + maxX) / 2;
+        const fromBottom = (bodyBottom - maxY) * cpp;
+        const fromLeft = (minX - bodyLeft) * cpp;
+        const fromRight = (bodyRight - maxX) * cpp;
+
+        // 정중앙 판단 (가방 폭의 ±5% 이내면 정중앙)
+        const isCenterH =
+          Math.abs(designCX - bodyCX) * cpp < bodyWidthCm * 0.05;
+
+        let posText = "앞면: ";
+        if (isCenterH) {
+          posText += `하단에서 ${fromBottom.toFixed(1)}CM (정중앙)`;
+        } else if (designCX < bodyCX) {
+          posText += `좌측에서 ${fromLeft.toFixed(1)}CM, 하단에서 ${fromBottom.toFixed(1)}CM`;
+        } else {
+          posText += `우측에서 ${fromRight.toFixed(1)}CM, 하단에서 ${fromBottom.toFixed(1)}CM`;
+        }
+        return posText;
+      }
+
+      /* =========================================================
+   인쇄 사이즈 계산
+========================================================= */
+      function calcPrintSize() {
+        const userObjs = canvas.getObjects().filter((o) => o.isUserObject);
+        const cpp = getCmPerPx();
+        if (!userObjs.length || !cpp) return "디자인 없음";
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+        userObjs.forEach((o) => {
+          const b = o.getBoundingRect();
+          minX = Math.min(minX, b.left);
+          minY = Math.min(minY, b.top);
+          maxX = Math.max(maxX, b.left + b.width);
+          maxY = Math.max(maxY, b.top + b.height);
+        });
+        const w = ((maxX - minX) * cpp).toFixed(1);
+        const h = ((maxY - minY) * cpp).toFixed(1);
+        return `앞면: ${w}*${h}`;
+      }
+
+      /* =========================================================
+   이미지 URL → base64 (fetch — 엑셀 호환 잘 됨)
+========================================================= */
+      async function fetchImgB64(url) {
+        try {
+          const res = await fetch(url, { mode: "cors" });
+          if (res.ok) {
+            const blob = await res.blob();
+            return await new Promise((r) => {
+              const fr = new FileReader();
+              fr.onloadend = () => r(fr.result);
+              fr.onerror = () => r(null);
+              fr.readAsDataURL(blob);
+            });
+          }
+        } catch (e) {}
+        // fallback: Image + canvas
+        return await new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            try {
+              const c = document.createElement("canvas");
+              c.width = img.naturalWidth;
+              c.height = img.naturalHeight;
+              c.getContext("2d").drawImage(img, 0, 0);
+              resolve(c.toDataURL("image/png"));
+            } catch (e) {
+              resolve(null);
+            }
+          };
+          img.onerror = () => resolve(null);
+          img.src = url;
+        });
+      }
+
+      /* =========================================================
+   엑셀 작업지시서 생성 (ExcelJS · 이미지 포함 · A4 한 장)
+========================================================= */
+      async function generateWorkOrderExcel(orderData) {
+        const { name, qty, opp, orderNum, orderDate, request } = orderData;
+        const bag = currentBag;
+        const sizeText = bag.size.replace("cm", "").replace(/×/g, "*");
+        const strapSize = STRAP_SIZE[bag.id] || ""; // 가방 고유값 (크로스끈이 덮어쓰지 않음)
+        const packType = opp ? "OPP비닐포장" : "벌크";
+        const printPos = calcPrintPosition() || "";
+        const printSize = calcPrintSize();
+        const optList = [...activeOptions].filter((o) => o !== "OPP개별포장");
+
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("작업지시서", {
+          pageSetup: {
+            paperSize: 9,
+            orientation: "portrait",
+            fitToPage: true,
+            fitToWidth: 1,
+            fitToHeight: 1,
+            margins: {
+              left: 0.2,
+              right: 0.2,
+              top: 0.2,
+              bottom: 0.2,
+              header: 0,
+              footer: 0,
+            },
+          },
+          views: [{ showGridLines: false }],
+        });
+        ws.columns = [
+          { width: 16 },
+          { width: 20 },
+          { width: 15 },
+          { width: 17 },
+        ];
+
+        const FONT = "NanumGothic";
+        const thin = { style: "thin", color: { argb: "FFD0D7E0" } };
+        const BORDER = { top: thin, left: thin, bottom: thin, right: thin };
+        const LABEL_FILL = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFEFF4FB" },
+        };
+
+        function L(addr, t) {
+          const c = ws.getCell(addr);
+          c.value = t;
+          c.fill = LABEL_FILL;
+          c.font = {
+            name: FONT,
+            bold: true,
+            size: 12,
+            color: { argb: "FF1B3A5C" },
+          };
+          c.alignment = { horizontal: "center", vertical: "middle" };
+          c.border = BORDER;
+        }
+        function V(addr, t, o = {}) {
+          const c = ws.getCell(addr);
+          c.value = t;
+          c.font = {
+            name: FONT,
+            size: 11.5,
+            bold: !!o.red || !!o.bold,
+            color: o.red
+              ? { argb: "FFE23B3B" }
+              : o.blue
+                ? { argb: "FF1B64DA" }
+                : { argb: "FF2C3E50" },
+          };
+          c.alignment = {
+            horizontal: o.center ? "center" : "left",
+            vertical: "middle",
+            wrapText: !!o.wrap,
+          };
+          c.border = BORDER;
+        }
+        function SEC(addr, t) {
+          const c = ws.getCell(addr);
+          c.value = t;
+          c.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF3182F6" },
+          };
+          c.font = {
+            name: FONT,
+            bold: true,
+            size: 12.5,
+            color: { argb: "FFFFFFFF" },
+          };
+          c.alignment = { horizontal: "center", vertical: "middle" };
+          c.border = BORDER;
+        }
+
+        // ── 타이틀 ──
+        ws.mergeCells("A1:D1");
+        const title = ws.getCell("A1");
+        title.value = "작 업 지 시 서";
+        title.font = {
+          name: FONT,
+          bold: true,
+          size: 18,
+          color: { argb: "FF1B3A5C" },
+        };
+        title.alignment = { horizontal: "center", vertical: "middle" };
+        title.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF5F8FC" },
+        };
+        ws.getRow(1).height = 30;
+
+        // ── 상단 정보 ──
+        L("A2", "제작의뢰날짜");
+        V("B2", orderDate);
+        L("C2", "작업완료날짜");
+        V("D2", "", { red: true });
+        L("A3", "주문자명");
+        V("B3", name, { blue: true, bold: true });
+        L("C3", "재주문");
+        V("D3", "");
+        L("A4", "제작수량");
+        ws.mergeCells("B4:D4");
+        V("B4", qty + "개", { red: true, center: true, bold: true });
+
+        // ── 본문 ──
+        L("A5", "원단명");
+        V("B5", "10수");
+        L("C5", "포장");
+        V("D5", packType, { red: true });
+        L("A6", "품명");
+        V("B6", bag.name);
+        L("C6", "배송");
+        V("D6", "택배", { red: true });
+        L("A7", "사이즈");
+        V("B7", sizeText);
+        L("C7", "인쇄방법");
+        V("D7", "전사");
+        L("A8", "원단컬러");
+        V("B8", bagColorName());
+        L("C8", "인쇄컬러");
+        V("D8", "");
+        L("A9", "손잡이컬러");
+        V("B9", webbingColorName());
+        L("C9", "손잡이사이즈");
+        V("D9", strapSize, { red: true });
+        L("A10", "인쇄사이즈");
+        ws.mergeCells("B10:D10");
+        V("B10", printSize, { blue: true, bold: true });
+        L("A11", "인쇄위치");
+        ws.mergeCells("B11:D11");
+        V("B11", printPos, { blue: true, bold: true, wrap: true });
+        for (let r = 2; r <= 11; r++) ws.getRow(r).height = 22;
+
+        // ── 옵션 사항 (가로 나열, 한 줄에 4개) ──
+        const secRow = 12;
+        ws.mergeCells(`A${secRow}:D${secRow}`);
+        SEC(`A${secRow}`, "옵션 사항");
+        ws.getRow(secRow).height = 22;
+        let row = secRow + 1;
+        if (optList.length) {
+          for (let i = 0; i < optList.length; i += 4) {
+            const chunk = optList.slice(i, i + 4);
+            ws.getRow(row).height = 66; // 이미지 행
+            ws.getRow(row + 1).height = 20; // 이름 행
+            for (let j = 0; j < chunk.length; j++) {
+              const opt = chunk[j];
+              const colL = ["A", "B", "C", "D"][j];
+              const ic = ws.getCell(`${colL}${row}`);
+              ic.border = BORDER;
+              ic.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFFFFFFF" },
+              };
+              let url = OPTION_IMAGES[opt];
+              if (opt === "크로스끈") url = BAG_IMAGES[bag.id + "_cross"];
+              if (url) {
+                const b64 = await fetchImgB64(url);
+                if (b64) {
+                  const oid = wb.addImage({ base64: b64, extension: "png" });
+                  ws.addImage(oid, {
+                    tl: { col: j, row: row - 1 },
+                    ext: { width: 62, height: 62 },
+                  });
+                }
+              }
+              const nc = ws.getCell(`${colL}${row + 1}`);
+              nc.value = opt;
+              nc.font = {
+                name: FONT,
+                bold: true,
+                size: 11,
+                color: { argb: "FF1B64DA" },
+              };
+              nc.alignment = { horizontal: "center", vertical: "middle" };
+              nc.border = BORDER;
+            }
+            row += 2;
+          }
+        } else {
+          ws.mergeCells(`A${row}:D${row}`);
+          V(`A${row}`, "추가 옵션 없음", { center: true });
+          ws.getRow(row).height = 22;
+          row++;
+        }
+
+        // ── 고객 요청 사항 ──
+        ws.mergeCells(`A${row}:D${row}`);
+        SEC(`A${row}`, "고객 요청 사항");
+        ws.getRow(row).height = 22;
+        row++;
+        ws.mergeCells(`A${row}:D${row}`);
+        const rq = ws.getCell(`A${row}`);
+        rq.value = request && request.trim() ? request.trim() : "(없음)";
+        rq.font = {
+          name: FONT,
+          size: 11.5,
+          color:
+            request && request.trim()
+              ? { argb: "FF2C3E50" }
+              : { argb: "FFAAAAAA" },
+        };
+        rq.alignment = { horizontal: "left", vertical: "top", wrapText: true };
+        rq.border = BORDER;
+        ws.getRow(row).height = 54;
+        row++;
+
+        // ── 시안 미리보기 (맨 아래, 가로 넓게 — 양면 시 가방 여러 개 대비) ──
+        ws.mergeCells(`A${row}:D${row}`);
+        SEC(`A${row}`, "시안 미리보기 (가방 + 인쇄)");
+        ws.getRow(row).height = 22;
+        row++;
+        ws.mergeCells(`A${row}:D${row}`);
+        const sc = ws.getCell(`A${row}`);
+        sc.value = "손잡이 사이즈: " + (strapSize || "-");
+        sc.font = {
+          name: FONT,
+          bold: true,
+          size: 11.5,
+          color: { argb: "FFE23B3B" },
+        };
+        sc.alignment = { horizontal: "center", vertical: "middle" };
+        sc.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFFF6F6" },
+        };
+        sc.border = BORDER;
+        ws.getRow(row).height = 22;
+        row++;
+        // 가방 시안 이미지 — 양면이면 앞/뒤 좌우, 단면이면 가운데
+        try {
+          const shots = captureAllSides();
+          if (shots.length === 1) {
+            const cid = wb.addImage({
+              base64: shots[0].data,
+              extension: "png",
+            });
+            let ch = 470,
+              cw = Math.round(ch * (CW / CH));
+            const tableW = 490,
+              offsetCols = Math.max(0, (tableW - cw) / 2 / (490 / 4));
+            ws.addImage(cid, {
+              tl: { col: offsetCols, row: row - 1 },
+              ext: { width: cw, height: ch },
+            });
+            const need = Math.ceil(ch / 20) + 1;
+            for (let i = 0; i < need; i++) ws.getRow(row + i).height = 20;
+          } else {
+            // 양면: 라벨 행 → 이미지(앞면 왼쪽 / 뒷면 오른쪽)
+            ws.mergeCells(`A${row}:B${row}`);
+            ws.mergeCells(`C${row}:D${row}`);
+            const fl = ws.getCell(`A${row}`),
+              bl = ws.getCell(`C${row}`);
+            fl.value = "◀ 앞면";
+            bl.value = "뒷면 ▶";
+            [fl, bl].forEach((c) => {
+              c.font = {
+                name: FONT,
+                bold: true,
+                size: 11.5,
+                color: { argb: "FF1B64DA" },
+              };
+              c.alignment = { horizontal: "center", vertical: "middle" };
+              c.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFF2F6FF" },
+              };
+              c.border = BORDER;
+            });
+            ws.getRow(row).height = 22;
+            row++;
+
+            let ch = 330,
+              cw = Math.round(ch * (CW / CH));
+            const fid = wb.addImage({
+              base64: shots[0].data,
+              extension: "png",
+            });
+            ws.addImage(fid, {
+              tl: { col: 0.15, row: row - 1 },
+              ext: { width: cw, height: ch },
+            });
+            const bid = wb.addImage({
+              base64: shots[1].data,
+              extension: "png",
+            });
+            ws.addImage(bid, {
+              tl: { col: 2.15, row: row - 1 },
+              ext: { width: cw, height: ch },
+            });
+            const need = Math.ceil(ch / 20) + 1;
+            for (let i = 0; i < need; i++) ws.getRow(row + i).height = 20;
+          }
+        } catch (e) {
+          console.error("canvas img", e);
+        }
+
+        // ── 파일명 ──
+        const now = new Date();
+        const dateStr =
+          String(now.getFullYear()).slice(2) +
+          String(now.getMonth() + 1).padStart(2, "0") +
+          String(now.getDate()).padStart(2, "0");
+        const webColor = webbingColorName().replace(/[●\s]/g, "");
+        const parts = [
+          dateStr,
+          bag.name,
+          webColor,
+          ...optList,
+          name,
+          qty + "개",
+        ];
+        const fileName = parts.filter(Boolean).join("_") + ".xlsx";
+
+        const buffer = await wb.xlsx.writeBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        const CHUNK = 8192;
+        for (let i = 0; i < bytes.length; i += CHUNK)
+          binary += String.fromCharCode.apply(
+            null,
+            bytes.subarray(i, i + CHUNK),
+          );
+        return { base64: btoa(binary), fileName };
+      }
+
+      document
+        .getElementById("orderSubmit")
+        .addEventListener("click", async () => {
+          const name = document.getElementById("ordName").value.trim();
+          const phone = document.getElementById("ordPhone").value.trim();
+          const email = document.getElementById("ordEmail").value.trim();
+          const qty = document.getElementById("ordQty").value.trim();
+          const opp = activeOptions.has("OPP개별포장");
+          const request = document.getElementById("ordRequest").value.trim();
+          const errs = [];
+          if (!qty || parseInt(qty) < 1)
+            errs.push("• 제작 수량을 입력해 주세요");
+          if (name.length < 2) errs.push("• 성함을 2자 이상 입력해 주세요");
+          if (!/^01[0-9]-?\d{3,4}-?\d{4}$/.test(phone))
+            errs.push("• 전화번호 형식을 확인해 주세요 (010-1234-5678)");
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+            errs.push("• 올바른 이메일 형식을 입력해 주세요");
+          const errBox = document.getElementById("ordErrors");
+          if (errs.length) {
+            errBox.innerHTML = errs.join("<br>");
+            return;
+          }
+          errBox.textContent = "";
+
+          const btn = document.getElementById("orderSubmit");
+          btn.disabled = true;
+          btn.textContent = "전송 중…";
+
+          const orderNum = makeOrderNum(name);
+          const specsRows = _lastOrderSpecs
+            .map(
+              (s) =>
+                `<tr><td style="padding:6px 12px;color:#555;">${s.label}</td><td style="padding:6px 12px;font-weight:600;">${s.value}</td></tr>`,
+            )
+            .join("");
+          const html = `
+    <div style="font-family:sans-serif;max-width:560px;">
+      <h2 style="color:#1b64da;">🎉 새 주문이 접수되었습니다</h2>
+      <p style="font-size:18px;"><b>시안 번호: ${orderNum}</b></p>
+      <h3>주문자 정보</h3>
+      <table style="border-collapse:collapse;">
+        <tr><td style="padding:6px 12px;color:#555;">성함</td><td style="padding:6px 12px;font-weight:600;">${name}</td></tr>
+        <tr><td style="padding:6px 12px;color:#555;">전화번호</td><td style="padding:6px 12px;font-weight:600;">${phone}</td></tr>
+        <tr><td style="padding:6px 12px;color:#555;">이메일</td><td style="padding:6px 12px;font-weight:600;">${email}</td></tr>
+      </table>
+      <h3>주문 내역</h3>
+      <table style="border-collapse:collapse;">${specsRows}</table>
+      <h3>고객 요청 사항</h3>
+      <p style="padding:10px 14px;background:#f7f8fa;border-radius:8px;white-space:pre-wrap;">${request ? request.replace(/</g, "&lt;") : "(없음)"}</p>
+      <p style="color:#888;font-size:12px;margin-top:20px;">요기백 셀프 시안 에디터에서 자동 발송된 메일입니다.</p>
+    </div>`;
+
+          try {
+            // 작업지시서 이미지(PNG) 생성
+            const orderDateText =
+              document.getElementById("orderDate").textContent;
+            const workOrder = await generateWorkOrderExcel({
+              name,
+              qty,
+              opp,
+              orderNum,
+              orderDate: orderDateText,
+              request,
+            });
+
+            // 인쇄용 파일 추출 → 첨부
+            const files = exportDesignFiles();
+            const attachments = [];
+            if (files.png)
+              attachments.push({
+                filename: `${orderNum}_인쇄용.png`,
+                content: files.png.split(",")[1],
+              });
+            if (files.svg)
+              attachments.push({
+                filename: `${orderNum}_인쇄용.svg`,
+                content: btoa(unescape(encodeURIComponent(files.svg))),
+              });
+
+            // 고객이 처음 올린 원본 파일 첨부 (AI 배경제거가 어긋나도 직원이 원본으로 재작업)
+            const seenUploads = new Set();
+            let origIdx = 0;
+            canvas.getObjects().forEach((o) => {
+              if (!o.uploadId || seenUploads.has(o.uploadId)) return;
+              const orig = originalUploads.get(o.uploadId);
+              if (!orig || !orig.dataURL) return;
+              seenUploads.add(o.uploadId);
+              origIdx++;
+              const comma = orig.dataURL.indexOf(",");
+              const b64 =
+                comma >= 0 ? orig.dataURL.slice(comma + 1) : orig.dataURL;
+              const extMatch = (orig.name || "").match(/\.[a-z0-9]+$/i);
+              const ext = extMatch ? extMatch[0] : extFromMime(orig.mime);
+              const base =
+                (orig.name || "원본").replace(/\.[a-z0-9]+$/i, "") || "원본";
+              const tag = orig.bgRemoved ? "배경제거전원본" : "원본";
+              attachments.push({
+                filename: `${orderNum}_${tag}${origIdx}_${base}${ext}`,
+                content: b64,
+              });
+            });
+
+            // 작업지시서 첨부 (맨 위로 보이게 먼저)
+            attachments.unshift({
+              filename: workOrder.fileName,
+              content: workOrder.base64,
+            });
+
+            const res = await fetch(
+              "https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  to: "thdghkstlr@gmail.com",
+                  subject: `[요기백 주문] ${orderNum} · ${name}님`,
+                  html,
+                  attachments,
+                }),
+              },
+            );
+            const data = await res.json();
+            if (res.ok && !data.error) {
+              showToast("주문이 접수되었어요! 🎉");
+              document.getElementById("orderModal").classList.remove("show");
+            } else {
+              errBox.innerHTML =
+                "메일 전송 실패: " +
+                (data.error || data.message || JSON.stringify(data));
+            }
+          } catch (e) {
+            errBox.innerHTML = "전송 오류: " + e.message;
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "주문 접수하기";
+          }
+        });
+
+      /* =========================================================
+   TOAST
+========================================================= */
+      let toastTimer;
+      function showToast(msg) {
+        const toast = document.getElementById("toast");
+        document.getElementById("toastMsg").textContent = msg;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+      }
+
+      /* =========================================================
+   BOOT
+========================================================= */
+      window.addEventListener("load", () => {
+        initCanvas();
+        updateOptionsForBag(); // 초기 가방(데일리=에코백) 옵션 구성
+        // Cafe24 상품번호/파라미터로 시작 가방 지정
+        const startBag = findBagById(resolveStartBagId());
+        if (startBag && startBag.id !== currentBag.id)
+          selectBag(startBag, true);
+        fitZoom();
+        setTimeout(fitZoom, 80); // 레이아웃 안정 후 재계산 (모바일)
+      });
+    </script>
+  </body>
+</html>
