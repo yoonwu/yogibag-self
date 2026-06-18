@@ -2222,8 +2222,9 @@ const sideDesigns = { front: [], back: [] };
 
 // 앞/뒤 전환 탭 (양면 ON 시 캔버스 바로 위에 표시)
 const sideTabs = document.createElement('div');
-sideTabs.style.cssText = 'display:none;gap:6px;background:#fff;padding:5px;border-radius:12px;'
-  + 'box-shadow:0 3px 14px rgba(0,0,0,.18);margin-bottom:12px;z-index:20;';
+sideTabs.style.cssText = 'display:none;position:absolute;top:84px;left:50%;transform:translateX(-50%);'
+  + 'gap:6px;background:#fff;padding:5px;border-radius:12px;'
+  + 'box-shadow:0 3px 14px rgba(0,0,0,.18);z-index:19;';
 ['front','back'].forEach(side => {
   const b = document.createElement('button');
   b.dataset.side = side;
