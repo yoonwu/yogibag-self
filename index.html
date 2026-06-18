@@ -423,6 +423,7 @@
   }
   .opt-pill .op-name { font-size: 13px; font-weight: 700; }
   .opt-pill .op-price { font-size: 11px; font-weight: 600; color: var(--blue); margin-left: 5px; }
+  .opt-pill .op-price.op-free { color: var(--gray-2); }
   .opt-pill.active .op-price { color: rgba(255,255,255,.9); }
   .opt-pill .op-use { font-size: 10.5px; font-weight: 500; opacity: .6; margin-top: 1px; }
   .opt-pill:hover { border-color: var(--gray-3); }
@@ -981,18 +982,27 @@ function wonFmt(n){ return Math.round(n).toLocaleString() + "원"; }
 function currentPrice(qty){
   const cn = (typeof bagColorName === "function") ? bagColorName().replace(/[●\s]/g,"") : "아이보리";
   const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "아이보리";
-  const opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+  let opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+  opts = opts.filter(o => !isLockedOption(o)); // 기본 장착(무료) 옵션은 가격 제외
   if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄800");
   let sizes = [];
   try { if (typeof measurePrintObjs === "function"){ const s = measurePrintObjs(); if (s) sizes = [s]; } } catch(e){}
   return calcPrice(currentBag.id, cn, wn, opts, qty, sizes);
+}
+// 현재 가방에서 기본 장착(locked=무료)인 옵션인지
+function isLockedOption(opt){
+  try {
+    const conf = BAG_OPT_CONF[bagCategory(currentBag)] || BAG_OPT_CONF.ecobag;
+    return conf.locked && conf.locked.indexOf(opt) >= 0;
+  } catch(e){ return false; }
 }
 function updatePriceBar(){
   const bar = document.getElementById("ygPriceBar");
   if (!bar) return;
   const cn = (typeof bagColorName === "function") ? bagColorName().replace(/[●\s]/g,"") : "아이보리";
   const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "아이보리";
-  const opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+  let opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+  opts = opts.filter(o => !isLockedOption(o));
   if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄800");
   let sizes = [];
   try { if (typeof measurePrintObjs === "function"){ const s = measurePrintObjs(); if (s) sizes = [s]; } } catch(e){}
@@ -2170,13 +2180,20 @@ function updateOptionsForBag() {
     if (conf.available.indexOf(opt) >= 0) {
       pill.style.display = '';
       const label = (conf.rename && conf.rename[opt]) || opt;
-      const nameEl = pill.querySelector('.op-name');
-      if (nameEl) nameEl.textContent = label; else pill.textContent = label;
-      if (conf.locked && conf.locked.indexOf(opt) >= 0) {
+      const isLocked = conf.locked && conf.locked.indexOf(opt) >= 0;
+      const price = (typeof OPTION_PRICE !== 'undefined' && OPTION_PRICE[opt]) || 0;
+      const priceHtml = isLocked
+        ? '<span class="op-price op-free">기본포함</span>'
+        : '<span class="op-price">+' + price.toLocaleString() + '</span>';
+      const useText = (OPTION_META[opt] && OPTION_META[opt].use) || '';
+      // pill 전체를 재구성 (op-name에 가격 포함 + op-use)
+      pill.innerHTML = '<span class="op-name">' + label + priceHtml + '</span>'
+                     + '<span class="op-use">' + useText + '</span>';
+      if (isLocked) {
         pill.dataset.locked = '1';
         pill.classList.add('active');
         pill.style.opacity = '0.85';
-        activeOptions.add(opt);   // 실제 그리기는 drawBag finalize가 처리
+        activeOptions.add(opt);
       } else {
         pill.dataset.locked = '';
         pill.style.opacity = '';
