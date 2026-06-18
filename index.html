@@ -1289,7 +1289,7 @@ function checkPrintBounds() {
   const warn = document.getElementById('printWarn');
   if (!printArea) { if (warn) warn.style.display = 'none'; return false; }
   const pa = printArea.getBoundingRect();
-  const tol = 2;
+  const tol = 12;
   let out = false;
   canvas.getObjects().filter(o => o.isUserObject).forEach(o => {
     const b = o.getBoundingRect();
@@ -2189,6 +2189,7 @@ const BAG_OPT_CONF = {
 /* 현재 가방에 맞춰 옵션 버튼 표시/라벨/잠금 갱신 */
 function updateOptionsForBag() {
   const conf = BAG_OPT_CONF[bagCategory(currentBag)] || BAG_OPT_CONF.ecobag;
+  const curColor = (typeof bagColorName === 'function') ? bagColorName().replace(/[●\s]/g,'') : '아이보리';
   OPTIONS.forEach(opt => {
     const pill = optButtons[opt];
     if (!pill) return;
@@ -2196,20 +2197,18 @@ function updateOptionsForBag() {
       pill.style.display = '';
       const label = (conf.rename && conf.rename[opt]) || opt;
       const isLocked = conf.locked && conf.locked.indexOf(opt) >= 0;
-      const curColor = (typeof bagColorName === 'function') ? bagColorName().replace(/[●\s]/g,'') : '아이보리';
       const price = (typeof optionPrice === 'function') ? optionPrice(opt, curColor) : ((typeof OPTION_PRICE !== 'undefined' && OPTION_PRICE[opt]) || 0);
       const priceHtml = isLocked
         ? '<span class="op-price op-free">기본포함</span>'
         : '<span class="op-price">+' + price.toLocaleString() + '</span>';
-      const useText = (OPTION_META[opt] && OPTION_META[opt].use) || '';
-      // pill 전체를 재구성 (op-name에 가격 포함 + op-use)
-      pill.innerHTML = '<span class="op-name">' + label + priceHtml + '</span>'
-                     + '<span class="op-use">' + useText + '</span>';
+      // op-name만 갱신 (가격 span 포함). op-use는 건드리지 않음 → 원본 동작 유지
+      const nameEl = pill.querySelector('.op-name');
+      if (nameEl) nameEl.innerHTML = label + priceHtml;
       if (isLocked) {
         pill.dataset.locked = '1';
         pill.classList.add('active');
         pill.style.opacity = '0.85';
-        activeOptions.add(opt);
+        activeOptions.add(opt);   // 실제 그리기는 drawBag finalize가 처리
       } else {
         pill.dataset.locked = '';
         pill.style.opacity = '';
@@ -2735,6 +2734,13 @@ function selectBag(bag, silent) {
   // 가방 바꾸면 추가옵션 전부 초기화 (꼬임 방지)
   activeOptions.forEach(opt => removeOptionVisual(opt));
   activeOptions.clear();
+  // 잔여 옵션 비주얼 강제 제거 (혹시 남은 것)
+  if (typeof optionVisuals !== 'undefined') {
+    Object.keys(optionVisuals).forEach(opt => {
+      if (optionVisuals[opt]) canvas.remove(optionVisuals[opt]);
+      delete optionVisuals[opt];
+    });
+  }
   document.querySelectorAll('.opt-pill').forEach(p => p.classList.remove('active'));
   // 폴리백이면 몸통 기본 블랙으로 리셋 + 끈 색 원본
   if (bagCategory(bag) === 'poly' && POLY_BODY[bag.id]) {
