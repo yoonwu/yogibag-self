@@ -1600,6 +1600,44 @@
           display: none;
         }
       }
+      /* ── 실시간 예상 가격 바 ── */
+      #ygPriceBar {
+        display: none;
+        padding: 9px 16px;
+        background: var(--blue-pale);
+        border-bottom: 1px solid var(--gray-5);
+        flex-shrink: 0;
+      }
+      #ygPriceBar .ygpb-tiers {
+        display: flex; align-items: center; gap: 0;
+      }
+      #ygPriceBar .ygpb-tier {
+        display: flex; flex-direction: column; align-items: center; gap: 1px; flex: 1;
+      }
+      #ygPriceBar .ygpb-qlabel {
+        font-size: 10.5px; color: var(--gray-2); font-weight: 500;
+      }
+      #ygPriceBar .ygpb-per {
+        font-size: 13.5px; font-weight: 700; color: var(--ink);
+      }
+      #ygPriceBar .ygpb-divider {
+        width: 1px; height: 28px; background: var(--gray-4); margin: 0 8px; flex-shrink: 0;
+      }
+      #ygPriceBar .ygpb-suffix {
+        margin-left: 10px; font-size: 11px; color: var(--gray-2); white-space: nowrap;
+      }
+      #ygPriceBar .ygpb-tag {
+        display: inline-block; margin-left: 4px; color: var(--blue);
+        font-size: 10.5px; font-weight: 600;
+      }
+      /* 주문 모달 견적 */
+      #ordQuote { margin: 4px 0 6px; }
+      #ordQuote .ordq-row { display: flex; align-items: center; gap: 8px; color: var(--gray-1); font-size: 13.5px; }
+      #ordQuote .ordq-x { color: var(--gray-3); }
+      #ordQuote .ordq-total { margin-top: 4px; font-size: 15px; color: var(--ink); }
+      #ordQuote .ordq-total b { color: var(--blue); font-size: 17px; margin-left: 4px; }
+      #ordQuote .ordq-note { margin-top: 5px; font-size: 11.5px; color: var(--gray-2); line-height: 1.4; }
+      #ordQuote .ordq-warn { margin-top: 5px; font-size: 12px; color: var(--red); font-weight: 600; }
     </style>
   </head>
   <body>
@@ -1618,6 +1656,8 @@
       <button class="btn-ghost" id="saveBtn">임시저장</button>
       <button class="btn-primary" id="orderBtn">주문하기</button>
     </header>
+    <!-- 실시간 예상 가격 바 -->
+    <div id="ygPriceBar"></div>
 
     <div class="body">
       <!-- TOOL RAIL -->
@@ -2125,6 +2165,7 @@
               min="1"
               style="font-size: 16px"
             />
+            <div id="ordQuote"></div>
             <div class="order-form-title" style="margin-top: 4px">
               <span class="req-dot"></span> 주문자 정보
               <span class="req-text">*필수</span>
@@ -2304,6 +2345,118 @@
         }
         return null;
       }
+      /* ════════ 가격 계산 모듈 ════════ */
+      function qtyTier(qty) {
+        if (qty >= 500) return "q500";
+        if (qty >= 300) return "q300";
+        if (qty >= 100) return "q100";
+        return "q20";
+      }
+      const PRICING = {
+        small:  { type:"ecobag", min:20, base:{q20:1980,q100:1980,q300:1980,q500:1980} },
+        sgak_s: { type:"ecobag", min:20, base:{q20:3180,q100:2980,q300:2880,q500:2780} },
+        kids:   { type:"ecobag", min:20, base:{q20:3280,q100:3080,q300:2980,q500:2880} },
+        sgak_m: { type:"ecobag", min:20, base:{q20:3300,q100:3100,q300:3000,q500:2900} },
+        daily:  { type:"ecobag", min:20, base:{q20:3480,q100:3380,q300:3280,q500:3230} },
+        sgak_l: { type:"ecobag", min:20, base:{q20:3480,q100:3380,q300:3280,q500:3230} },
+        market: { type:"ecobag", min:20, base:{q20:3560,q100:3360,q300:3260,q500:3160} },
+        minja:  { type:"pouch",  min:20, base:{q20:2880,q100:2780,q300:2680,q500:2680} },
+        mitdan: { type:"pouch",  min:20, base:{q20:2980,q100:2880,q300:2780,q500:2780} },
+        tumbler:{ type:"tumbler",min:50, base:{q20:3360,q100:3360,q300:3360,q500:3360} },
+        poly_v: { type:"poly",   min:1,  base:{q20:4000,q100:3800,q300:3800,q500:3800}, small:{lt10:6500,lt20:4500} },
+        poly_h: { type:"poly",   min:1,  base:{q20:4000,q100:3800,q300:3800,q500:3800}, small:{lt10:6500,lt20:4500} },
+      };
+      function colorSurcharge(type, colorName, webbingName) {
+        let sur = 0;
+        if (type === "ecobag" && (colorName === "블랙" || colorName === "네이비")) sur += 700;
+        if (webbingName && webbingName !== "없음" && webbingName !== "아이보리") sur += 300;
+        return sur;
+      }
+      // 인쇄 크기(cm) → DTF 필름 폭(58cm) 기준 추가 인쇄비
+      // 짧은 변으로 배치 → 58÷짧은변 = 한 줄 장수
+      // 3장 이상(짧은변≤19.3) = 기본, 2장(≤29) = +700, 1장(>29) = +1000
+      function printSurchargeBySize(type, sizeObj) {
+        if (!sizeObj || type === "pouch") return 0;
+        const filmW = 58;
+        const shorter = Math.min(sizeObj.w || 0, sizeObj.h || 0);
+        if (shorter <= 0) return 0;
+        const perRow = filmW / shorter;
+        if (perRow >= 3) return 0;    // 3장 이상 = 기본
+        if (perRow >= 2) return 700;  // 2장 = +700
+        return 1000;                  // 1장 = +1000
+      }
+      const OPTION_PRICE = {
+        "안주머니":600,"안주머니인쇄":600,"똑딱이":550,"자석":650,
+        "지퍼":850,"크로스끈":1200,"이름표":250,"OPP개별포장":250,
+      };
+      function calcPrice(bagId, colorName, webbingName, options, qty, printSizes) {
+        const p = PRICING[bagId];
+        if (!p) return null;
+        const q = qty && qty > 0 ? qty : 100;
+        let per;
+        if (p.type === "poly" && p.small) {
+          if (q < 10) per = p.small.lt10;
+          else if (q < 20) per = p.small.lt20;
+          else per = p.base[qtyTier(q)];
+        } else {
+          per = p.base[qtyTier(q)];
+        }
+        per += colorSurcharge(p.type, colorName, webbingName);
+        let printSur = 0;
+        (printSizes || []).forEach((s) => { printSur += printSurchargeBySize(p.type, s); });
+        per += printSur;
+        let optSum = 0;
+        (options || []).forEach((o) => { optSum += OPTION_PRICE[o] || 0; });
+        per += optSum;
+        return { per, total: per * q, qty: q, min: p.min, optSum, printSur };
+      }
+      // 현재 에디터 상태로 가격 산출
+      function currentPrice(qty) {
+        const cn = (typeof bagColorName === "function") ? bagColorName().replace(/[●\s]/g,"") : "아이보리";
+        const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "없음";
+        const opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+        let sizes = [];
+        try {
+          if (typeof calcSidePrintSizes === "function") {
+            sizes = calcSidePrintSizes().map((s) => s.size).filter(Boolean);
+          }
+        } catch(e) {}
+        return calcPrice(currentBag.id, cn, wn, opts, qty, sizes);
+      }
+      function wonFmt(n){ return Math.round(n).toLocaleString() + "원"; }
+      // 가격 바 갱신 (에디터 상단 표시)
+      function updatePriceBar() {
+        const bar = document.getElementById("ygPriceBar");
+        if (!bar) return;
+        // 3구간 계산 (인쇄크기는 현재 상태로 한 번만 측정)
+        const cn = (typeof bagColorName === "function") ? bagColorName().replace(/[●\s]/g,"") : "아이보리";
+        const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "없음";
+        const opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
+        let sizes = [];
+        try {
+          if (typeof calcSidePrintSizes === "function")
+            sizes = calcSidePrintSizes().map((s) => s.size).filter(Boolean);
+        } catch(e) {}
+        const r20  = calcPrice(currentBag.id, cn, wn, opts, 20,  sizes);
+        const r100 = calcPrice(currentBag.id, cn, wn, opts, 100, sizes);
+        const r300 = calcPrice(currentBag.id, cn, wn, opts, 300, sizes);
+        if (!r20) { bar.style.display = "none"; return; }
+        bar.style.display = "block";
+        var tags = [];
+        if (r100.printSur > 0) tags.push("인쇄크기+" + r100.printSur.toLocaleString());
+        if (r100.optSum   > 0) tags.push("옵션+" + r100.optSum.toLocaleString());
+        var tagTxt = tags.length ? ' <span class="ygpb-tag">' + tags.join(" · ") + "</span>" : "";
+        bar.innerHTML =
+          '<div class="ygpb-tiers">'
+          + '<div class="ygpb-tier"><span class="ygpb-qlabel">20개</span><span class="ygpb-per">' + wonFmt(r20.per)  + '</span></div>'
+          + '<div class="ygpb-divider"></div>'
+          + '<div class="ygpb-tier"><span class="ygpb-qlabel">100개</span><span class="ygpb-per">' + wonFmt(r100.per) + '</span></div>'
+          + '<div class="ygpb-divider"></div>'
+          + '<div class="ygpb-tier"><span class="ygpb-qlabel">300개</span><span class="ygpb-per">' + wonFmt(r300.per) + '</span></div>'
+          + '<div class="ygpb-suffix">개당' + tagTxt + '</div>'
+          + '</div>';
+      }
+
       /* URL 파라미터로 시작 가방 결정: ?bag=daily 직접 지정 또는 ?product_no=397 */
       function resolveStartBagId() {
         const p = new URLSearchParams(location.search);
@@ -2375,8 +2528,7 @@
         { name: "그린", key: "green", display: "#104727" },
       ];
       const WEBBING_COLORS = [
-        { name: "없음", hex: null, display: "#e5e7eb" },
-        { name: "아이보리", hex: "#FFFFF0", display: "#FFFFF0" },
+        { name: "아이보리", hex: null, display: "#FFFFF0" },
         { name: "레드", hex: "#c2141c", display: "#c2141c" },
         { name: "오렌지", hex: "#ed721e", display: "#ed721e" },
         { name: "라이트핑크", hex: "#f7c9dd", display: "#f7c9dd" },
@@ -2625,6 +2777,18 @@
         canvas.on("object:scaling", checkPrintBounds);
         canvas.on("object:rotating", checkPrintBounds);
         canvas.on("object:added", checkPrintBounds);
+        // 인쇄 크기 변화 → 가격바 실시간 갱신 (드래그 중엔 디바운스)
+        var _priceTimer;
+        function priceBarDebounced(){
+          clearTimeout(_priceTimer);
+          _priceTimer = setTimeout(function(){
+            if (typeof updatePriceBar === "function") updatePriceBar();
+          }, 180);
+        }
+        canvas.on("object:modified", priceBarDebounced);
+        canvas.on("object:scaling", priceBarDebounced);
+        canvas.on("object:added", priceBarDebounced);
+        canvas.on("object:removed", priceBarDebounced);
         // 캔버스에서 기존 객체를 직접 클릭 → 사진 탭 열기(사진 다듬기 노출). 새 추가는 영향 없음
         canvas.on("mouse:down", (e) => {
           if (e.target && e.target.isUserObject) switchToPhotoTab();
@@ -3602,6 +3766,7 @@
                 saveState();
               }
               showToast(c.name + " 원단으로 바꿨어요");
+              if (typeof updatePriceBar === "function") updatePriceBar();
             });
             grid.appendChild(el);
           });
@@ -3641,6 +3806,7 @@
           canvas.requestRenderAll();
           saveState();
           showToast(c.name + " 끈으로 바꿨어요");
+          if (typeof updatePriceBar === "function") updatePriceBar();
         });
         webbingColorGrid.appendChild(el);
       });
@@ -4435,6 +4601,7 @@
 
       /* 캔버스 상단에 적용된 옵션 칩 표시 */
       function renderOptionChips() {
+        if (typeof updatePriceBar === "function") updatePriceBar();
         let bar = document.getElementById("optionChipBar");
         if (!bar) {
           bar = document.createElement("div");
@@ -4706,6 +4873,7 @@
         updateOptionsForBag(); // 가방별 옵션 표시/잠금 (activeOptions 세팅)
         drawBag(); // finalize에서 activeOptions(잠금옵션 포함) 그림
         if (typeof renderOptionPreviews === "function") renderOptionPreviews();
+        if (typeof updatePriceBar === "function") updatePriceBar();
         saveState();
         closeBagModal();
         if (!silent) showToast(bag.name + "으로 바꿨어요");
@@ -4815,7 +4983,7 @@
       }
       function webbingColorName() {
         const c = WEBBING_COLORS.find((x) => x.hex === webbingColor);
-        return c ? c.name : "없음";
+        return c ? c.name : "아이보리";
       }
 
       document.getElementById("orderBtn").addEventListener("click", () => {
@@ -4940,8 +5108,31 @@
         document.getElementById("ordErrors").textContent = "";
         document.getElementById("ordPrintWarn").style.display =
           checkPrintBounds() ? "block" : "none";
+        renderOrdQuote();
         document.getElementById("orderModal").classList.add("show");
       }
+
+      // 주문 모달 실시간 견적
+      function renderOrdQuote() {
+        const box = document.getElementById("ordQuote");
+        if (!box) return;
+        const qv = parseInt(document.getElementById("ordQty").value, 10);
+        const r = currentPrice(qv > 0 ? qv : null);
+        if (!r) { box.innerHTML = ""; return; }
+        const minWarn = (qv > 0 && qv < r.min)
+          ? `<div class="ordq-warn">이 상품은 최소 ${r.min}개부터 제작돼요</div>` : "";
+        const qtyLabel = qv > 0 ? (qv + "개") : "100개 기준";
+        box.innerHTML =
+          '<div class="ordq-row"><span>개당 ' + wonFmt(r.per) + '</span>'
+          + '<span class="ordq-x">×</span><span>' + qtyLabel + '</span></div>'
+          + '<div class="ordq-total">예상 금액 <b>' + wonFmt(r.total) + '</b></div>'
+          + '<div class="ordq-note">현재 디자인·옵션 기준 예상가예요. 최종 견적은 확정 후 안내드려요.</div>'
+          + minWarn;
+      }
+      (function(){
+        var q = document.getElementById("ordQty");
+        if (q) q.addEventListener("input", renderOrdQuote);
+      })();
 
       document.getElementById("orderClose").addEventListener("click", () => {
         document.getElementById("orderModal").classList.remove("show");
@@ -5606,6 +5797,7 @@
           selectBag(startBag, true);
         fitZoom();
         setTimeout(fitZoom, 80); // 레이아웃 안정 후 재계산 (모바일)
+        if (typeof updatePriceBar === "function") updatePriceBar();
       });
     </script>
   </body>
