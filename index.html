@@ -131,14 +131,15 @@
   }
   .btn-primary:hover { background: var(--blue-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(49,130,246,.4); }
   /* 실시간 예상 가격 바 */
-  #ygPriceBar { display:none; padding:9px 16px; background:var(--blue-pale,#f4f8ff); border-bottom:1px solid var(--gray-5,#e5e8eb); flex-shrink:0; }
+  #ygPriceBar { display:none; padding:8px 16px 7px; background:var(--blue-pale,#f4f8ff); border-bottom:1px solid var(--gray-5,#e5e8eb); flex-shrink:0; }
   #ygPriceBar .ygpb-tiers { display:flex; align-items:center; gap:0; }
   #ygPriceBar .ygpb-tier { display:flex; flex-direction:column; align-items:center; gap:1px; flex:1; }
   #ygPriceBar .ygpb-qlabel { font-size:10.5px; color:var(--gray-2,#8b95a1); font-weight:500; }
-  #ygPriceBar .ygpb-per { font-size:13.5px; font-weight:700; color:var(--ink,#191f28); }
+  #ygPriceBar .ygpb-per { font-size:14px; font-weight:700; color:var(--ink,#191f28); }
   #ygPriceBar .ygpb-divider { width:1px; height:28px; background:var(--gray-4,#d1d6db); margin:0 8px; flex-shrink:0; }
-  #ygPriceBar .ygpb-suffix { margin-left:10px; font-size:11px; color:var(--gray-2,#8b95a1); white-space:nowrap; }
-  #ygPriceBar .ygpb-tag { display:inline-block; margin-left:4px; color:var(--blue,#3182f6); font-size:10.5px; font-weight:600; }
+  #ygPriceBar .ygpb-foot { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:5px; flex-wrap:wrap; }
+  #ygPriceBar .ygpb-unit { font-size:10.5px; color:var(--gray-2,#8b95a1); }
+  #ygPriceBar .ygpb-tagrow { font-size:10.5px; color:var(--blue,#3182f6); font-weight:600; }
   /* 주문 모달 견적 */
   #ordQuote { margin:4px 0 6px; }
   #ordQuote .ordq-row { display:flex; align-items:center; gap:8px; color:var(--gray-1,#4e5968); font-size:13.5px; }
@@ -1012,18 +1013,18 @@ function updatePriceBar(){
   if (!r20) { bar.style.display = "none"; return; }
   bar.style.display = "block";
   var tags = [];
-  if (r100.printSur > 0) tags.push("인쇄크기+" + r100.printSur.toLocaleString());
-  if (r100.optSum   > 0) tags.push("옵션+" + r100.optSum.toLocaleString());
-  var tagTxt = tags.length ? ' <span class="ygpb-tag">' + tags.join(" · ") + "</span>" : "";
+  if (r100.printSur > 0) tags.push("인쇄크기 +" + r100.printSur.toLocaleString());
+  if (r100.optSum   > 0) tags.push("옵션 +" + r100.optSum.toLocaleString());
+  var tagRow = tags.length ? '<div class="ygpb-tagrow">' + tags.join(" · ") + " 포함</div>" : "";
   bar.innerHTML =
     '<div class="ygpb-tiers">'
-    + '<div class="ygpb-tier"><span class="ygpb-qlabel">20개</span><span class="ygpb-per">' + wonFmt(r20.per)  + '</span></div>'
+    + '<div class="ygpb-tier"><span class="ygpb-qlabel">20개 이상</span><span class="ygpb-per">' + wonFmt(r20.per)  + '</span></div>'
     + '<div class="ygpb-divider"></div>'
-    + '<div class="ygpb-tier"><span class="ygpb-qlabel">100개</span><span class="ygpb-per">' + wonFmt(r100.per) + '</span></div>'
+    + '<div class="ygpb-tier"><span class="ygpb-qlabel">100개 이상</span><span class="ygpb-per">' + wonFmt(r100.per) + '</span></div>'
     + '<div class="ygpb-divider"></div>'
-    + '<div class="ygpb-tier"><span class="ygpb-qlabel">300개</span><span class="ygpb-per">' + wonFmt(r300.per) + '</span></div>'
-    + '<div class="ygpb-suffix">개당' + tagTxt + '</div>'
-    + '</div>';
+    + '<div class="ygpb-tier"><span class="ygpb-qlabel">300개 이상</span><span class="ygpb-per">' + wonFmt(r300.per) + '</span></div>'
+    + '</div>'
+    + '<div class="ygpb-foot"><span class="ygpb-unit">개당 단가 (VAT 별도)</span>' + tagRow + '</div>';
 }
 
 /* URL 파라미터로 시작 가방 결정: ?bag=daily 직접 지정 또는 ?product_no=397 */
