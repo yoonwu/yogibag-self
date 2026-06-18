@@ -96,6 +96,9 @@
   }
   .logo span { font-size: 26px; }
   .current-bag {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -104,7 +107,7 @@
     padding: 7px 14px 7px 10px;
     border-radius: 999px;
     transition: all .15s;
-    margin-left: 6px;
+    margin-left: 0;
   }
   .current-bag:hover { background: var(--blue-light); border-color: var(--blue); }
   .current-bag .mini-bag {
@@ -131,15 +134,18 @@
   }
   .btn-primary:hover { background: var(--blue-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(49,130,246,.4); }
   /* 실시간 예상 가격 바 */
-  #ygPriceBar { display:none; padding:8px 16px 7px; background:var(--blue-pale,#f4f8ff); border-bottom:1px solid var(--gray-5,#e5e8eb); flex-shrink:0; }
-  #ygPriceBar .ygpb-tiers { display:flex; align-items:center; gap:0; }
-  #ygPriceBar .ygpb-tier { display:flex; flex-direction:column; align-items:center; gap:1px; flex:1; }
-  #ygPriceBar .ygpb-qlabel { font-size:10.5px; color:var(--gray-2,#8b95a1); font-weight:500; }
-  #ygPriceBar .ygpb-per { font-size:14px; font-weight:700; color:var(--ink,#191f28); }
-  #ygPriceBar .ygpb-divider { width:1px; height:28px; background:var(--gray-4,#d1d6db); margin:0 8px; flex-shrink:0; }
-  #ygPriceBar .ygpb-foot { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:5px; flex-wrap:wrap; }
-  #ygPriceBar .ygpb-unit { font-size:10.5px; color:var(--gray-2,#8b95a1); }
-  #ygPriceBar .ygpb-tagrow { font-size:10.5px; color:var(--blue,#3182f6); font-weight:600; }
+  #ygPriceBar { display:none; padding:13px 16px 12px; background:linear-gradient(180deg,#eef5ff,#f4f8ff); border-bottom:1px solid var(--gray-5,#e5e8eb); flex-shrink:0; }
+  #ygPriceBar .ygpb-head { text-align:center; font-size:12px; font-weight:700; color:var(--blue,#3182f6); margin-bottom:8px; letter-spacing:-.2px; }
+  #ygPriceBar .ygpb-tiers { display:flex; align-items:stretch; justify-content:center; gap:0; max-width:520px; margin:0 auto; }
+  #ygPriceBar .ygpb-tier { display:flex; flex-direction:column; align-items:center; gap:3px; flex:1; padding:4px 0; border-radius:10px; }
+  #ygPriceBar .ygpb-tier-main { background:rgba(49,130,246,.09); }
+  #ygPriceBar .ygpb-qlabel { font-size:11.5px; color:var(--gray-1,#4e5968); font-weight:600; }
+  #ygPriceBar .ygpb-per { font-size:19px; font-weight:800; color:var(--ink,#191f28); letter-spacing:-.5px; }
+  #ygPriceBar .ygpb-tier-main .ygpb-per { color:var(--blue,#3182f6); }
+  #ygPriceBar .ygpb-divider { width:1px; background:var(--gray-4,#d1d6db); margin:6px 10px; flex-shrink:0; }
+  #ygPriceBar .ygpb-foot { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:9px; flex-wrap:wrap; }
+  #ygPriceBar .ygpb-unit { font-size:11px; color:var(--gray-2,#8b95a1); }
+  #ygPriceBar .ygpb-tagrow { font-size:11px; color:var(--blue,#3182f6); font-weight:600; }
   /* 주문 모달 견적 */
   #ordQuote { margin:4px 0 6px; }
   #ordQuote .ordq-row { display:flex; align-items:center; gap:8px; color:var(--gray-1,#4e5968); font-size:13.5px; }
@@ -533,9 +539,9 @@
     .header { height: 54px; padding: 0 12px; gap: 8px; }
     .logo { font-size: 17px; gap: 5px; }
     .logo span { font-size: 19px; }
-    .current-bag { padding: 5px 10px 5px 7px; margin-left: 2px; }
+    .current-bag { padding: 5px 10px 5px 7px; margin-left: 0; max-width: 52vw; }
     .current-bag .cb-label { display: none; }
-    .current-bag .cb-name { font-size: 12px; }
+    .current-bag .cb-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .current-bag .mini-bag { width: 24px; height: 24px; font-size: 13px; }
     .current-bag .cb-arrow { font-size: 10px; }
     .btn-ghost { padding: 7px 10px; font-size: 12.5px; }
@@ -1017,10 +1023,11 @@ function updatePriceBar(){
   if (r100.optSum   > 0) tags.push("옵션 +" + r100.optSum.toLocaleString());
   var tagRow = tags.length ? '<div class="ygpb-tagrow">' + tags.join(" · ") + " 포함</div>" : "";
   bar.innerHTML =
-    '<div class="ygpb-tiers">'
+    '<div class="ygpb-head">💰 예상 제작 단가</div>'
+    + '<div class="ygpb-tiers">'
     + '<div class="ygpb-tier"><span class="ygpb-qlabel">20개 이상</span><span class="ygpb-per">' + wonFmt(r20.per)  + '</span></div>'
     + '<div class="ygpb-divider"></div>'
-    + '<div class="ygpb-tier"><span class="ygpb-qlabel">100개 이상</span><span class="ygpb-per">' + wonFmt(r100.per) + '</span></div>'
+    + '<div class="ygpb-tier ygpb-tier-main"><span class="ygpb-qlabel">100개 이상</span><span class="ygpb-per">' + wonFmt(r100.per) + '</span></div>'
     + '<div class="ygpb-divider"></div>'
     + '<div class="ygpb-tier"><span class="ygpb-qlabel">300개 이상</span><span class="ygpb-per">' + wonFmt(r300.per) + '</span></div>'
     + '</div>'
