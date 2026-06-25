@@ -748,9 +748,12 @@
     <div class="opt-section" data-panel="color">
       <div class="panel-title">가방 색상</div>
       <div class="panel-sub">원단과 끈 색을 바꿔보세요</div>
+      <div id="fabricSection">
+        <div class="section-label">원단 종류</div>
+        <div class="fabric-tabs" id="bagFabricTabs"></div>
+      </div>
       <div class="section-label">가방 색상</div>
       <div id="bagColorName" style="font-size:15px;font-weight:700;color:var(--blue);margin:-4px 0 10px;"></div>
-      <div class="fabric-tabs" id="bagFabricTabs"></div>
       <div class="color-grid" id="bagColorGrid"></div>
       <div id="webbingSection">
         <div class="section-label">손잡이 · 끈 색상</div>
@@ -1129,9 +1132,28 @@ const POLY_COLORS = [
 ];
 // 원단(질감) — Supabase texture 폴더. 가방 몸통에 곱셈 합성으로 입힘
 const TEX_BASE = "https://cnfgzjmgdwuaywqaufkt.supabase.co/storage/v1/object/public/ecobag-images/texture/";
+// 단일 직조 원단(리넨/주트/헤링본)용 공통 색상 팔레트 — 원단 위에 틴트로 색을 입힘
+// hex=null → 원단 본연 색(틴트 없음)
+const TEX_TINTS = [
+  { name:'원단색',       hex:null,      display:'#e3d8c4' },
+  { name:'아이보리',     hex:'#efe7d6', display:'#efe7d6' },
+  { name:'그레이',       hex:'#c9c8c4', display:'#c9c8c4' },
+  { name:'베이지',       hex:'#e0d2b8', display:'#e0d2b8' },
+  { name:'피치',         hex:'#f3cdb4', display:'#f3cdb4' },
+  { name:'핑크',         hex:'#f0c3cd', display:'#f0c3cd' },
+  { name:'그린',         hex:'#7d9070', display:'#7d9070' },
+  { name:'스카이',       hex:'#aac8da', display:'#aac8da' },
+  { name:'블루',         hex:'#5f82a8', display:'#5f82a8' },
+  { name:'네이비',       hex:'#33485f', display:'#33485f' },
+  { name:'브라운',       hex:'#7a5c43', display:'#7a5c43' },
+  { name:'블랙',         hex:'#2b2b2b', display:'#2b2b2b' },
+];
+// 원단 종류. 색상 칩 종류 두 가지:
+//  - file: 미리 색이 입혀진 실제 원단 사진(트윌/데님)
+//  - hex : fabric.weave 위에 입히는 틴트 색(리넨/주트/헤링본) — TEX_TINTS 공유
 const FABRICS = [
-  { id:'basic', name:'기본', kind:'tint', colors: BAG_COLORS },
-  { id:'twill', name:'트윌', kind:'texture', colors:[
+  { id:'basic', name:'기본', weave:null, colors: BAG_COLORS },
+  { id:'twill', name:'트윌', weave:null, colors:[
     { name:'화이트',       file:'twill_1white.png',     display:'#f3f1ec' },
     { name:'아이보리',     file:'twill_2ivory.png',     display:'#efe7d6' },
     { name:'라이트그레이', file:'twill_3lightgray.png', display:'#d7d5d0' },
@@ -1143,7 +1165,7 @@ const FABRICS = [
     { name:'블루',         file:'twill_9blue.png',      display:'#5f82a8' },
     { name:'블랙',         file:'twill_10black.png',    display:'#2b2b2b' },
   ]},
-  { id:'denim', name:'데님', kind:'texture', colors:[
+  { id:'denim', name:'데님', weave:null, colors:[
     { name:'블랙',   file:'twilldenim_black.png',    display:'#2b2b2b' },
     { name:'블루',   file:'twilldenim_blue.png',     display:'#5f82a8' },
     { name:'브라운', file:'twilldenim_brown.png',    display:'#7a5c43' },
@@ -1151,16 +1173,9 @@ const FABRICS = [
     { name:'그레이', file:'twilldenim_gray.png',     display:'#70737a' },
     // ※ 데님 색상이 더 있으면 여기에 같은 형식으로 한 줄씩 추가
   ]},
-  { id:'linen', name:'리넨', kind:'texture', colors:[
-    { name:'내추럴',  file:'linen.png',  display:'#e7ddcc' },
-    { name:'내추럴2', file:'linen2.png', display:'#e2d3bd' },
-  ]},
-  { id:'jute', name:'주트', kind:'texture', colors:[
-    { name:'주트', file:'jute.png', display:'#d3bb92' },
-  ]},
-  { id:'herringbone', name:'헤링본', kind:'texture', colors:[
-    { name:'헤링본', file:'herringbone.png', display:'#e8e3d8' },
-  ]},
+  { id:'linen',       name:'리넨',   weave:'linen.png',       colors: TEX_TINTS },
+  { id:'jute',        name:'주트',   weave:'jute.png',        colors: TEX_TINTS },
+  { id:'herringbone', name:'헤링본', weave:'herringbone.png', colors: TEX_TINTS },
 ];
 const WEBBING_COLORS = [
   { name:'없음', hex:null, display:'#e5e7eb' },
@@ -1430,10 +1445,7 @@ function drawBag() {
         bagBodyRect = img;
         bagScale = sc; bagOffX = left; bagOffY = top;
         // 폴리백은 PNG 교체 방식이라 질감/틴트 미적용
-        if (bagCategory(currentBag) !== 'poly') {
-          if (bagTexture) applyBagTexture(img, bagTexture, 0.92);
-          else if (bagBodyColor) applyColorTint(img, bagBodyColor, 0.85);
-        }
+        if (bagCategory(currentBag) !== 'poly') applyBodyLook(img);
       }
       if (part === 'handle') {
         if (webbingColor) applyColorTint(img, webbingColor, 0.85);
@@ -1476,27 +1488,32 @@ function loadTexImage(file, cb) {
     cb(im);
   }, { crossOrigin: 'anonymous' });
 }
-function applyBagTexture(img, file, strength) {
-  if (!img || !img.applyFilters || !file) return;
+// 전역 상태(bagTexture=직조/색상 이미지, bagBodyColor=틴트)를 몸통에 한 번에 적용
+//  - bagTexture 있으면 BlendImage(곱셈)로 직조/원단 이미지를 얹고
+//  - bagBodyColor 있으면 BlendColor(곱셈)로 색을 입힘 (둘 다 가능 = 직조 위에 틴트)
+function applyBodyLook(img) {
+  if (!img || !img.applyFilters) return;
   const BlendColor = fabric.Image.filters.BlendColor;
   const BlendImage = fabric.Image.filters.BlendImage;
-  loadTexImage(file, texImg => {
-    // 이 img가 아직 그 질감을 원하는지 확인 (비동기 로드 사이 가방/색이 바뀌었을 수 있음)
-    if (bagTexture !== file || bagBodyRect !== img) return;
-    img.filters = (img.filters || []).filter(f =>
+  const tex = bagTexture, tint = bagBodyColor;
+  const finish = (texImg) => {
+    if (bagBodyRect !== img) return;  // 비동기 로드 사이 가방이 바뀌면 취소
+    let fl = (img.filters || []).filter(f =>
       !(BlendColor && f instanceof BlendColor) && !(BlendImage && f instanceof BlendImage));
-    img.filters.push(new BlendImage({ image: texImg, mode: 'multiply', alpha: strength == null ? 1 : strength }));
+    if (texImg) fl.push(new BlendImage({ image: texImg, mode: 'multiply', alpha: 1 }));
+    if (tint)   fl.push(new BlendColor({ color: tint, mode: 'multiply', alpha: 0.85 }));
+    img.filters = fl;
     img.applyFilters();
     if (typeof canvas !== 'undefined') canvas.requestRenderAll();
-  });
+  };
+  if (tex) loadTexImage(tex, im => { if (bagTexture === tex) finish(im); });
+  else finish(null);
 }
-// 전역 상태(bagTexture/bagBodyColor)를 현재 몸통에 다시 입힘 — 가방 재생성/복원 후 사용
+// 가방 재생성/복원 후, 현재 전역 상태로 몸통 룩을 다시 입힘
 function reapplyBodyStyle() {
   if (!bagBodyRect) return;
   if (bagCategory(currentBag) === 'poly') return;  // 폴리백은 PNG 교체 방식
-  if (bagTexture) applyBagTexture(bagBodyRect, bagTexture, 0.92);
-  else if (bagBodyColor) applyColorTint(bagBodyRect, bagBodyColor, 0.85);
-  else clearColorTint(bagBodyRect);
+  applyBodyLook(bagBodyRect);
 }
 
 
@@ -2048,10 +2065,11 @@ function renderColorGridForBag() {
   }
 
   const tabs = document.getElementById('bagFabricTabs');
+  const fabSection = document.getElementById('fabricSection');
 
   if (isPoly) {
-    if (tabs) tabs.style.display = 'none';
-    bagTexture = null;
+    if (fabSection) fabSection.style.display = 'none';
+    bagTexture = null; bagFabricId = 'basic';
     POLY_COLORS.forEach((c) => {
       const el = document.createElement('button');
       el.className = 'color-sw' + (c.key === polyBodyKey ? ' active' : '');
@@ -2074,58 +2092,87 @@ function renderColorGridForBag() {
     const cur = POLY_COLORS.find(c => c.key === polyBodyKey) || POLY_COLORS[0];
     nameEl.textContent = '● ' + cur.name;
   } else {
-    // 원단 탭 (기본 / 트윌 / 데님 / 리넨 / 주트 / 헤링본)
+    // 원단 종류 탭 (기본 / 트윌 / 데님 / 리넨 / 주트 / 헤링본)
+    if (fabSection) fabSection.style.display = '';
     if (tabs) {
-      tabs.style.display = '';
       tabs.innerHTML = '';
       FABRICS.forEach(fab => {
         const t = document.createElement('button');
         t.className = 'fabric-tab' + (fab.id === bagFabricId ? ' active' : '');
         t.textContent = fab.name;
-        t.addEventListener('click', () => { bagFabricId = fab.id; renderColorGridForBag(); });
+        t.addEventListener('click', () => {
+          if (bagFabricId === fab.id) return;
+          bagFabricId = fab.id;
+          applyFabricColor(fab, fab.colors[0]);   // 새 원단의 첫 색으로 전환
+          renderColorGridForBag();
+          saveState();
+          showToast(fab.name + ' 원단으로 바꿨어요');
+          if (typeof updateOptionsForBag === 'function') updateOptionsForBag();
+          if (typeof updatePriceBar === 'function') updatePriceBar();
+        });
         tabs.appendChild(t);
       });
     }
+    // 선택한 원단의 색상 칩
     const fab = FABRICS.find(f => f.id === bagFabricId) || FABRICS[0];
-    const isTex = fab.kind === 'texture';
     fab.colors.forEach(c => {
       const el = document.createElement('button');
-      const active = isTex ? (bagTexture === c.file)
-                           : (bagTexture === null && bagBodyColor === c.hex);
-      el.className = 'color-sw' + (isTex ? ' tex' : '') + (active ? ' active' : '');
-      if (isTex) { el.style.backgroundImage = 'url("' + TEX_BASE + c.file + '")'; el.style.backgroundColor = c.display; }
-      else { el.style.background = c.display; }
+      el.className = 'color-sw' + (c.file ? ' tex' : '') + (isColorActive(fab, c) ? ' active' : '');
+      if (c.file) {   // 실제 원단 사진 썸네일 (사각형)
+        el.style.backgroundImage = 'url("' + TEX_BASE + c.file + '")';
+        el.style.backgroundColor = c.display || '#eee';
+      } else {        // 틴트 색상(리넨/주트/헤링본)·기본색 → 색을 원형 칩으로 표시
+        el.style.background = c.display || c.hex || '#eee';
+      }
       el.title = c.name;
       el.addEventListener('click', () => {
-        grid.querySelectorAll('.color-sw').forEach(x => x.classList.remove('active'));
-        el.classList.add('active');
-        if (isTex) {
-          bagTexture = c.file; bagBodyColor = null;
-          if (bagBodyRect) applyBagTexture(bagBodyRect, c.file, 0.92);
-          nameEl.textContent = '● ' + fab.name + ' ' + c.name;
-          showToast(fab.name + ' ' + c.name + ' 원단으로 바꿨어요');
-        } else {
-          bagTexture = null; bagBodyColor = c.hex;
-          if (bagBodyRect) { if (c.hex === null) clearColorTint(bagBodyRect); else applyColorTint(bagBodyRect, c.hex, 0.85); }
-          nameEl.textContent = '● ' + c.name;
-          showToast(c.name + ' 원단으로 바꿨어요');
-        }
+        applyFabricColor(fab, c);
+        renderColorGridForBag();
         saveState();
+        showToast(fab.name + ' ' + c.name + ' 으로 바꿨어요');
         if (typeof updateOptionsForBag === 'function') updateOptionsForBag();
         if (typeof updatePriceBar === 'function') updatePriceBar();
       });
       grid.appendChild(el);
     });
-    // 현재 선택 이름 표시
-    if (bagTexture) {
-      const f2 = FABRICS.find(f => f.colors.some(x => x.file === bagTexture));
-      const c2 = f2 && f2.colors.find(x => x.file === bagTexture);
-      if (f2 && c2) nameEl.textContent = '● ' + f2.name + ' ' + c2.name;
-    } else {
-      const c2 = BAG_COLORS.find(x => x.hex === bagBodyColor) || BAG_COLORS[0];
-      nameEl.textContent = '● ' + c2.name;
-    }
+    nameEl.textContent = '● ' + currentLookName();
   }
+}
+
+// 원단+색 선택을 전역 상태에 반영하고 몸통에 적용
+function applyFabricColor(fab, c) {
+  bagFabricId = fab.id;
+  if (fab.weave) {            // 리넨/주트/헤링본: 직조 위에 틴트
+    bagTexture = fab.weave;
+    bagBodyColor = (c && c.hex != null) ? c.hex : null;
+  } else if (c && c.file) {   // 트윌/데님: 미리 색 입혀진 원단 사진
+    bagTexture = c.file;
+    bagBodyColor = null;
+  } else {                    // 기본: 아이보리/블랙/네이비 틴트
+    bagTexture = null;
+    bagBodyColor = c ? c.hex : null;
+  }
+  if (bagBodyRect) applyBodyLook(bagBodyRect);
+}
+// 칩이 현재 선택 상태인지
+function isColorActive(fab, c) {
+  if (fab.weave) return bagTexture === fab.weave && bagBodyColor === ((c && c.hex != null) ? c.hex : null);
+  if (c && c.file) return bagTexture === c.file;
+  return bagTexture === null && bagBodyColor === (c ? c.hex : null);
+}
+// 현재 룩의 표시 이름
+function currentLookName() {
+  const fab = FABRICS.find(f => f.id === bagFabricId) || FABRICS[0];
+  if (fab.id === 'basic') {
+    const c = fab.colors.find(x => x.hex === bagBodyColor) || fab.colors[0];
+    return c.name;
+  }
+  if (fab.weave) {
+    const c = fab.colors.find(x => ((x.hex != null) ? x.hex : null) === bagBodyColor) || fab.colors[0];
+    return fab.name + ' ' + c.name;
+  }
+  const c = fab.colors.find(x => x.file === bagTexture) || fab.colors[0];
+  return fab.name + ' ' + c.name;
 }
 renderColorGridForBag();
 
@@ -2990,9 +3037,10 @@ function selectBag(bag, silent) {
     });
   }
   document.querySelectorAll('.opt-pill').forEach(p => p.classList.remove('active'));
-  // 가방 바꾸면 원단(질감) 선택도 기본으로 초기화
+  // 가방 바꾸면 원단(질감)·색 선택을 기본(아이보리)으로 초기화
   bagTexture = null;
   bagFabricId = 'basic';
+  bagBodyColor = null;
   // 폴리백이면 몸통 기본 블랙으로 리셋 + 끈 색 원본
   if (bagCategory(bag) === 'poly' && POLY_BODY[bag.id]) {
     polyBodyKey = 'black';
@@ -3111,13 +3159,7 @@ function bagColorName() {
     const pc = POLY_COLORS.find(x => x.key === polyBodyKey);
     return pc ? pc.name : '블랙';
   }
-  if (bagTexture) {
-    const f = FABRICS.find(x => x.colors.some(y => y.file === bagTexture));
-    const c2 = f && f.colors.find(y => y.file === bagTexture);
-    if (f && c2) return f.name + ' ' + c2.name;
-  }
-  const c = BAG_COLORS.find(x => x.hex === bagBodyColor);
-  return c ? c.name : '아이보리';
+  return (typeof currentLookName === 'function') ? currentLookName() : '아이보리';
 }
 function webbingColorName() {
   const c = WEBBING_COLORS.find(x => x.hex === webbingColor);
