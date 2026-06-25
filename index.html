@@ -1577,7 +1577,10 @@ function extFromMime(mime) {
 
 // 캔버스에 이미지(dataURL)를 디자인 객체로 추가. uploadId가 있으면 고객 업로드로 표시
 function addUploadedImage(dataURL, msg, uploadId) {
-  fabric.Image.fromURL(dataURL, (img) => {
+  // 편집용 사본은 최대 2000px로 다운스케일 → 되돌리기 히스토리 메모리 절약.
+  // (고객 원본 풀해상도는 originalUploads에 그대로 보관돼 주문 메일에 첨부됨)
+  const MAXU = 2000;
+  function place(img) {
     if (!img) { showToast('이미지를 불러오지 못했어요'); return; }
     const scale = Math.min(220 / img.width, 220 / img.height, 1);
     const ctr = bagBodyCenter();
@@ -1589,6 +1592,20 @@ function addUploadedImage(dataURL, msg, uploadId) {
     canvas.requestRenderAll();
     saveState();
     showToast(msg || '이미지를 올렸어요');
+  }
+  fabric.Image.fromURL(dataURL, (img) => {
+    if (!img) { showToast('이미지를 불러오지 못했어요'); return; }
+    const el = img.getElement();
+    const ow = el.naturalWidth || el.width, oh = el.naturalHeight || el.height;
+    if (Math.max(ow, oh) > MAXU) {
+      const s = MAXU / Math.max(ow, oh);
+      const c = document.createElement('canvas');
+      c.width = Math.round(ow * s); c.height = Math.round(oh * s);
+      c.getContext('2d').drawImage(el, 0, 0, c.width, c.height);
+      try { fabric.Image.fromURL(c.toDataURL('image/png'), place); return; }
+      catch (e) { /* tainted 등 예외 → 원본 사용 */ }
+    }
+    place(img);
   });
 }
 
@@ -2777,6 +2794,12 @@ function selectBag(bag, silent) {
     webbingColor = null;
   }
   renderColorGridForBag();        // 폴리=블랙/네이비/그린, 그 외=아이보리/블랙/네이비
+  // 손잡이 색상 스와치 UI를 현재 webbingColor에 맞춰 동기화 (폴리 전환 시 null로 리셋된 것 반영)
+  document.querySelectorAll('#webbingColorGrid .color-sw').forEach((sw, idx) => {
+    sw.classList.toggle('active', WEBBING_COLORS[idx] && WEBBING_COLORS[idx].hex === webbingColor);
+  });
+  var _wn = document.getElementById('webbingColorName');
+  if (_wn) _wn.textContent = '● ' + webbingColorName();
   updateOptionsForBag();          // 가방별 옵션 표시/잠금 (activeOptions 세팅)
   drawBag();                      // finalize에서 activeOptions(잠금옵션 포함) 그림
   if (typeof renderOptionPreviews === 'function') renderOptionPreviews();
@@ -2833,6 +2856,31 @@ function exportDesignFiles() {
   return { png, svg, full };
 }
 
+/* 인쇄용 파일을 면별로 추출 — 단면이면 [현재화면], 양면이면 [앞면, 뒷면].
+   exportDesignFiles는 '현재 캔버스'만 보므로, 양면일 땐 면을 전환하며 각각 추출해야
+   뒷면 인쇄용 PNG/SVG가 누락되지 않는다. (안주머니인쇄는 앞뒤 공통 → 항상 캔버스에 유지) */
+function exportDesignFilesAllSides() {
+  if (!twoSided) return [{ label:'', ...exportDesignFiles() }];
+  const saved = currentSide;
+  const pick = () => canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o));
+  sideDesigns[saved] = pick();
+  const out = [];
+  ['front','back'].forEach(side => {
+    pick().forEach(o => canvas.remove(o));
+    sideDesigns[side].forEach(o => canvas.add(o));
+    canvas.discardActiveObject();
+    canvas.renderAll();
+    canvas.getObjects().filter(o => o.isUserObject).forEach(o => o.setCoords());
+    out.push({ label: side === 'front' ? '앞면' : '뒷면', ...exportDesignFiles() });
+  });
+  // 원래 보던 면 복원
+  pick().forEach(o => canvas.remove(o));
+  sideDesigns[saved].forEach(o => canvas.add(o));
+  currentSide = saved;
+  canvas.renderAll();
+  return out;
+}
+
 function makeOrderNum(name) {
   const d = new Date();
   const ymd = String(d.getFullYear()).slice(2)
@@ -2852,6 +2900,11 @@ function makeOrderNum(name) {
 }
 
 function bagColorName() {
+  // 폴리백은 PNG 교체 방식이라 bagBodyColor가 항상 null → polyBodyKey로 실제 색 이름 반환
+  if (bagCategory(currentBag) === 'poly') {
+    const pc = POLY_COLORS.find(x => x.key === polyBodyKey);
+    return pc ? pc.name : '블랙';
+  }
   const c = BAG_COLORS.find(x => x.hex === bagBodyColor);
   return c ? c.name : '아이보리';
 }
@@ -2887,20 +2940,47 @@ function measurePrintObjs() {
   return { w:(maxX-minX)*cpp, h:(maxY-minY)*cpp };
 }
 
-/* 인쇄 크기 — 단면이면 [앞면], 양면이면 [앞면, 뒷면] */
+/* 인쇄 크기 — 단면이면 [앞면], 양면이면 [앞면, 뒷면].
+   안주머니인쇄는 앞뒤 공통이라 면 전환 대상에서 제외(캔버스에 그대로 유지) → captureAllSides와 동일 기준 */
 function calcSidePrintSizes() {
   if (!twoSided) return [{ label:'앞면 인쇄', size: measurePrintObjs() }];
   const saved = currentSide;
-  sideDesigns[saved] = canvas.getObjects().filter(o => o.isUserObject);
+  const pick = () => canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o));
+  sideDesigns[saved] = pick();
   const out = [];
   ['front','back'].forEach(side => {
-    canvas.getObjects().filter(o => o.isUserObject).forEach(o => canvas.remove(o));
+    pick().forEach(o => canvas.remove(o));
     sideDesigns[side].forEach(o => canvas.add(o));
     canvas.renderAll();
     canvas.getObjects().filter(o => o.isUserObject).forEach(o => o.setCoords());
     out.push({ label: side==='front' ? '앞면 인쇄' : '뒷면 인쇄', size: measurePrintObjs() });
   });
-  canvas.getObjects().filter(o => o.isUserObject).forEach(o => canvas.remove(o));
+  pick().forEach(o => canvas.remove(o));
+  sideDesigns[saved].forEach(o => canvas.add(o));
+  currentSide = saved;
+  canvas.renderAll();
+  return out;
+}
+
+/* 작업지시서용 면별 인쇄 위치·크기 — 단면이면 [앞면], 양면이면 [앞면, 뒷면].
+   calcPrintSize/calcPrintPosition은 '앞면:' 접두사를 붙이므로 strip으로 떼고 면 라벨을 따로 단다. */
+function calcSidePrintInfo() {
+  const strip = s => (s || '').replace(/^[가-힣]+면:\s*/, '');
+  if (!twoSided) {
+    return [{ label:'앞면', size: strip(calcPrintSize()), pos: strip(calcPrintPosition() || '-') }];
+  }
+  const saved = currentSide;
+  const pick = () => canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o));
+  sideDesigns[saved] = pick();
+  const out = [];
+  ['front','back'].forEach(side => {
+    pick().forEach(o => canvas.remove(o));
+    sideDesigns[side].forEach(o => canvas.add(o));
+    canvas.renderAll();
+    canvas.getObjects().filter(o => o.isUserObject).forEach(o => o.setCoords());
+    out.push({ label: side==='front' ? '앞면' : '뒷면', size: strip(calcPrintSize()), pos: strip(calcPrintPosition() || '-') });
+  });
+  pick().forEach(o => canvas.remove(o));
   sideDesigns[saved].forEach(o => canvas.add(o));
   currentSide = saved;
   canvas.renderAll();
@@ -2938,6 +3018,11 @@ function openOrderModal() {
   document.getElementById('ordErrors').textContent = '';
   document.getElementById('ordPrintWarn').style.display = checkPrintBounds() ? 'block' : 'none';
   renderOrdQuote();
+  // 재오픈 시 상태 초기화 — 이전 주문의 시안번호 박스/완료버튼 흔적 제거
+  var _numBox = document.querySelector('.order-num-box');
+  if (_numBox) _numBox.style.display = 'none';
+  var _sbtn = document.getElementById('orderSubmit');
+  if (_sbtn) { _sbtn.disabled = false; _sbtn.textContent = '주문 접수하기'; }
   document.getElementById('orderModal').classList.add('show');
 }
 
@@ -3098,8 +3183,10 @@ async function generateWorkOrderExcel(orderData) {
   const sizeText = bag.size.replace('cm','').replace(/×/g,'*');
   const strapSize = STRAP_SIZE[bag.id] || '';     // 가방 고유값 (크로스끈이 덮어쓰지 않음)
   const packType  = opp ? 'OPP비닐포장' : '벌크';
-  const printPos  = calcPrintPosition() || '';
-  const printSize = calcPrintSize();
+  // 인쇄 위치·크기 — 양면이면 앞/뒤 각각 줄바꿈으로 표기 (현재 면만 찍히던 문제 수정)
+  const _sideInfo = calcSidePrintInfo();
+  const printSize = _sideInfo.map(s => `${s.label}: ${s.size}`).join('\n');
+  const printPos  = _sideInfo.map(s => `${s.label}: ${s.pos}`).join('\n');
   const optList   = [...activeOptions].filter(o => o !== 'OPP개별포장');
 
   const wb = new ExcelJS.Workbook();
@@ -3161,9 +3248,10 @@ async function generateWorkOrderExcel(orderData) {
   L('A7','사이즈');     V('B7', sizeText);           L('C7','인쇄방법');    V('D7','전사');
   L('A8','원단컬러');   V('B8', bagColorName());     L('C8','인쇄컬러');    V('D8','');
   L('A9','손잡이컬러'); V('B9', webbingColorName()); L('C9','손잡이사이즈'); V('D9', strapSize, {red:true});
-  L('A10','인쇄사이즈'); ws.mergeCells('B10:D10'); V('B10', printSize, {blue:true, bold:true});
+  L('A10','인쇄사이즈'); ws.mergeCells('B10:D10'); V('B10', printSize, {blue:true, bold:true, wrap:true});
   L('A11','인쇄위치');   ws.mergeCells('B11:D11'); V('B11', printPos, {blue:true, bold:true, wrap:true});
   for (let r=2; r<=11; r++) ws.getRow(r).height = 22;
+  if (twoSided) { ws.getRow(10).height = 34; ws.getRow(11).height = 44; }  // 앞/뒤 2줄 표기 공간
 
   // ── 옵션 사항 (가로 나열, 한 줄에 4개) ──
   const secRow = 12;
@@ -3294,6 +3382,7 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
 
   const btn = document.getElementById('orderSubmit');
   btn.disabled = true; btn.textContent = '전송 중…';
+  let submitOk = false;
 
   const orderNum = makeOrderNum(name);
   const specsRows = _lastOrderSpecs.map(s =>
@@ -3321,11 +3410,14 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
     const orderDateText = document.getElementById('orderDate').textContent;
     const workOrder = await generateWorkOrderExcel({ name, qty, opp, orderNum, orderDate: orderDateText, request });
 
-    // 인쇄용 파일 추출 → 첨부
-    const files = exportDesignFiles();
+    // 인쇄용 파일 추출 → 첨부 (양면이면 앞/뒤 각각 — 뒷면 파일 누락 방지)
+    const fileSets = exportDesignFilesAllSides();
     const attachments = [];
-    if (files.png) attachments.push({ filename: `${orderNum}_인쇄용.png`, content: files.png.split(',')[1] });
-    if (files.svg) attachments.push({ filename: `${orderNum}_인쇄용.svg`, content: btoa(unescape(encodeURIComponent(files.svg))) });
+    fileSets.forEach(fs => {
+      const suffix = fs.label ? `_${fs.label}` : '';
+      if (fs.png) attachments.push({ filename: `${orderNum}_인쇄용${suffix}.png`, content: fs.png.split(',')[1] });
+      if (fs.svg) attachments.push({ filename: `${orderNum}_인쇄용${suffix}.svg`, content: btoa(unescape(encodeURIComponent(fs.svg))) });
+    });
 
     // 고객이 처음 올린 원본 파일 첨부 (AI 배경제거가 어긋나도 직원이 원본으로 재작업)
     const seenUploads = new Set();
@@ -3348,6 +3440,13 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
     // 작업지시서 첨부 (맨 위로 보이게 먼저)
     attachments.unshift({ filename: workOrder.fileName, content: workOrder.base64 });
 
+    // 첨부 용량 사전 점검 — Resend 한도(약 40MB) 초과로 인한 전송 실패를 막고 명확히 안내
+    const approxMB = attachments.reduce((n, a) => n + (a.content ? a.content.length : 0), 0) * 0.75 / (1024 * 1024);
+    if (approxMB > 38) {
+      errBox.innerHTML = '⚠️ 첨부 용량이 너무 커요 (약 ' + approxMB.toFixed(0) + 'MB).<br>업로드한 이미지의 용량이나 개수를 줄여 다시 시도해 주세요.';
+      return;
+    }
+
     const res = await fetch('https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3360,15 +3459,24 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
     });
     const data = await res.json();
     if (res.ok && !data.error) {
+      submitOk = true;
       showToast('주문이 접수되었어요! 🎉');
-      document.getElementById('orderModal').classList.remove('show');
+      originalUploads.clear();   // 전송 완료 → 보관하던 원본 캐시 비움 (메모리 누적 방지)
+      // 시안 번호를 화면에 노출 (복사 가능)
+      document.getElementById('orderNum').textContent = orderNum;
+      var numBox = document.querySelector('.order-num-box');
+      if (numBox) numBox.style.display = 'block';
+      var oc = document.querySelector('.order-card');
+      if (oc) oc.scrollTop = 0;
+      btn.textContent = '주문 접수 완료 ✓';
+      btn.disabled = true;
     } else {
       errBox.innerHTML = '메일 전송 실패: ' + (data.error || data.message || JSON.stringify(data));
     }
   } catch (e) {
     errBox.innerHTML = '전송 오류: ' + e.message;
   } finally {
-    btn.disabled = false; btn.textContent = '주문 접수하기';
+    if (!submitOk) { btn.disabled = false; btn.textContent = '주문 접수하기'; }
   }
 });
 
