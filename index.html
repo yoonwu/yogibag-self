@@ -306,7 +306,8 @@
     text-shadow: 0 1px 2px rgba(0,0,0,.5);
   }
   /* 원단(질감) 선택 */
-  .fabric-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 2px 0 13px; }
+  .fabric-tabs { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; margin: 2px 0 13px; }
+  .fabric-row { display: flex; flex-wrap: wrap; gap: 7px; }
   .fabric-tab {
     padding: 6px 13px; border: 1.5px solid var(--gray-5); border-radius: 999px;
     background: #fff; font-size: 13px; font-weight: 600; color: var(--gray-1);
@@ -314,6 +315,15 @@
   }
   .fabric-tab:hover { border-color: var(--blue); color: var(--blue); }
   .fabric-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  /* 상담문의 원단(트윌/데님/리넨/주트/헤링본) */
+  .fabric-tab.consult { border-style: dashed; }
+  .fabric-tab.consult.active { background: #f59e0b; border-color: #f59e0b; border-style: solid; color: #fff; }
+  .fabric-consult { display: flex; align-items: center; gap: 7px; margin: 1px 0 -2px; }
+  .fabric-consult-tag {
+    font-size: 11px; font-weight: 700; color: #fff; background: #f59e0b;
+    border-radius: 999px; padding: 2px 9px; flex-shrink: 0;
+  }
+  .fabric-consult-desc { font-size: 11.5px; color: var(--gray-2); }
   .color-sw.tex { border-radius: 12px; background-size: cover; background-position: center; }
 
   /* order confirm modal */
@@ -2092,13 +2102,14 @@ function renderColorGridForBag() {
     const cur = POLY_COLORS.find(c => c.key === polyBodyKey) || POLY_COLORS[0];
     nameEl.textContent = '● ' + cur.name;
   } else {
-    // 원단 종류 탭 (기본 / 트윌 / 데님 / 리넨 / 주트 / 헤링본)
+    // 원단 종류 탭 — 1열: 기본(단가 확정) / 2열: 나머지(상담문의)
     if (fabSection) fabSection.style.display = '';
     if (tabs) {
       tabs.innerHTML = '';
-      FABRICS.forEach(fab => {
+      const makeFabricTab = (fab) => {
         const t = document.createElement('button');
-        t.className = 'fabric-tab' + (fab.id === bagFabricId ? ' active' : '');
+        const isConsult = fab.id !== 'basic';
+        t.className = 'fabric-tab' + (fab.id === bagFabricId ? ' active' : '') + (isConsult ? ' consult' : '');
         t.textContent = fab.name;
         t.addEventListener('click', () => {
           if (bagFabricId === fab.id) return;
@@ -2106,12 +2117,29 @@ function renderColorGridForBag() {
           applyFabricColor(fab, fab.colors[0]);   // 새 원단의 첫 색으로 전환
           renderColorGridForBag();
           saveState();
-          showToast(fab.name + ' 원단으로 바꿨어요');
+          showToast(isConsult ? (fab.name + ' 원단은 상담 후 주문할 수 있어요') : '기본 원단으로 바꿨어요');
           if (typeof updateOptionsForBag === 'function') updateOptionsForBag();
           if (typeof updatePriceBar === 'function') updatePriceBar();
         });
-        tabs.appendChild(t);
-      });
+        return t;
+      };
+      // 1열: 기본
+      const row1 = document.createElement('div');
+      row1.className = 'fabric-row';
+      const basic = FABRICS.find(f => f.id === 'basic');
+      if (basic) row1.appendChild(makeFabricTab(basic));
+      tabs.appendChild(row1);
+      // 상담문의 라벨
+      const consultLabel = document.createElement('div');
+      consultLabel.className = 'fabric-consult';
+      consultLabel.innerHTML = '<span class="fabric-consult-tag">상담문의</span>'
+        + '<span class="fabric-consult-desc">아래 원단은 상담 후 선택할 수 있어요</span>';
+      tabs.appendChild(consultLabel);
+      // 2열: 나머지 원단
+      const row2 = document.createElement('div');
+      row2.className = 'fabric-row';
+      FABRICS.filter(f => f.id !== 'basic').forEach(f => row2.appendChild(makeFabricTab(f)));
+      tabs.appendChild(row2);
     }
     // 선택한 원단의 색상 칩
     const fab = FABRICS.find(f => f.id === bagFabricId) || FABRICS[0];
