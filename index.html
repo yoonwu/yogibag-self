@@ -956,16 +956,23 @@ function colorSurcharge(type, colorName, webbingName, qty){
   }
   return sur;
 }
-// DTF 필름 폭(58cm) 기준 인쇄비: 짧은변 배치 → 3장이상=0, 2장=+700, 1장=+1000
+// 인쇄 크기 등급별 추가단가: 기본(18×18 이하)=0, 중형(18 초과)=+700, 대형(24 초과)=+1000
+const PRINT_SIZE_FEE = { medium: 700, large: 1000 };
+/* 인쇄 크기 등급 판정 — 긴 변(여백 제외한 실제 그림) 기준.
+   18×18 박스를 넘으면 중형, 24×24 박스를 넘으면 대형. (이전 필름폭 공식은
+   25cm 도안도 중형으로만 잡혀 대형 단가가 적용되지 않던 문제를 수정) */
+function printSizeTier(sizeObj){
+  if (!sizeObj) return null;
+  const longer = Math.max(sizeObj.w || 0, sizeObj.h || 0);
+  if (longer > 24.1) return 'large';   // 24×24 초과 = 대형인쇄
+  if (longer > 18.1) return 'medium';  // 18×18 초과 = 중형인쇄
+  return null;
+}
+function printSizeTierLabel(t){ return t === 'large' ? '대형인쇄' : t === 'medium' ? '중형인쇄' : null; }
 function printSurchargeBySize(type, sizeObj){
   if (!sizeObj || type === "pouch") return 0;
-  const filmW = 58;
-  const shorter = Math.min(sizeObj.w || 0, sizeObj.h || 0);
-  if (shorter <= 0) return 0;
-  const perRow = filmW / shorter;
-  if (perRow >= 3) return 0;
-  if (perRow >= 2) return 700;
-  return 1000;
+  const t = printSizeTier(sizeObj);
+  return t ? (PRINT_SIZE_FEE[t] || 0) : 0;
 }
 const OPTION_PRICE = {
   "안주머니":600,"안주머니인쇄":600,"똑딱이":550,"자석":650,
@@ -1034,7 +1041,11 @@ function updatePriceBar(){
   if (!r20) { bar.style.display = "none"; return; }
   bar.style.display = "block";
   var tags = [];
-  if (r100.printSur > 0) tags.push("인쇄크기 +" + r100.printSur.toLocaleString());
+  if (r100.printSur > 0) {
+    var _tier = (typeof printSizeTier === 'function' && sizes[0]) ? printSizeTier(sizes[0]) : null;
+    var _tname = (typeof printSizeTierLabel === 'function' && _tier) ? printSizeTierLabel(_tier) : '인쇄크기';
+    tags.push(_tname + " +" + r100.printSur.toLocaleString());
+  }
   if (r100.optSum   > 0) tags.push("옵션 +" + r100.optSum.toLocaleString());
   var tagRow = tags.length ? '<div class="ygpb-tagrow">' + tags.join(" · ") + " 포함</div>" : "";
   bar.innerHTML =
@@ -1046,6 +1057,7 @@ function updatePriceBar(){
     + '<div class="ygpb-tier"><span class="ygpb-qlabel">300개 이상</span><span class="ygpb-per">' + wonFmt(r300.per) + '</span></div>'
     + '</div>'
     + '<div class="ygpb-foot"><span class="ygpb-unit">주문 수량별 개당 단가 (부가세 포함)</span>' + tagRow + '</div>';
+  if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
 }
 
 /* URL 파라미터로 시작 가방 결정: ?bag=daily 직접 지정 또는 ?product_no=397 */
@@ -1306,6 +1318,7 @@ function checkPrintBounds() {
         b.top + b.height > pa.top + pa.height + tol) out = true;
   });
   if (warn) warn.style.display = out ? 'block' : 'none';
+  if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
   return out;
 }
 
@@ -1448,8 +1461,9 @@ function updateDesignSizeHint(obj) {
   if (!obj || !obj.isUserObject) { updatePrintSizeHint(); return; }
   const cpp = getCmPerPx();
   if (!cpp) { updatePrintSizeHint(); return; }
-  const wcm = obj.getScaledWidth() * cpp;
-  const hcm = obj.getScaledHeight() * cpp;
+  const r = opaqueBoundingRect(obj);   // 투명 여백 제외 → 실제 인쇄되는 크기
+  const wcm = r.width * cpp;
+  const hcm = r.height * cpp;
   hint.textContent = `🖼️ 선택한 디자인 인쇄 크기: ${wcm.toFixed(1)} × ${hcm.toFixed(1)} cm`;
 }
 
@@ -1487,6 +1501,7 @@ function restore(json) {
     canvas.renderAll();
     isRestoring = false;
     updateUndoRedo();
+    if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
   });
 }
 function rebindBagRefs() {
@@ -1742,7 +1757,8 @@ function addDesignImage(url) {
     canvas.setActiveObject(img);
     canvas.requestRenderAll();
     saveState();
-    showToast('도안을 추가했어요 (18×18cm)');
+    showToast('도안을 추가했어요 (최대 18cm)');
+    if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
   });
 }
 
@@ -2046,6 +2062,7 @@ document.getElementById('dupBtn').addEventListener('click', () => {
 document.getElementById('deleteBtn').addEventListener('click', () => {
   const objs = canvas.getActiveObjects(); if(!objs.length){needSelect();return;}
   objs.forEach(o => canvas.remove(o)); canvas.discardActiveObject(); canvas.requestRenderAll(); saveState();
+  if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
 });
 function needSelect(){ showToast('먼저 이미지나 글자를 선택해주세요'); }
 
@@ -2056,7 +2073,7 @@ document.addEventListener('keydown', (e) => {
   else if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey && e.key==='z'))) { e.preventDefault(); redo(); }
   else if (e.key==='Delete' || e.key==='Backspace') {
     const objs = canvas.getActiveObjects();
-    if (objs.length) { e.preventDefault(); objs.forEach(o=>canvas.remove(o)); canvas.discardActiveObject(); canvas.requestRenderAll(); saveState(); }
+    if (objs.length) { e.preventDefault(); objs.forEach(o=>canvas.remove(o)); canvas.discardActiveObject(); canvas.requestRenderAll(); saveState(); if (typeof updatePrintSizePill === 'function') updatePrintSizePill(); }
   }
 });
 
@@ -2446,6 +2463,78 @@ function getOpaqueBBox(imgEl, cacheKey) {
   return box;
 }
 
+/* 이미지에서 '실제 그림' 영역(투명 여백 제외) 박스를 원본 px로 반환.
+   getOpaqueBBox와 달리 흰색은 살리고 '투명(알파)' 여백만 잘라낸다 →
+   추천 도안처럼 위아래 투명 공백이 큰 PNG도 그림 부분만 정확히 잰다. */
+const _contentBoxCache = {};
+function getContentBBox(imgEl, cacheKey) {
+  if (cacheKey && _contentBoxCache[cacheKey]) return _contentBoxCache[cacheKey];
+  const w = imgEl.naturalWidth || imgEl.width;
+  const h = imgEl.naturalHeight || imgEl.height;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const cx = c.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(imgEl, 0, 0, w, h);
+  let data;
+  try { data = cx.getImageData(0, 0, w, h).data; }
+  catch (e) { return { x: 0, y: 0, w, h }; } // 읽기 실패(taint 등) 시 전체 사용
+  const ALPHA = 8;
+  let minX = w, minY = h, maxX = -1, maxY = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > ALPHA) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  const box = (maxX < 0)
+    ? { x: 0, y: 0, w, h }
+    : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+  if (cacheKey) _contentBoxCache[cacheKey] = box;
+  return box;
+}
+
+/* 객체의 '실제 그림' 영역 AABB를 캔버스 좌표로 반환.
+   이미지면 알파 기준 콘텐츠 박스를 객체 변환행렬로 투영(회전·반전·확대 모두 반영),
+   그 외(텍스트·도형)는 기존 bounding rect 그대로. 투명 여백을 인쇄 크기에서 제외하는 핵심. */
+function opaqueBoundingRect(o) {
+  try {
+    if (o && o.type === 'image' && o.getElement) {
+      const el = o.getElement();
+      const nw = el && (el.naturalWidth || el.width);
+      const nh = el && (el.naturalHeight || el.height);
+      if (el && nw && nh) {
+        if (!o._contentBox) o._contentBox = getContentBBox(el);
+        const cb = o._contentBox;
+        // 콘텐츠가 거의 전체면 보정 불필요(여백 5% 미만)
+        if (cb.w >= nw * 0.95 && cb.h >= nh * 0.95) {
+          const b = o.getBoundingRect();
+          return { left: b.left, top: b.top, width: b.width, height: b.height };
+        }
+        const m = o.calcTransformMatrix();
+        const W = o.width, H = o.height;
+        const corners = [
+          { x: cb.x - W / 2,          y: cb.y - H / 2 },
+          { x: cb.x + cb.w - W / 2,   y: cb.y - H / 2 },
+          { x: cb.x + cb.w - W / 2,   y: cb.y + cb.h - H / 2 },
+          { x: cb.x - W / 2,          y: cb.y + cb.h - H / 2 },
+        ].map(p => fabric.util.transformPoint(p, m));
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        corners.forEach(p => {
+          minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+          maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+        });
+        return { left: minX, top: minY, width: maxX - minX, height: maxY - minY };
+      }
+    }
+  } catch (e) { /* 폴백 */ }
+  const b = o.getBoundingRect();
+  return { left: b.left, top: b.top, width: b.width, height: b.height };
+}
+
 /* 크로스끈 부착 기준점 계산:
    - aL/aR  : '다리가 가장 넓게 벌어진 행'의 좌/우 끝 = 실제 가방에 붙는 폭 (V자 끈의 어깨선)
    - legBottom : 다리 폭이 최대폭의 절반 이상 유지되는 가장 아래 행 = 다리 바닥
@@ -2607,6 +2696,34 @@ function renderOptionChips() {
     chip.innerHTML = `<span style="display:inline-flex;color:#3182f6">${ico}</span> ${opt}`;
     bar.appendChild(chip);
   });
+}
+
+/* 현재 인쇄 크기 등급(중형/대형)을 왼쪽 '추가 옵션' 영역에 자동 pill로 노출.
+   디자인을 키우면 '중형인쇄/대형인쇄'가 등장하고, 다시 줄이면 사라진다(가격 자동 반영 안내). */
+function updatePrintSizePill() {
+  const wrap = document.getElementById('optionToggles');
+  if (!wrap) return;
+  let pill = document.getElementById('printSizePill');
+  let tier = null;
+  try {
+    const s = (typeof measurePrintObjs === 'function') ? measurePrintObjs() : null;
+    tier = (typeof printSizeTier === 'function') ? printSizeTier(s) : null;
+  } catch (e) {}
+  if (!tier) { if (pill) pill.remove(); return; }
+  const label = printSizeTierLabel(tier);
+  const fee = (PRINT_SIZE_FEE[tier] || 0);
+  if (!pill) {
+    pill = document.createElement('button');
+    pill.id = 'printSizePill';
+    pill.className = 'opt-pill active';
+    pill.style.cursor = 'default';
+    pill.style.background = 'linear-gradient(135deg,#7c3aed,#3182f6)';
+    pill.style.borderColor = 'transparent';
+    pill.addEventListener('click', () => showToast('인쇄 크기에 따라 자동 적용되는 단가예요'));
+    wrap.insertBefore(pill, wrap.firstChild);   // 추가 옵션 맨 위에 노출
+  }
+  pill.innerHTML = `<span class="op-name">${label}<span class="op-price">+${fee.toLocaleString()}</span></span>`
+    + `<span class="op-use">인쇄 ${tier === 'large' ? '24' : '18'}cm 초과 · 자동 적용</span>`;
 }
 
 /* =========================================================
@@ -2933,7 +3050,7 @@ function measurePrintObjs() {
   if (!objs.length) return null;
   let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
   objs.forEach(o => {
-    const b = o.getBoundingRect();
+    const b = opaqueBoundingRect(o);   // 투명 여백 제외한 실제 그림 영역
     minX=Math.min(minX,b.left); minY=Math.min(minY,b.top);
     maxX=Math.max(maxX,b.left+b.width); maxY=Math.max(maxY,b.top+b.height);
   });
@@ -3096,10 +3213,10 @@ function calcPrintPosition() {
   const bodyWidthCm  = bBox.w * bsc * cpp;
   const bodyHeightCm = bBox.h * bsc * cpp;
 
-  // 전체 사용자 오브젝트의 바운딩 박스
+  // 전체 사용자 오브젝트의 바운딩 박스 (투명 여백 제외)
   let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
   userObjs.forEach(o => {
-    const b = o.getBoundingRect();
+    const b = opaqueBoundingRect(o);
     minX = Math.min(minX, b.left); minY = Math.min(minY, b.top);
     maxX = Math.max(maxX, b.left+b.width); maxY = Math.max(maxY, b.top+b.height);
   });
@@ -3132,7 +3249,7 @@ function calcPrintSize() {
   if (!userObjs.length || !cpp) return '디자인 없음';
   let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
   userObjs.forEach(o => {
-    const b = o.getBoundingRect();
+    const b = opaqueBoundingRect(o);   // 투명 여백 제외
     minX = Math.min(minX, b.left); minY = Math.min(minY, b.top);
     maxX = Math.max(maxX, b.left+b.width); maxY = Math.max(maxY, b.top+b.height);
   });
@@ -3305,6 +3422,16 @@ async function generateWorkOrderExcel(orderData) {
   // ── 시안 미리보기 (맨 아래, 가로 넓게 — 양면 시 가방 여러 개 대비) ──
   ws.mergeCells(`A${row}:D${row}`); SEC(`A${row}`, '시안 미리보기 (가방 + 인쇄)');
   ws.getRow(row).height = 22; row++;
+  // 인쇄 위치·크기를 가방 시안 바로 위(옆)에 크게 표기 → 작업자가 시안 보며 바로 확인
+  ws.mergeCells(`A${row}:D${row}`);
+  const pinfo = ws.getCell(`A${row}`);
+  pinfo.value = '📍 인쇄 위치·크기\n'
+    + _sideInfo.map(s => `${s.label} · 위치: ${s.pos} · 크기: ${s.size}`).join('\n');
+  pinfo.font = { name:FONT, bold:true, size:11.5, color:{argb:'FF1B64DA'} };
+  pinfo.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+  pinfo.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFF2F6FF'} };
+  pinfo.border = BORDER;
+  ws.getRow(row).height = twoSided ? 56 : 38; row++;
   ws.mergeCells(`A${row}:D${row}`);
   const sc = ws.getCell(`A${row}`);
   sc.value = '손잡이 사이즈: ' + (strapSize || '-');
