@@ -69,6 +69,10 @@
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
     user-select: none;
+    /* 헤더 + 가격바 + 본문을 세로 flex로 → 가격바가 1~2줄로 늘어도
+       본문이 남은 높이에 맞춰져 화면이 넘쳐 잘리거나 스크롤되지 않음 */
+    display: flex;
+    flex-direction: column;
   }
   button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
   input, textarea { font-family: inherit; }
@@ -84,6 +88,7 @@
     gap: 16px;
     position: relative;
     z-index: 50;
+    flex-shrink: 0;
   }
   .logo {
     font-size: 22px;
@@ -158,7 +163,8 @@
   /* ============ BODY ============ */
   .body {
     display: flex;
-    height: calc(100vh - 62px);
+    flex: 1;
+    min-height: 0;   /* flex 자식 내부 스크롤이 정상 동작하도록 */
   }
 
   /* ---- Tool rail ---- */
@@ -547,8 +553,8 @@
     .btn-ghost { padding: 7px 10px; font-size: 12.5px; }
     .btn-primary { padding: 7px 13px; font-size: 12.5px; }
 
-    /* 명시적 레이아웃: 캔버스 전체 + 도구바 하단 고정 */
-    .body { display: block; position: relative; height: calc(100vh - 54px); height: calc(100dvh - 54px); }
+    /* 명시적 레이아웃: 캔버스 전체 + 도구바 하단 고정 (flex로 남은 높이 채움 → 가격바 높이 무관) */
+    .body { display: block; position: relative; flex: 1; min-height: 0; }
 
     .canvas-area {
       width: 100%; height: 100%;
