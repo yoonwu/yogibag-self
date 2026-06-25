@@ -1173,7 +1173,7 @@ const FABRICS = [
     { name:'그레이', file:'twilldenim_gray.png',     display:'#70737a' },
     // ※ 데님 색상이 더 있으면 여기에 같은 형식으로 한 줄씩 추가
   ]},
-  { id:'linen',       name:'리넨',   weave:'linen.png',       colors: TEX_TINTS },
+  { id:'linen',       name:'리넨',   weave:'linen2.png',      colors: TEX_TINTS },
   { id:'jute',        name:'주트',   weave:'jute.png',        colors: TEX_TINTS },
   { id:'herringbone', name:'헤링본', weave:'herringbone.png', colors: TEX_TINTS },
 ];
@@ -2852,7 +2852,7 @@ function updatePrintSizePill() {
     pill.style.background = 'linear-gradient(135deg,#7c3aed,#3182f6)';
     pill.style.borderColor = 'transparent';
     pill.addEventListener('click', () => showToast('인쇄 크기에 따라 자동 적용되는 단가예요'));
-    wrap.insertBefore(pill, wrap.firstChild);   // 추가 옵션 맨 위에 노출
+    wrap.appendChild(pill);   // 추가 옵션 맨 뒤에 노출
   }
   pill.innerHTML = `<span class="op-name">${label}<span class="op-price">+${fee.toLocaleString()}</span></span>`
     + `<span class="op-use">인쇄 ${tier === 'large' ? '24' : '18'}cm 초과 · 자동 적용</span>`;
