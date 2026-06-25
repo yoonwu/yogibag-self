@@ -698,13 +698,6 @@
           <button class="saved-item saved-add" id="saveDesignBtn">＋ 저장</button>
         </div>
       </div>
-
-      <div class="prop-card" id="adjustCard">
-        <div class="prop-card-title">🎚️ 이미지 다듬기</div>
-        <div id="adjustContent">
-          <div class="prop-empty">캔버스에서 이미지나<br>글자를 선택해보세요</div>
-        </div>
-      </div>
     </div>
 
     <!-- DESIGN (추천 도안) -->
@@ -1296,9 +1289,6 @@ function switchToPhotoTab() {
   const btn = document.querySelector('.tool-btn[data-tool="photo"]');
   if (btn && !btn.classList.contains('active')) btn.click();
   else if (typeof isMobileView === 'function' && isMobileView()) openSheet();
-  // 이미지 다듬기가 맨 아래에 있으므로 그쪽으로 부드럽게 스크롤
-  const ac = document.getElementById('adjustCard');
-  if (ac) setTimeout(() => ac.scrollIntoView({ behavior:'smooth', block:'nearest' }), 80);
 }
 
 /* 인쇄 영역 이탈 경고 배너 */
@@ -2089,43 +2079,9 @@ document.addEventListener('keydown', (e) => {
 function onSelect() {
   const obj = canvas.getActiveObject();
   if (!obj) return;
-  const content = document.getElementById('adjustContent');
   const isText = obj.type === 'i-text';
-  content.innerHTML = `
-    <div class="prop-row">
-      <div class="prop-row-label"><span>크기</span><span class="val" id="valScale">100%</span></div>
-      <input type="range" id="scaleSlider" min="10" max="300" value="${Math.round((obj.scaleX||1)*100)}">
-    </div>
-    <div class="prop-row">
-      <div class="prop-row-label"><span>투명도</span><span class="val" id="valOpacity">${Math.round((obj.opacity??1)*100)}%</span></div>
-      <input type="range" id="opacitySlider" min="0" max="100" value="${Math.round((obj.opacity??1)*100)}">
-    </div>
-    <div class="prop-row">
-      <div class="prop-row-label"><span>회전</span><span class="val" id="valAngle">${Math.round(obj.angle||0)}°</span></div>
-      <input type="range" id="angleSlider" min="0" max="360" value="${Math.round(obj.angle||0)}">
-    </div>
-  `;
-  const scaleS = document.getElementById('scaleSlider');
-  const opaS = document.getElementById('opacitySlider');
-  const angS = document.getElementById('angleSlider');
-  scaleS.addEventListener('input', e => {
-    const v = e.target.value/100; obj.set({scaleX:v, scaleY:v}); obj.setCoords();
-    document.getElementById('valScale').textContent = e.target.value+'%'; canvas.requestRenderAll();
-    updateDesignSizeHint(obj);
-  });
-  scaleS.addEventListener('change', saveState);
-  opaS.addEventListener('input', e => {
-    obj.set('opacity', e.target.value/100);
-    document.getElementById('valOpacity').textContent = e.target.value+'%'; canvas.requestRenderAll();
-  });
-  opaS.addEventListener('change', saveState);
-  angS.addEventListener('input', e => {
-    obj.set('angle', parseInt(e.target.value));
-    document.getElementById('valAngle').textContent = e.target.value+'°'; canvas.requestRenderAll();
-  });
-  angS.addEventListener('change', saveState);
-
-  // sync text controls
+  // 크기·회전은 캔버스 핸들로 조절 (이미지 다듬기 패널 제거됨)
+  // 글자 선택 시 폰트 크기 컨트롤만 현재 값에 동기화
   if (isText) {
     fontNum.value = Math.round(obj.fontSize);
     fontSlider.value = Math.min(200, Math.round(obj.fontSize));
@@ -2133,7 +2089,6 @@ function onSelect() {
   updateDesignSizeHint(obj);
 }
 function onDeselect() {
-  document.getElementById('adjustContent').innerHTML = '<div class="prop-empty">캔버스에서 이미지나<br>글자를 선택해보세요</div>';
   updatePrintSizeHint();
 }
 
