@@ -318,7 +318,12 @@
   /* 상담문의 원단(트윌/데님/리넨/주트/헤링본) */
   .fabric-tab.consult { border-style: dashed; }
   .fabric-tab.consult.active { background: #f59e0b; border-color: #f59e0b; border-style: solid; color: #fff; }
-  .fabric-consult { display: flex; align-items: center; gap: 7px; margin: 1px 0 -2px; }
+  .fabric-consult-box {
+    align-self: stretch; display: flex; flex-direction: column; gap: 9px;
+    border: 1.5px solid #f1c98a; border-radius: 12px;
+    background: #fffaf1; padding: 11px 12px;
+  }
+  .fabric-consult { display: flex; align-items: center; gap: 7px; }
   .fabric-consult-tag {
     font-size: 11px; font-weight: 700; color: #fff; background: #f59e0b;
     border-radius: 999px; padding: 2px 9px; flex-shrink: 0;
@@ -2129,17 +2134,20 @@ function renderColorGridForBag() {
       const basic = FABRICS.find(f => f.id === 'basic');
       if (basic) row1.appendChild(makeFabricTab(basic));
       tabs.appendChild(row1);
-      // 상담문의 라벨
+      // 상담문의 박스 (라벨 + 2열 원단을 네모 테두리로 묶음)
+      const consultBox = document.createElement('div');
+      consultBox.className = 'fabric-consult-box';
       const consultLabel = document.createElement('div');
       consultLabel.className = 'fabric-consult';
       consultLabel.innerHTML = '<span class="fabric-consult-tag">상담문의</span>'
         + '<span class="fabric-consult-desc">아래 원단은 상담 후 선택할 수 있어요</span>';
-      tabs.appendChild(consultLabel);
+      consultBox.appendChild(consultLabel);
       // 2열: 나머지 원단
       const row2 = document.createElement('div');
       row2.className = 'fabric-row';
       FABRICS.filter(f => f.id !== 'basic').forEach(f => row2.appendChild(makeFabricTab(f)));
-      tabs.appendChild(row2);
+      consultBox.appendChild(row2);
+      tabs.appendChild(consultBox);
     }
     // 선택한 원단의 색상 칩
     const fab = FABRICS.find(f => f.id === bagFabricId) || FABRICS[0];
