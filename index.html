@@ -1170,7 +1170,7 @@ const TEX_TINTS = [
 //  ribs = 가방 가로폭에 들어가는 능선(짜임 줄) 수. 클수록 더 곱다.
 const FABRICS = [
   { id:'basic', name:'기본', weave:null, colors: BAG_COLORS },
-  { id:'twill', name:'트윌', weaveGen:'twill', ribs:130, colors:[
+  { id:'twill', name:'트윌', weaveGen:'twill', ribs:95, colors:[
     { name:'화이트',       hex:'#f3f1ec', display:'#f3f1ec' },
     { name:'아이보리',     hex:'#efe7d6', display:'#efe7d6' },
     { name:'라이트그레이', hex:'#d7d5d0', display:'#d7d5d0' },
@@ -1182,7 +1182,7 @@ const FABRICS = [
     { name:'블루',         hex:'#5f82a8', display:'#5f82a8' },
     { name:'블랙',         hex:'#2b2b2b', display:'#2b2b2b' },
   ]},
-  { id:'denim', name:'데님', weaveGen:'twill', ribs:115, colors:[
+  { id:'denim', name:'데님', weaveGen:'twill', ribs:85, colors:[
     { name:'블랙',   hex:'#2b2b2b', display:'#2b2b2b' },
     { name:'블루',   hex:'#5f82a8', display:'#5f82a8' },
     { name:'브라운', hex:'#7a5c43', display:'#7a5c43' },
@@ -1534,8 +1534,12 @@ function getWeaveTexture(hex, ribs, W, H) {
   const id = tctx.createImageData(P, P);
   for (let y = 0; y < P; y++) {
     for (let x = 0; x < P; x++) {
-      const t = (((x - y) % P) + P) % P / P;                  // 0..1 대각선 위상(이음매 없음)
-      const shade = 1 + 0.17 * Math.sin(2 * Math.PI * t) - 0.05 * Math.cos(4 * Math.PI * t);
+      const a = (((x + y) % P) + P) % P / P;                  // 0..1 "/" 대각선 위상(이음매 없음)
+      const s = Math.sin(Math.PI * a), cps = Math.cos(Math.PI * a);
+      const cord   = s * 2 - 1;                               // -1..1 부드러운 능선
+      const hi      = Math.pow(s > 0 ? s : 0, 6);             // 능선 정점의 또렷한 밝은 선
+      const groove  = Math.pow(cps > 0 ? cps : 0, 6);         // 골(코드 사이)의 어두운 선
+      const shade = 1 + 0.14 * cord + 0.17 * hi - 0.20 * groove;  // 굴곡 대비 강화
       const i = (y * P + x) * 4;
       id.data[i]   = Math.max(0, Math.min(255, br * shade));
       id.data[i+1] = Math.max(0, Math.min(255, bg * shade));
