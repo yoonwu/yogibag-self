@@ -2544,16 +2544,21 @@ OPTIONS.forEach(opt => {
     if (el.dataset.locked === '1') { showToast('기본 옵션이에요 (해제 불가)'); return; }
     el.classList.toggle('active');
     if (el.classList.contains('active')) {
-      // 똑딱이 ↔ 자석: 하나만 가능 (다른 하나는 자동 해제)
-      const exclusive = { '똑딱이':'자석', '자석':'똑딱이' };
-      const other = exclusive[opt];
-      if (other && activeOptions.has(other)) {
-        activeOptions.delete(other);
-        removeOptionVisual(other);
-        if (optButtons[other]) optButtons[other].classList.remove('active');
-        showToast(other + ' 해제됨 (둘 중 하나만 가능)');
+      // 여밈 방식(똑딱이·자석·지퍼)은 물리적으로 하나만 → 나머지 자동 해제
+      const CLOSURE_GROUP = ['똑딱이','자석','지퍼'];
+      const removed = [];
+      if (CLOSURE_GROUP.indexOf(opt) >= 0) {
+        CLOSURE_GROUP.forEach(other => {
+          if (other !== opt && activeOptions.has(other)) {
+            activeOptions.delete(other);
+            removeOptionVisual(other);
+            if (optButtons[other]) optButtons[other].classList.remove('active');
+            removed.push(other);
+          }
+        });
       }
-      activeOptions.add(opt); addOptionVisual(opt); showToast(opt+' 추가 ✓');
+      activeOptions.add(opt); addOptionVisual(opt);
+      showToast(removed.length ? (opt + ' 선택 — ' + removed.join(', ') + ' 해제 (여밈은 하나만)') : (opt + ' 추가 ✓'));
     }
     else { activeOptions.delete(opt); removeOptionVisual(opt); showToast(opt+' 해제'); }
     renderOptionChips();
