@@ -1163,30 +1163,31 @@ const TEX_TINTS = [
   { name:'브라운',       hex:'#7a5c43', display:'#7a5c43' },
   { name:'블랙',         hex:'#2b2b2b', display:'#2b2b2b' },
 ];
-// 원단 종류. 색상 칩 종류 두 가지:
-//  - file: 미리 색이 입혀진 실제 원단 사진(트윌/데님)
-//  - hex : fabric.weave 위에 입히는 틴트 색(리넨/주트/헤링본) — TEX_TINTS 공유
+// 원단 종류. 색상 칩 종류 세 가지:
+//  - weaveGen: 코드로 생성하는 이음매 없는 짜임(트윌/데님). 색은 hex로 입힘
+//  - weave+hex(file 없음): 원단 사진 위에 틴트(리넨/주트/헤링본) — TEX_TINTS 공유
+//  - hex만(기본): 단순 틴트
+//  ribs = 가방 가로폭에 들어가는 능선(짜임 줄) 수. 클수록 더 곱다.
 const FABRICS = [
   { id:'basic', name:'기본', weave:null, colors: BAG_COLORS },
-  { id:'twill', name:'트윌', weave:null, tiles:10, colors:[
-    { name:'화이트',       file:'twill_1white.png',     display:'#f3f1ec' },
-    { name:'아이보리',     file:'twill_2ivory.png',     display:'#efe7d6' },
-    { name:'라이트그레이', file:'twill_3lightgray.png', display:'#d7d5d0' },
-    { name:'라이트베이지', file:'twill_4lightbeige.png',display:'#e2d6c1' },
-    { name:'피치',         file:'twill_5peach.png',     display:'#f0cdb6' },
-    { name:'핑크',         file:'twill_6pink.png',      display:'#eec3cd' },
-    { name:'그린',         file:'twill_7green.png',     display:'#8a9a7c' },
-    { name:'스카이',       file:'twill_8sky.png',       display:'#a9c6d8' },
-    { name:'블루',         file:'twill_9blue.png',      display:'#5f82a8' },
-    { name:'블랙',         file:'twill_10black.png',    display:'#2b2b2b' },
+  { id:'twill', name:'트윌', weaveGen:'twill', ribs:60, colors:[
+    { name:'화이트',       hex:'#f3f1ec', display:'#f3f1ec' },
+    { name:'아이보리',     hex:'#efe7d6', display:'#efe7d6' },
+    { name:'라이트그레이', hex:'#d7d5d0', display:'#d7d5d0' },
+    { name:'라이트베이지', hex:'#e2d6c1', display:'#e2d6c1' },
+    { name:'피치',         hex:'#f0cdb6', display:'#f0cdb6' },
+    { name:'핑크',         hex:'#eec3cd', display:'#eec3cd' },
+    { name:'그린',         hex:'#8a9a7c', display:'#8a9a7c' },
+    { name:'스카이',       hex:'#a9c6d8', display:'#a9c6d8' },
+    { name:'블루',         hex:'#5f82a8', display:'#5f82a8' },
+    { name:'블랙',         hex:'#2b2b2b', display:'#2b2b2b' },
   ]},
-  { id:'denim', name:'데님', weave:null, tiles:10, colors:[
-    { name:'블랙',   file:'twilldenim_black.png',    display:'#2b2b2b' },
-    { name:'블루',   file:'twilldenim_blue.png',     display:'#5f82a8' },
-    { name:'브라운', file:'twilldenim_brown.png',    display:'#7a5c43' },
-    { name:'딥블루', file:'twilldenim_deepblue.png', display:'#33485f' },
-    { name:'그레이', file:'twilldenim_gray.png',     display:'#70737a' },
-    // ※ 데님 색상이 더 있으면 여기에 같은 형식으로 한 줄씩 추가
+  { id:'denim', name:'데님', weaveGen:'twill', ribs:52, colors:[
+    { name:'블랙',   hex:'#2b2b2b', display:'#2b2b2b' },
+    { name:'블루',   hex:'#5f82a8', display:'#5f82a8' },
+    { name:'브라운', hex:'#7a5c43', display:'#7a5c43' },
+    { name:'딥블루', hex:'#33485f', display:'#33485f' },
+    { name:'그레이', hex:'#70737a', display:'#70737a' },
   ]},
   { id:'linen',       name:'리넨',   weave:'linen.png',       colors: TEX_TINTS },
   { id:'jute',        name:'주트',   weave:'jute.png',        colors: TEX_TINTS },
@@ -1511,6 +1512,47 @@ function loadTexImage(file, cb) {
 // 텍스처를 가방 몸통 비율에 맞춰 '타일 반복'으로 깔아 고운 짜임을 만든다.
 // (정사각 PNG 1장을 늘리면 짜임이 확대·세로로 왜곡되므로, 작은 정사각 타일을 반복)
 //  tiles = 가방 가로폭에 들어가는 반복 횟수(클수록 더 촘촘/고운 짜임)
+// ── 절차적 트윌 짜임 (이음매 없음) ───────────────────────────────
+// 사진을 반복하면 타일 경계가 격자로 보이므로, 트윌/데님은 대각선 능선을
+// 코드로 생성한다. P×P 타일이 (x-y)%P 주기라 가로/세로 모두 완벽히 이어진다.
+const _weaveCache = {};
+function _hexToRgb(h) {
+  h = (h || '#cccccc').replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16) || 0;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function getWeaveTexture(hex, ribs, W, H) {
+  W = Math.max(1, Math.round(W)); H = Math.max(1, Math.round(H));
+  const P = Math.max(4, Math.round(W / Math.max(8, ribs)));   // 능선 1줄 주기(px)
+  const key = hex + '@' + ribs + '@' + W + 'x' + H;
+  if (_weaveCache[key]) return _weaveCache[key];
+  const [br, bg, bb] = _hexToRgb(hex);
+  // 이음매 없는 P×P 타일
+  const tile = document.createElement('canvas'); tile.width = P; tile.height = P;
+  const tctx = tile.getContext('2d');
+  const id = tctx.createImageData(P, P);
+  for (let y = 0; y < P; y++) {
+    for (let x = 0; x < P; x++) {
+      const t = (((x - y) % P) + P) % P / P;                  // 0..1 대각선 위상(이음매 없음)
+      const shade = 1 + 0.17 * Math.sin(2 * Math.PI * t) - 0.05 * Math.cos(4 * Math.PI * t);
+      const i = (y * P + x) * 4;
+      id.data[i]   = Math.max(0, Math.min(255, br * shade));
+      id.data[i+1] = Math.max(0, Math.min(255, bg * shade));
+      id.data[i+2] = Math.max(0, Math.min(255, bb * shade));
+      id.data[i+3] = 255;
+    }
+  }
+  tctx.putImageData(id, 0, 0);
+  // 몸통 크기 캔버스에 반복 채움
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = ctx.createPattern(tile, 'repeat');
+  ctx.fillRect(0, 0, W, H);
+  const fimg = new fabric.Image(c);
+  _weaveCache[key] = fimg;
+  return fimg;
+}
 const _tiledCache = {};
 const TEX_CROP = 0.6;   // PNG 중앙 60%만 사용(가장자리 음영/비네팅 제거 → 바둑판 경계 완화)
 function getTiledTexture(texImg, file, tiles, bodyImg) {
@@ -1541,19 +1583,26 @@ function applyBodyLook(img) {
   const BlendImage = fabric.Image.filters.BlendImage;
   const tex = bagTexture, tint = bagBodyColor;
   const fab = FABRICS.find(f => f.id === bagFabricId);
+  const baseFilters = () => (img.filters || []).filter(f =>
+    !(BlendColor && f instanceof BlendColor) && !(BlendImage && f instanceof BlendImage));
+  const commit = (fl) => { img.filters = fl; img.applyFilters(); if (typeof canvas !== 'undefined') canvas.requestRenderAll(); };
+
+  // 1) 절차적 트윌/데님 — 선택 색(hex)으로 이음매 없는 짜임을 생성해 곱셈 합성
+  if (fab && fab.weaveGen && tint) {
+    const weave = getWeaveTexture(tint, fab.ribs || 55, img.width, img.height);
+    const fl = baseFilters();
+    fl.push(new BlendImage({ image: weave, mode: 'multiply', alpha: 1 }));
+    commit(fl);
+    return;
+  }
+
+  // 2) 사진 원단(리넨/주트/헤링본) + 틴트, 또는 단순 틴트(기본)
   const finish = (texImg) => {
     if (bagBodyRect !== img) return;  // 비동기 로드 사이 가방이 바뀌면 취소
-    let fl = (img.filters || []).filter(f =>
-      !(BlendColor && f instanceof BlendColor) && !(BlendImage && f instanceof BlendImage));
-    if (texImg) {
-      // 원단별 tiles 값이 있으면 타일 반복으로 고운 짜임 적용
-      const blendSrc = (fab && fab.tiles) ? getTiledTexture(texImg, tex, fab.tiles, img) : texImg;
-      fl.push(new BlendImage({ image: blendSrc, mode: 'multiply', alpha: 1 }));
-    }
+    const fl = baseFilters();
+    if (texImg) fl.push(new BlendImage({ image: texImg, mode: 'multiply', alpha: 1 }));
     if (tint)   fl.push(new BlendColor({ color: tint, mode: 'multiply', alpha: 0.85 }));
-    img.filters = fl;
-    img.applyFilters();
-    if (typeof canvas !== 'undefined') canvas.requestRenderAll();
+    commit(fl);
   };
   if (tex) loadTexImage(tex, im => { if (bagTexture === tex) finish(im); });
   else finish(null);
@@ -2212,10 +2261,13 @@ function renderColorGridForBag() {
 // 원단+색 선택을 전역 상태에 반영하고 몸통에 적용
 function applyFabricColor(fab, c) {
   bagFabricId = fab.id;
-  if (fab.weave) {            // 리넨/주트/헤링본: 직조 위에 틴트
+  if (fab.weaveGen) {         // 트윌/데님: 절차적 짜임, 색은 hex
+    bagTexture = null;
+    bagBodyColor = c ? c.hex : null;
+  } else if (fab.weave) {     // 리넨/주트/헤링본: 직조 사진 위에 틴트
     bagTexture = fab.weave;
     bagBodyColor = (c && c.hex != null) ? c.hex : null;
-  } else if (c && c.file) {   // 트윌/데님: 미리 색 입혀진 원단 사진
+  } else if (c && c.file) {   // (예비) 미리 색 입혀진 원단 사진
     bagTexture = c.file;
     bagBodyColor = null;
   } else {                    // 기본: 아이보리/블랙/네이비 틴트
@@ -2226,6 +2278,7 @@ function applyFabricColor(fab, c) {
 }
 // 칩이 현재 선택 상태인지
 function isColorActive(fab, c) {
+  if (fab.weaveGen) return bagTexture === null && bagBodyColor === (c ? c.hex : null);
   if (fab.weave) return bagTexture === fab.weave && bagBodyColor === ((c && c.hex != null) ? c.hex : null);
   if (c && c.file) return bagTexture === c.file;
   return bagTexture === null && bagBodyColor === (c ? c.hex : null);
@@ -2236,6 +2289,10 @@ function currentLookName() {
   if (fab.id === 'basic') {
     const c = fab.colors.find(x => x.hex === bagBodyColor) || fab.colors[0];
     return c.name;
+  }
+  if (fab.weaveGen) {
+    const c = fab.colors.find(x => x.hex === bagBodyColor) || fab.colors[0];
+    return fab.name + ' ' + c.name;
   }
   if (fab.weave) {
     const c = fab.colors.find(x => ((x.hex != null) ? x.hex : null) === bagBodyColor) || fab.colors[0];
