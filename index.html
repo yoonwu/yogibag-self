@@ -1498,7 +1498,9 @@ const _texCache = {};
 function loadTexImage(file, cb) {
   if (_texCache[file]) { cb(_texCache[file]); return; }
   fabric.Image.fromURL(TEX_BASE + file, im => {
-    if (!im) return;
+    // 파일이 없거나(404) 로드 실패 시 cb(null) — 호출부에서 깨지지 않게 폴백
+    const el = im && im._element;
+    if (!im || !el || !el.naturalWidth) { cb(null); return; }
     _texCache[file] = im;
     cb(im);
   }, { crossOrigin: 'anonymous' });
