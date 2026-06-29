@@ -1189,9 +1189,9 @@ const FABRICS = [
     { name:'딥블루', hex:'#33485f', display:'#33485f' },
     { name:'그레이', hex:'#70737a', display:'#70737a' },
   ]},
-  { id:'linen',       name:'리넨',   weave:'linen.png',       colors: TEX_TINTS },
-  { id:'jute',        name:'주트',   weave:'jute.png',        colors: TEX_TINTS },
-  { id:'herringbone', name:'헤링본', weave:'herringbone.png', colors: TEX_TINTS },
+  { id:'linen',       name:'리넨',   weaveGen:'twill', ribs:95, base:'#e3d8c4', colors: TEX_TINTS },
+  { id:'jute',        name:'주트',   weaveGen:'twill', ribs:95, base:'#e3d8c4', colors: TEX_TINTS },
+  { id:'herringbone', name:'헤링본', weaveGen:'twill', ribs:95, base:'#e3d8c4', colors: TEX_TINTS },
 ];
 const WEBBING_COLORS = [
   { name:'없음', hex:null, display:'#e5e7eb' },
@@ -1591,9 +1591,10 @@ function applyBodyLook(img) {
     !(BlendColor && f instanceof BlendColor) && !(BlendImage && f instanceof BlendImage));
   const commit = (fl) => { img.filters = fl; img.applyFilters(); if (typeof canvas !== 'undefined') canvas.requestRenderAll(); };
 
-  // 1) 절차적 트윌/데님 — 선택 색(hex)으로 이음매 없는 짜임을 생성해 곱셈 합성
-  if (fab && fab.weaveGen && tint) {
-    const weave = getWeaveTexture(tint, fab.ribs || 55, img.width, img.height);
+  // 1) 절차적 짜임(트윌/데님/리넨/주트/헤링본) — 선택 색(hex) 또는 원단 기본색으로 짜임 생성
+  if (fab && fab.weaveGen) {
+    const color = tint || fab.base || '#cccccc';   // 틴트 없으면(원단색) 원단 기본색 사용
+    const weave = getWeaveTexture(color, fab.ribs || 55, img.width, img.height);
     const fl = baseFilters();
     fl.push(new BlendImage({ image: weave, mode: 'multiply', alpha: 1 }));
     commit(fl);
