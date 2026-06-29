@@ -106,25 +106,26 @@
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: var(--gray-7);
-    border: 1px solid var(--gray-5);
-    padding: 7px 14px 7px 10px;
+    gap: 12px;
+    background: var(--blue-pale, #f4f8ff);
+    border: 2px solid var(--blue);
+    padding: 8px 20px 8px 12px;
     border-radius: 999px;
     transition: all .15s;
     margin-left: 0;
+    box-shadow: 0 3px 12px rgba(49,130,246,.22);
   }
-  .current-bag:hover { background: var(--blue-light); border-color: var(--blue); }
+  .current-bag:hover { background: var(--blue-light); transform: translateX(-50%) translateY(-1px); box-shadow: 0 5px 16px rgba(49,130,246,.3); }
   .current-bag .mini-bag {
-    width: 30px; height: 30px; border-radius: 7px;
+    width: 42px; height: 42px; border-radius: 10px;
     background: linear-gradient(135deg, #efe7d6, #e2d5bd);
     display: flex; align-items: center; justify-content: center;
-    font-size: 15px;
+    font-size: 22px;
   }
-  .current-bag .cb-text { text-align: left; line-height: 1.2; }
-  .current-bag .cb-label { font-size: 11px; color: var(--gray-2); font-weight: 600; }
-  .current-bag .cb-name { font-size: 13.5px; font-weight: 700; color: var(--ink); }
-  .current-bag .cb-arrow { color: var(--gray-3); font-size: 12px; margin-left: 2px; }
+  .current-bag .cb-text { text-align: left; line-height: 1.18; }
+  .current-bag .cb-label { font-size: 12px; color: var(--blue); font-weight: 700; }
+  .current-bag .cb-name { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: -.3px; }
+  .current-bag .cb-arrow { color: var(--blue); font-size: 13px; margin-left: 3px; }
 
   .header-spacer { flex: 1; }
   .btn-ghost {
@@ -151,6 +152,19 @@
   #ygPriceBar .ygpb-foot { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:5px; flex-wrap:wrap; }
   #ygPriceBar .ygpb-unit { font-size:11.5px; color:var(--gray-2,#8b95a1); font-weight:500; }
   #ygPriceBar .ygpb-tagrow { font-size:11.5px; color:var(--blue,#3182f6); font-weight:700; }
+  /* 캔버스 좌측 세로 단가 카드 ('적용된 옵션' 위) */
+  #ygPriceV { background:rgba(255,255,255,.97); border:1px solid #cfe0fb; border-radius:14px;
+    padding:12px 14px; box-shadow:0 4px 14px rgba(49,130,246,.13); }
+  #ygPriceV .pv-head { font-size:11px; font-weight:700; color:var(--gray-2,#8b95a1); margin-bottom:7px; }
+  #ygPriceV .pv-row { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:3px 0; }
+  #ygPriceV .pv-q { font-size:12px; color:var(--gray-2,#8b95a1); font-weight:600; }
+  #ygPriceV .pv-p { font-size:16px; font-weight:800; color:var(--blue-dark,#1b64da); letter-spacing:-.3px; white-space:nowrap; }
+  #ygPriceV .pv-p.dash { color:#b0b8c1; }
+  #ygPriceV .pv-foot { margin-top:8px; padding-top:8px; border-top:1px solid #eef2f7; }
+  #ygPriceV .pv-unit { font-size:10.5px; color:var(--gray-3,#b0b8c1); }
+  #ygPriceV .pv-tag { font-size:11px; color:var(--blue,#3182f6); font-weight:700; margin-top:3px; }
+  #ygPriceV .pv-consult { font-size:11.5px; color:#d97706; font-weight:800; margin-top:8px; padding-top:8px;
+    border-top:1px solid #f3e6cf; line-height:1.45; }
   /* 주문 모달 견적 */
   #ordQuote { margin:4px 0 6px; }
   #ordQuote .ordq-row { display:flex; align-items:center; gap:8px; color:var(--gray-1,#4e5968); font-size:13.5px; }
@@ -1072,9 +1086,30 @@ function isLockedOption(opt){
     return conf.locked && conf.locked.indexOf(opt) >= 0;
   } catch(e){ return false; }
 }
+// 캔버스 좌측 상단 정보 스택('적용된 옵션' 칩과 세로 단가 카드가 함께 들어감)
+function getCanvasInfoStack(){
+  let s = document.getElementById('canvasInfoStack');
+  if (!s) {
+    s = document.createElement('div');
+    s.id = 'canvasInfoStack';
+    s.style.cssText = 'position:absolute;left:18px;top:78px;display:flex;flex-direction:column;gap:10px;z-index:18;width:210px;max-width:46vw;';
+    const area = document.querySelector('.canvas-area');
+    if (area) area.appendChild(s);
+  }
+  return s;
+}
+// 현재 원단이 상담문의 원단인지(기본 외 전부) → 셀프 시안에선 가격 미산출
+function isConsultFabric(){
+  return (typeof bagFabricId !== 'undefined') && bagFabricId && bagFabricId !== 'basic';
+}
 function updatePriceBar(){
-  const bar = document.getElementById("ygPriceBar");
-  if (!bar) return;
+  const topBar = document.getElementById("ygPriceBar");
+  if (topBar) topBar.style.display = "none";   // 상단 가로 바는 사용 안 함(세로 카드로 이동)
+  const stack = getCanvasInfoStack();
+  let card = document.getElementById("ygPriceV");
+  if (!card) { card = document.createElement('div'); card.id = 'ygPriceV'; }
+  if (stack.firstChild !== card) stack.insertBefore(card, stack.firstChild);  // 항상 맨 위
+
   const cn = (typeof bagColorName === "function") ? bagColorName().replace(/[●\s]/g,"") : "아이보리";
   const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "아이보리";
   let opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
@@ -1082,11 +1117,25 @@ function updatePriceBar(){
   if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄800");
   let sizes = [];
   try { if (typeof measurePrintObjs === "function"){ const s = measurePrintObjs(); if (s) sizes = [s]; } } catch(e){}
+
+  // 상담문의 원단: 가격을 '--'로 표시(상담 후 안내)
+  if (isConsultFabric()) {
+    card.style.display = "block";
+    card.innerHTML =
+      '<div class="pv-head">📋 주문 수량별 개당 단가</div>'
+      + '<div class="pv-row"><span class="pv-q">20개 이상</span><span class="pv-p dash">--</span></div>'
+      + '<div class="pv-row"><span class="pv-q">100개 이상</span><span class="pv-p dash">--</span></div>'
+      + '<div class="pv-row"><span class="pv-q">300개 이상</span><span class="pv-p dash">--</span></div>'
+      + '<div class="pv-consult">상담문의 원단이에요.<br>상담 후 가격이 안내됩니다.</div>';
+    if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
+    return;
+  }
+
   const r20  = calcPrice(currentBag.id, cn, wn, opts, 20,  sizes);
   const r100 = calcPrice(currentBag.id, cn, wn, opts, 100, sizes);
   const r300 = calcPrice(currentBag.id, cn, wn, opts, 300, sizes);
-  if (!r20) { bar.style.display = "none"; return; }
-  bar.style.display = "block";
+  if (!r20) { card.style.display = "none"; return; }
+  card.style.display = "block";
   var tags = [];
   if (r100.printSur > 0) {
     var _tier = (typeof printSizeTier === 'function' && sizes[0]) ? printSizeTier(sizes[0]) : null;
@@ -1094,16 +1143,13 @@ function updatePriceBar(){
     tags.push(_tname + " +" + r100.printSur.toLocaleString());
   }
   if (r100.optSum   > 0) tags.push("옵션 +" + r100.optSum.toLocaleString());
-  var tagRow = tags.length ? '<div class="ygpb-tagrow">' + tags.join(" · ") + " 포함</div>" : "";
-  bar.innerHTML =
-    '<div class="ygpb-tiers">'
-    + '<div class="ygpb-tier"><span class="ygpb-qlabel">20개 이상</span><span class="ygpb-per">' + wonFmt(r20.per)  + '</span></div>'
-    + '<div class="ygpb-divider"></div>'
-    + '<div class="ygpb-tier ygpb-tier-main"><span class="ygpb-qlabel">100개 이상</span><span class="ygpb-per">' + wonFmt(r100.per) + '</span></div>'
-    + '<div class="ygpb-divider"></div>'
-    + '<div class="ygpb-tier"><span class="ygpb-qlabel">300개 이상</span><span class="ygpb-per">' + wonFmt(r300.per) + '</span></div>'
-    + '</div>'
-    + '<div class="ygpb-foot"><span class="ygpb-unit">주문 수량별 개당 단가 (부가세 포함)</span>' + tagRow + '</div>';
+  var tagRow = tags.length ? '<div class="pv-tag">' + tags.join(" · ") + " 포함</div>" : "";
+  card.innerHTML =
+    '<div class="pv-head">📋 주문 수량별 개당 단가</div>'
+    + '<div class="pv-row"><span class="pv-q">20개 이상</span><span class="pv-p">' + wonFmt(r20.per)  + '</span></div>'
+    + '<div class="pv-row main"><span class="pv-q">100개 이상</span><span class="pv-p">' + wonFmt(r100.per) + '</span></div>'
+    + '<div class="pv-row"><span class="pv-q">300개 이상</span><span class="pv-p">' + wonFmt(r300.per) + '</span></div>'
+    + '<div class="pv-foot"><span class="pv-unit">부가세 포함</span>' + tagRow + '</div>';
   if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
 }
 
@@ -2959,12 +3005,14 @@ function removeOptionVisual(opt) {
 /* 캔버스 상단에 적용된 옵션 칩 표시 */
 function renderOptionChips() {
   if (typeof updatePriceBar === 'function') setTimeout(updatePriceBar, 250);
+  const stack = (typeof getCanvasInfoStack === 'function') ? getCanvasInfoStack() : null;
   let bar = document.getElementById('optionChipBar');
   if (!bar) {
     bar = document.createElement('div');
     bar.id = 'optionChipBar';
-    bar.style.cssText = 'position:absolute;left:18px;top:80px;display:flex;flex-direction:column;gap:6px;z-index:18;';
-    document.querySelector('.canvas-area').appendChild(bar);
+    bar.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+    if (stack) stack.appendChild(bar);
+    else document.querySelector('.canvas-area').appendChild(bar);
   }
   bar.innerHTML = '';
   if (activeOptions.size === 0) return;
