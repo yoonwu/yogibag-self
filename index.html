@@ -1168,7 +1168,7 @@ const TEX_TINTS = [
 //  - hex : fabric.weave 위에 입히는 틴트 색(리넨/주트/헤링본) — TEX_TINTS 공유
 const FABRICS = [
   { id:'basic', name:'기본', weave:null, colors: BAG_COLORS },
-  { id:'twill', name:'트윌', weave:null, tiles:4, colors:[
+  { id:'twill', name:'트윌', weave:null, tiles:10, colors:[
     { name:'화이트',       file:'twill_1white.png',     display:'#f3f1ec' },
     { name:'아이보리',     file:'twill_2ivory.png',     display:'#efe7d6' },
     { name:'라이트그레이', file:'twill_3lightgray.png', display:'#d7d5d0' },
@@ -1180,7 +1180,7 @@ const FABRICS = [
     { name:'블루',         file:'twill_9blue.png',      display:'#5f82a8' },
     { name:'블랙',         file:'twill_10black.png',    display:'#2b2b2b' },
   ]},
-  { id:'denim', name:'데님', weave:null, tiles:4, colors:[
+  { id:'denim', name:'데님', weave:null, tiles:10, colors:[
     { name:'블랙',   file:'twilldenim_black.png',    display:'#2b2b2b' },
     { name:'블루',   file:'twilldenim_blue.png',     display:'#5f82a8' },
     { name:'브라운', file:'twilldenim_brown.png',    display:'#7a5c43' },
@@ -1512,16 +1512,20 @@ function loadTexImage(file, cb) {
 // (정사각 PNG 1장을 늘리면 짜임이 확대·세로로 왜곡되므로, 작은 정사각 타일을 반복)
 //  tiles = 가방 가로폭에 들어가는 반복 횟수(클수록 더 촘촘/고운 짜임)
 const _tiledCache = {};
+const TEX_CROP = 0.6;   // PNG 중앙 60%만 사용(가장자리 음영/비네팅 제거 → 바둑판 경계 완화)
 function getTiledTexture(texImg, file, tiles, bodyImg) {
   const W = Math.max(1, Math.round(bodyImg.width));
   const H = Math.max(1, Math.round(bodyImg.height));
   const key = file + '@' + tiles + '@' + W + 'x' + H;
   if (_tiledCache[key]) return _tiledCache[key];
   const src = texImg.getElement ? texImg.getElement() : (texImg._element || texImg);
+  const sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+  const cw = sw * TEX_CROP, ch = sh * TEX_CROP;       // 중앙 크롭 영역
+  const cx = (sw - cw) / 2, cy = (sh - ch) / 2;
   const tilePx = Math.max(8, Math.round(W / tiles));   // 정사각 타일 → 짜임 비율 유지
   const tile = document.createElement('canvas');
   tile.width = tilePx; tile.height = tilePx;
-  tile.getContext('2d').drawImage(src, 0, 0, tilePx, tilePx);
+  tile.getContext('2d').drawImage(src, cx, cy, cw, ch, 0, 0, tilePx, tilePx);
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const ctx = c.getContext('2d');
