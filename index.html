@@ -1254,9 +1254,9 @@ const FABRICS = [
     { name:'딥블루', hex:'#33485f', display:'#33485f' },
     { name:'그레이', hex:'#70737a', display:'#70737a' },
   ]},
-  { id:'linen',       name:'리넨',   weaveGen:'twill', ribs:95, base:'#e3d8c4', colors: TEX_TINTS },
-  { id:'jute',        name:'주트',   weaveGen:'twill', ribs:95, base:'#e3d8c4', colors: TEX_TINTS },
-  { id:'herringbone', name:'헤링본', weaveGen:'twill', ribs:95, base:'#e3d8c4', colors: TEX_TINTS },
+  { id:'linen',       name:'리넨',   weaveGen:'plain',       ribs:52, base:'#e3d8c4', colors: TEX_TINTS },
+  { id:'jute',        name:'주트',   weaveGen:'jute',        ribs:26, base:'#cdb083', colors: TEX_TINTS },
+  { id:'herringbone', name:'헤링본', weaveGen:'herringbone', ribs:80, base:'#dcd4c4', colors: TEX_TINTS },
 ];
 const WEBBING_COLORS = [
   { name:'없음', hex:null, display:'#e5e7eb' },
@@ -1587,28 +1587,50 @@ function _hexToRgb(h) {
   const n = parseInt(h, 16) || 0;
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
-function getWeaveTexture(hex, ribs, W, H) {
+// type: 'twill'(사선 코드) · 'plain'(평직 격자, 리넨) · 'jute'(굵은 평직) · 'herringbone'(V자)
+function getWeaveTexture(hex, ribs, W, H, type) {
+  type = type || 'twill';
   W = Math.max(1, Math.round(W)); H = Math.max(1, Math.round(H));
-  const P = Math.max(4, Math.round(W / Math.max(8, ribs)));   // 능선 1줄 주기(px)
-  const key = hex + '@' + ribs + '@' + W + 'x' + H;
+  const P = Math.max(4, Math.round(W / Math.max(8, ribs)));   // 실/능선 1줄 주기(px)
+  const key = hex + '@' + ribs + '@' + type + '@' + W + 'x' + H;
   if (_weaveCache[key]) return _weaveCache[key];
   const [br, bg, bb] = _hexToRgb(hex);
-  // 이음매 없는 P×P 타일
-  const tile = document.createElement('canvas'); tile.width = P; tile.height = P;
+  const clip = v => v < 0 ? 0 : (v > 255 ? 255 : v);
+  // 헤링본은 밴드(방향 전환)마다 이음매가 맞도록 타일 폭을 2밴드로 잡는다
+  const BAND = 6;                          // 밴드 하나당 능선 수
+  const bandPx = BAND * P;
+  const tw = (type === 'herringbone') ? 2 * bandPx : P;
+  const th = P;
+  const tile = document.createElement('canvas'); tile.width = tw; tile.height = th;
   const tctx = tile.getContext('2d');
-  const id = tctx.createImageData(P, P);
-  for (let y = 0; y < P; y++) {
-    for (let x = 0; x < P; x++) {
-      const a = (((x + y) % P) + P) % P / P;                  // 0..1 "/" 대각선 위상(이음매 없음)
-      const s = Math.sin(Math.PI * a), cps = Math.cos(Math.PI * a);
-      const cord   = s * 2 - 1;                               // -1..1 부드러운 능선
-      const hi      = Math.pow(s > 0 ? s : 0, 6);             // 능선 정점의 또렷한 밝은 선
-      const groove  = Math.pow(cps > 0 ? cps : 0, 6);         // 골(코드 사이)의 어두운 선
-      const shade = 1 + 0.14 * cord + 0.17 * hi - 0.20 * groove;  // 굴곡 대비 강화
-      const i = (y * P + x) * 4;
-      id.data[i]   = Math.max(0, Math.min(255, br * shade));
-      id.data[i+1] = Math.max(0, Math.min(255, bg * shade));
-      id.data[i+2] = Math.max(0, Math.min(255, bb * shade));
+  const id = tctx.createImageData(tw, th);
+  const twillShade = (a) => {                // 사선 코드 능선 (a: 0..1)
+    const s = Math.sin(Math.PI * a), cps = Math.cos(Math.PI * a);
+    return 1 + 0.14 * (s * 2 - 1) + 0.17 * Math.pow(s > 0 ? s : 0, 6) - 0.20 * Math.pow(cps > 0 ? cps : 0, 6);
+  };
+  for (let y = 0; y < th; y++) {
+    for (let x = 0; x < tw; x++) {
+      let shade;
+      if (type === 'plain' || type === 'jute') {
+        // 평직: 세로실·가로실 격자. 실 중심 밝고 교차 골 어두움
+        const ax = (((x % P) + P) % P) / P, ay = (((y % P) + P) % P) / P;
+        const amp = (type === 'jute') ? 0.24 : 0.14;
+        const grid = (Math.cos(2 * Math.PI * ax) + Math.cos(2 * Math.PI * ay)) * 0.5;
+        // 오버-언더(바구니) 느낌: 셀마다 세로/가로실이 번갈아 위로
+        const cell = ((Math.floor(x / (P / 2)) + Math.floor(y / (P / 2))) % 2 === 0);
+        const overUnder = cell ? Math.cos(2 * Math.PI * ax) : Math.cos(2 * Math.PI * ay);
+        shade = 1 + amp * (grid * 0.6 + overUnder * 0.4);
+      } else {
+        // twill / herringbone: 사선 코드. 헤링본은 밴드마다 방향 반전
+        let dir = 1;
+        if (type === 'herringbone') { dir = (Math.floor(x / bandPx) % 2 === 0) ? 1 : -1; }
+        const a = ((((dir * x + y) % P) + P) % P) / P;
+        shade = twillShade(a);
+      }
+      const i = (y * tw + x) * 4;
+      id.data[i]   = clip(br * shade);
+      id.data[i+1] = clip(bg * shade);
+      id.data[i+2] = clip(bb * shade);
       id.data[i+3] = 255;
     }
   }
@@ -1659,7 +1681,7 @@ function applyBodyLook(img) {
   // 1) 절차적 짜임(트윌/데님/리넨/주트/헤링본) — 선택 색(hex) 또는 원단 기본색으로 짜임 생성
   if (fab && fab.weaveGen) {
     const color = tint || fab.base || '#cccccc';   // 틴트 없으면(원단색) 원단 기본색 사용
-    const weave = getWeaveTexture(color, fab.ribs || 55, img.width, img.height);
+    const weave = getWeaveTexture(color, fab.ribs || 55, img.width, img.height, fab.weaveGen);
     const fl = baseFilters();
     fl.push(new BlendImage({ image: weave, mode: 'multiply', alpha: 1 }));
     commit(fl);
