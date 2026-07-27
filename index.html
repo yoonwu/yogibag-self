@@ -1049,7 +1049,7 @@ function printSurchargeBySize(type, sizeObj){
 }
 const OPTION_PRICE = {
   "안주머니":600,"안주머니인쇄":600,"똑딱이":550,"자석":650,
-  "지퍼":850,"크로스끈":1200,"이름표":250,"OPP개별포장":250,"양면인쇄800":800,
+  "지퍼":850,"크로스끈":1200,"이름표":250,"OPP개별포장":250,"양면인쇄900":900,
 };
 // 컬러에 따라 가격이 달라지는 옵션 (안주머니: 아이보리 600 / 블랙·네이비 800)
 function optionPrice(opt, colorName){
@@ -1086,10 +1086,23 @@ function currentPrice(qty){
   const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "아이보리";
   let opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
   opts = opts.filter(o => !isLockedOption(o)); // 기본 장착(무료) 옵션은 가격 제외
-  if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄800");
-  let sizes = [];
-  try { if (typeof measurePrintObjs === "function"){ const s = measurePrintObjs(); if (s) sizes = [s]; } } catch(e){}
-  return calcPrice(currentBag.id, cn, wn, opts, qty, sizes);
+  if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄900");
+  return calcPrice(currentBag.id, cn, wn, opts, qty, currentPrintSizes());
+}
+/* 가격 계산용 인쇄 크기 목록 — 단면이면 [현재 면], 양면이면 [현재 면, 반대 면].
+   반대 면은 마지막으로 화면에 표시됐을 때 측정해 둔 캐시를 사용해 캔버스를 건드리지 않는다.
+   → 뒷면 디자인이 커져도 앞면처럼 중형/대형 인쇄비가 단가에 반영됨 */
+function currentPrintSizes(){
+  const sizes = [];
+  try { const s = measurePrintObjs(); if (s) sizes.push(s); } catch(e){}
+  try {
+    if (twoSided) {
+      sideMeasured[currentSide] = sizes[0] || null;
+      const other = currentSide === 'front' ? 'back' : 'front';
+      if (sideMeasured[other]) sizes.push(sideMeasured[other]);
+    }
+  } catch(e){}
+  return sizes;
 }
 // 현재 가방에서 기본 장착(locked=무료)인 옵션인지
 function isLockedOption(opt){
@@ -1126,9 +1139,8 @@ function updatePriceBar(){
   const wn = (typeof webbingColorName === "function") ? webbingColorName().replace(/[●\s]/g,"") : "아이보리";
   let opts = (typeof activeOptions !== "undefined") ? [...activeOptions] : [];
   opts = opts.filter(o => !isLockedOption(o));
-  if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄800");
-  let sizes = [];
-  try { if (typeof measurePrintObjs === "function"){ const s = measurePrintObjs(); if (s) sizes = [s]; } } catch(e){}
+  if (typeof twoSided !== "undefined" && twoSided) opts.push("양면인쇄900");
+  let sizes = currentPrintSizes();
 
   // 상담문의 원단: 가격을 '--'로 표시(상담 후 안내)
   if (isConsultFabric()) {
@@ -2670,6 +2682,8 @@ function updateOptionsForBag() {
 let twoSided = false;
 let currentSide = 'front';
 const sideDesigns = { front: [], back: [] };
+// 면별 인쇄 크기 캐시(가격용) — 각 면이 화면에 보일 때 측정해 두고, 숨겨진 면의 인쇄비 산정에 사용
+const sideMeasured = { front: null, back: null };
 
 // 앞/뒤 전환 탭 (양면 ON 시 캔버스 바로 위에 표시)
 const sideTabs = document.createElement('div');
@@ -2704,6 +2718,7 @@ function switchSide(side) {
   // 현재 면 디자인 저장 후 캔버스에서 제거 (안주머니 디자인은 앞뒤 공통 → 면 전환서 제외)
   const objs = canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o));
   sideDesigns[currentSide] = objs;
+  try { sideMeasured[currentSide] = measurePrintObjs(); } catch(e){}  // 떠나기 전 이 면의 인쇄 크기 저장
   objs.forEach(o => canvas.remove(o));
   // 새 면 디자인 표시
   currentSide = side;
@@ -2713,6 +2728,7 @@ function switchSide(side) {
   updateSideTabUI();
   showToast(side === 'front' ? '앞면' : '뒷면');
   checkPrintBounds();
+  if (typeof updatePriceBar === 'function') updatePriceBar();
 }
 
 /* 안주머니인쇄 영역(좌상단)에 올린 디자인인지 — 양면 공통으로 다룸 */
@@ -2756,13 +2772,14 @@ function captureAllSides() {
 // 양면 인쇄 토글 버튼 (옵션 영역)
 const dualBtn = document.createElement('button');
 dualBtn.className = 'opt-pill';
-dualBtn.innerHTML = '<span class="op-name">양면 인쇄<span class="op-price">+800</span></span><span class="op-use">앞·뒤 양쪽 인쇄</span>';
+dualBtn.innerHTML = '<span class="op-name">양면 인쇄<span class="op-price">+900</span></span><span class="op-use">앞·뒤 양쪽 인쇄</span>';
 dualBtn.addEventListener('click', () => {
   if (!twoSided) {
     twoSided = true;
     dualBtn.classList.add('active');
     sideDesigns.front = canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o));
     sideDesigns.back = [];
+    sideMeasured.front = null; sideMeasured.back = null;
     currentSide = 'front';
     sideTabs.style.display = 'flex';
     updateSideTabUI();
@@ -2770,6 +2787,7 @@ dualBtn.addEventListener('click', () => {
   } else {
     if (currentSide === 'back') switchSide('front');
     sideDesigns.back = [];          // 뒷면 디자인 폐기
+    sideMeasured.front = null; sideMeasured.back = null;
     twoSided = false;
     dualBtn.classList.remove('active');
     sideTabs.style.display = 'none';
