@@ -319,6 +319,14 @@
     justify-content: center; color: var(--white); font-size: 17px; font-weight: 800;
     text-shadow: 0 1px 2px rgba(0,0,0,.5);
   }
+  /* 색상 칩 + 이름 라벨 (칩 아래 컬러명 표시) */
+  .color-item { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .color-item .color-sw { width: 100%; }
+  .color-name {
+    font-size: 10px; color: var(--gray-2); text-align: center;
+    line-height: 1.15; width: 100%; word-break: keep-all;
+  }
+  .color-item .color-sw.active + .color-name { color: var(--blue); font-weight: 700; }
   /* 원단(질감) 선택 */
   .fabric-tabs { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; margin: 2px 0 13px; }
   .fabric-row { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -2255,6 +2263,17 @@ let polyBodyKey = 'black';   // 현재 폴리백 몸통 색
 /* 가방 카테고리에 맞춰 가방 색상 그리드 렌더링
    - 폴리백: 블랙(기본)/네이비/그린 (몸통 PNG 교체)
    - 그 외: 아이보리/블랙/네이비 (색상 틴트) */
+// 색상 칩을 '칩 + 이름 라벨' 묶음으로 감싸 반환 (그리드 셀 하나로 들어감)
+function swatchWithLabel(el, name) {
+  const wrap = document.createElement('div');
+  wrap.className = 'color-item';
+  wrap.appendChild(el);
+  const lb = document.createElement('span');
+  lb.className = 'color-name';
+  lb.textContent = name;
+  wrap.appendChild(lb);
+  return wrap;
+}
 function renderColorGridForBag() {
   const grid = document.getElementById('bagColorGrid');
   grid.innerHTML = '';
@@ -2303,7 +2322,7 @@ function renderColorGridForBag() {
         saveState();
         showToast(c.name + ' 폴리백으로 바꿨어요');
       });
-      grid.appendChild(el);
+      grid.appendChild(swatchWithLabel(el, c.name));
     });
     const cur = POLY_COLORS.find(c => c.key === polyBodyKey) || POLY_COLORS[0];
     nameEl.textContent = '● ' + cur.name;
@@ -2372,7 +2391,7 @@ function renderColorGridForBag() {
         if (typeof updateOptionsForBag === 'function') updateOptionsForBag();
         if (typeof updatePriceBar === 'function') updatePriceBar();
       });
-      grid.appendChild(el);
+      grid.appendChild(swatchWithLabel(el, c.name));
     });
     nameEl.textContent = '● ' + currentLookName();
   }
@@ -2450,7 +2469,7 @@ WEBBING_COLORS.forEach((c, i) => {
     showToast(c.name + ' 끈으로 바꿨어요');
     if (typeof updatePriceBar === 'function') updatePriceBar();
   });
-  webbingColorGrid.appendChild(el);
+  webbingColorGrid.appendChild(swatchWithLabel(el, c.name));
 });
 // 초기 색상 이름 표시
 document.getElementById('bagColorName').textContent = '● ' + BAG_COLORS[0].name;
@@ -2499,6 +2518,26 @@ document.addEventListener('keydown', (e) => {
   else if (e.key==='Delete' || e.key==='Backspace') {
     const objs = canvas.getActiveObjects();
     if (objs.length) { e.preventDefault(); objs.forEach(o=>canvas.remove(o)); canvas.discardActiveObject(); canvas.requestRenderAll(); saveState(); if (typeof updatePrintSizePill === 'function') updatePrintSizePill(); }
+  }
+  else if (e.key==='ArrowUp' || e.key==='ArrowDown' || e.key==='ArrowLeft' || e.key==='ArrowRight') {
+    // 방향키로 선택 객체 미세 이동 (Shift = 10px씩)
+    const obj = canvas.getActiveObject();
+    if (!obj || obj.isEditing) return;   // 글자 입력 중엔 커서 이동 유지
+    e.preventDefault();
+    const step = e.shiftKey ? 10 : 2;
+    if (e.key==='ArrowUp')    obj.top  -= step;
+    if (e.key==='ArrowDown')  obj.top  += step;
+    if (e.key==='ArrowLeft')  obj.left -= step;
+    if (e.key==='ArrowRight') obj.left += step;
+    obj.setCoords();
+    canvas.requestRenderAll();
+    if (typeof checkPrintBounds === 'function') checkPrintBounds();
+    // 키를 연타해도 저장·가격 갱신은 멈춘 뒤 한 번만
+    clearTimeout(window._arrowMoveT);
+    window._arrowMoveT = setTimeout(() => {
+      saveState();
+      if (typeof updatePriceBar === 'function') updatePriceBar();
+    }, 400);
   }
 });
 
