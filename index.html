@@ -1475,8 +1475,10 @@ function checkPrintBounds() {
   const pa = printArea.getBoundingRect();
   const tol = 12;
   let out = false;
-  canvas.getObjects().filter(o => o.isUserObject).forEach(o => {
-    const b = o.getBoundingRect();
+  // 투명 여백 제외한 '실제 그림' 영역으로 판정 (여백 큰 PNG의 오탐 방지)
+  // 안주머니인쇄 디자인은 좌상단 별도 영역이라 본판 인쇄영역 판정에서 제외
+  canvas.getObjects().filter(o => o.isUserObject && !(typeof isInnerPocketObj === 'function' && isInnerPocketObj(o))).forEach(o => {
+    const b = (typeof opaqueBoundingRect === 'function') ? opaqueBoundingRect(o) : o.getBoundingRect();
     if (b.left < pa.left - tol || b.top < pa.top - tol ||
         b.left + b.width > pa.left + pa.width + tol ||
         b.top + b.height > pa.top + pa.height + tol) out = true;
