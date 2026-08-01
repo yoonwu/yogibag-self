@@ -3977,6 +3977,14 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
       if (fs.svg) attachments.push({ filename: `${orderNum}_인쇄용${suffix}.svg`, content: btoa(unescape(encodeURIComponent(fs.svg))) });
     });
 
+    // 가방 시안 미리보기 PNG 첨부 (디자인이 얹힌 가방 전체 모습 — 양면이면 앞/뒤 각각)
+    try {
+      captureAllSides().forEach(p => {
+        const suffix = p.label ? `_${p.label}` : '';
+        attachments.push({ filename: `${orderNum}_시안미리보기${suffix}.png`, content: p.data.split(',')[1] });
+      });
+    } catch(e) { console.error('시안 미리보기 첨부', e); }
+
     // 고객이 처음 올린 원본 파일 첨부 (AI 배경제거가 어긋나도 직원이 원본으로 재작업)
     const seenUploads = new Set();
     let origIdx = 0;
