@@ -1296,9 +1296,9 @@ const FABRICS = [
     { name:'딥블루', hex:'#33485f', display:'#33485f' },
     { name:'그레이', hex:'#70737a', display:'#70737a' },
   ]},
-  { id:'linen',       name:'리넨',   weaveGen:'plain',       ribs:52, base:'#e3d8c4', colors: TEX_TINTS },
-  { id:'jute',        name:'주트',   weaveGen:'jute',        ribs:26, base:'#cdb083', colors: TEX_TINTS },
-  { id:'herringbone', name:'헤링본', weaveGen:'herringbone', ribs:80, base:'#dcd4c4', colors: TEX_TINTS },
+  { id:'linen',       name:'리넨',   weaveGen:'plain',       ribs:95, base:'#e3d8c4', colors: TEX_TINTS },
+  { id:'jute',        name:'주트',   weaveGen:'jute',        ribs:85, base:'#cdb083', colors: TEX_TINTS },
+  { id:'herringbone', name:'헤링본', weaveGen:'herringbone', ribs:95, base:'#dcd4c4', colors: TEX_TINTS },
 ];
 const WEBBING_COLORS = [
   { name:'없음', hex:null, display:'#e5e7eb' },
@@ -1645,7 +1645,7 @@ function getWeaveTexture(hex, ribs, W, H, type) {
   const [br, bg, bb] = _hexToRgb(hex);
   const clip = v => v < 0 ? 0 : (v > 255 ? 255 : v);
   // 헤링본은 밴드(방향 전환)마다 이음매가 맞도록 타일 폭을 2밴드로 잡는다
-  const BAND = 6;                          // 밴드 하나당 능선 수
+  const BAND = 3;                          // 밴드 하나당 능선 수
   const bandPx = BAND * P;
   const tw = (type === 'herringbone') ? 2 * bandPx : P;
   const th = P;
