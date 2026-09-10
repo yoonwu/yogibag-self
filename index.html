@@ -1508,7 +1508,9 @@ function checkPrintBounds() {
 
 /* draw the bag with real PNG layers */
 let drawBagToken = 0;
+let drawBagPending = false;
 function drawBag() {
+  drawBagPending = true;
   const myToken = ++drawBagToken; // 이 호출의 세대 번호 (최신 호출만 반영)
   canvas.getObjects().filter(o => o.bagPart).forEach(o => canvas.remove(o));
   webbingPaths = [];
@@ -1542,10 +1544,12 @@ function drawBag() {
       rx:4, ry:4, selectable:false, evented:false, bagPart:'print', visible:false,
     });
     canvas.add(printArea);
+    drawBagPending = false;
     reorderBag();
     updatePrintSizeHint();
     if (typeof activeOptions !== 'undefined') activeOptions.forEach(opt => addOptionVisual(opt));
     canvas.requestRenderAll();
+    saveState();
   }
 
   if (layers.length === 0) { finalize(); return; }
@@ -1804,38 +1808,91 @@ function updateDesignSizeHint(obj) {
 /* =========================================================
    STATE / UNDO-REDO
 ========================================================= */
+const DESIGN_PROPS = ['isUserObject','isOptionVisual','optName','bagPart','selectable','evented','uploadId','isCustomerUpload'];
+function captureDesignState() {
+  sideMeasured[currentSide] = measurePrintObjs();
+  const hiddenSide = currentSide === 'front' ? 'back' : 'front';
+  return {
+    version: 1, json: canvas.toJSON(DESIGN_PROPS), currentBag,
+    bagBodyColor, webbingColor, bagTexture, bagFabricId, polyBodyKey,
+    bagScale, bagOffX, bagOffY, options: [...activeOptions],
+    twoSided, currentSide,
+    hiddenObjects: twoSided ? sideDesigns[hiddenSide].map(o => o.toObject(DESIGN_PROPS)) : [],
+    sideMeasured: {...sideMeasured},
+  };
+}
 function saveState() {
-  if (isRestoring) return;
+  if (isRestoring || drawBagPending) return;
+  const json = JSON.stringify(captureDesignState());
+  if (undoStack[undoStack.length - 1] === json) return;
   redoStack = [];
-  const json = JSON.stringify(canvas.toJSON(['isUserObject','isOptionVisual','optName','bagPart','selectable','evented','uploadId','isCustomerUpload']));
   undoStack.push(json);
   if (undoStack.length > 40) undoStack.shift();
   updateUndoRedo();
 }
 function updateUndoRedo() {
-  document.getElementById('undoBtn').disabled = undoStack.length <= 1;
-  document.getElementById('redoBtn').disabled = redoStack.length === 0;
+  document.getElementById('undoBtn').disabled = isRestoring || undoStack.length <= 1;
+  document.getElementById('redoBtn').disabled = isRestoring || redoStack.length === 0;
 }
 function undo() {
-  if (undoStack.length <= 1) return;
+  if (isRestoring || drawBagPending || undoStack.length <= 1) return;
   redoStack.push(undoStack.pop());
   restore(undoStack[undoStack.length-1]);
 }
 function redo() {
-  if (redoStack.length === 0) return;
+  if (isRestoring || drawBagPending || redoStack.length === 0) return;
   const json = redoStack.pop();
   undoStack.push(json);
   restore(json);
 }
-function restore(json) {
+function restore(json, onDone) {
+  const state = typeof json === 'string' ? JSON.parse(json) : json;
   isRestoring = true;
-  canvas.loadFromJSON(json, () => {
-    // rebind bag refs
+  ++drawBagToken; // invalidate outstanding bag/option image callbacks
+  drawBagPending = false;
+  updateUndoRedo();
+  currentBag = state.currentBag;
+  bagBodyColor = state.bagBodyColor;
+  webbingColor = state.webbingColor;
+  bagTexture = state.bagTexture;
+  bagFabricId = state.bagFabricId;
+  polyBodyKey = state.polyBodyKey;
+  bagScale = state.bagScale; bagOffX = state.bagOffX; bagOffY = state.bagOffY;
+  activeOptions.clear();
+  state.options.forEach(o => activeOptions.add(o));
+  twoSided = state.twoSided;
+  currentSide = state.currentSide;
+  if (POLY_BODY[currentBag.id]) BAG_IMAGES[currentBag.id + '_body'] = POLY_BODY[currentBag.id][polyBodyKey];
+  canvas.loadFromJSON(state.json, () => {
     rebindBagRefs();
-    canvas.renderAll();
-    isRestoring = false;
-    updateUndoRedo();
-    if (typeof updatePrintSizePill === 'function') updatePrintSizePill();
+    fabric.util.enlivenObjects(state.hiddenObjects || [], objects => {
+      sideDesigns.front = []; sideDesigns.back = [];
+      sideDesigns[currentSide] = canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o));
+      sideDesigns[currentSide === 'front' ? 'back' : 'front'] = objects;
+      Object.assign(sideMeasured, state.sideMeasured);
+      document.getElementById('cbName').textContent = currentBag.name;
+      document.getElementById('arBagName').textContent = currentBag.name;
+      document.getElementById('miniBag').textContent = currentBag.emoji;
+      renderColorGridForBag();
+      updateOptionsForBag();
+      Object.entries(optButtons).forEach(([opt, pill]) => pill.classList.toggle('active', activeOptions.has(opt)));
+      dualBtn.classList.toggle('active', twoSided);
+      sideTabs.style.display = twoSided ? 'flex' : 'none';
+      updateSideTabUI();
+      syncColorSwatches();
+      const wn = document.getElementById('webbingColorName');
+      if (wn) wn.textContent = '● ' + webbingColorName();
+      renderOptionChips();
+      renderOptionPreviews();
+      if (activeOptions.has('크로스끈') && !optionVisuals['크로스끈']) addOptionVisual('크로스끈');
+      updatePrintSizeHint();
+      updatePrintSizePill();
+      updatePriceBar();
+      canvas.renderAll();
+      isRestoring = false;
+      updateUndoRedo();
+      if (onDone) onDone();
+    });
   });
 }
 function rebindBagRefs() {
@@ -2511,7 +2568,7 @@ document.getElementById('bagCenterBtn').addEventListener('click', () => {
 });
 document.getElementById('dupBtn').addEventListener('click', () => {
   const o=canvas.getActiveObject(); if(!o){needSelect();return;}
-  o.clone(cl => { cl.set({left:o.left+24,top:o.top+24}); cl.isUserObject=true; canvas.add(cl); canvas.setActiveObject(cl); canvas.requestRenderAll(); saveState(); }, ['isUserObject']);
+  o.clone(cl => { cl.set({left:o.left+24,top:o.top+24}); cl.isUserObject=true; canvas.add(cl); canvas.setActiveObject(cl); canvas.requestRenderAll(); saveState(); }, DESIGN_PROPS);
 });
 document.getElementById('deleteBtn').addEventListener('click', () => {
   const objs = canvas.getActiveObjects(); if(!objs.length){needSelect();return;}
@@ -2672,6 +2729,7 @@ OPTIONS.forEach(opt => {
     }
     else { activeOptions.delete(opt); removeOptionVisual(opt); showToast(opt+' 해제'); }
     renderOptionChips();
+    saveState();
   });
   optToggles.appendChild(el);
 });
@@ -2778,6 +2836,7 @@ function switchSide(side) {
   canvas.requestRenderAll();
   updateSideTabUI();
   showToast(side === 'front' ? '앞면' : '뒷면');
+  saveState();
   checkPrintBounds();
   if (typeof updatePriceBar === 'function') updatePriceBar();
 }
@@ -2845,6 +2904,7 @@ dualBtn.addEventListener('click', () => {
     showToast('양면 인쇄 OFF');
   }
   if (typeof updatePriceBar === 'function') updatePriceBar();
+  saveState();
 });
 optToggles.appendChild(dualBtn);
 
@@ -2865,6 +2925,7 @@ fabric.Image.filters.DematteEdge = fabric.util.createClass(fabric.Image.filters.
     }
   }
 });
+fabric.Image.filters.DematteEdge.fromObject = fabric.Image.filters.BaseFilter.fromObject;
 function cleanEdges(img) {
   if (!img || !img.applyFilters) return;
   if (!fabric.filterBackend || !(fabric.filterBackend instanceof fabric.Canvas2dFilterBackend)) {
@@ -3034,7 +3095,11 @@ function addOptionVisual(opt) {
   if (opt === '크로스끈') {
     const url = BAG_IMAGES[currentBag.id + '_cross'];
     if (url && bagBodyRect) {
+      const token = drawBagToken;
+      const body = bagBodyRect;
       loadImg(url, (img) => {
+        if (!img || token !== drawBagToken || body !== bagBodyRect || !activeOptions.has(opt)) return;
+        if (optionVisuals[opt]) canvas.remove(optionVisuals[opt]);
         cleanEdges(img); // 검정 매트 가장자리(투명블랙) 제거
         // 몸통: PNG 전체가 아니라 '실제 그려진 가방' 영역을 화면 좌표로 환산
         const bsc   = bagBodyRect.scaleX;
@@ -3065,6 +3130,8 @@ function addOptionVisual(opt) {
         if (printArea) canvas.bringToFront(printArea);
         canvas.getObjects().forEach(o => { if (o.isUserObject) canvas.bringToFront(o); });
         canvas.requestRenderAll();
+        // Complete the current option snapshot after its image arrives.
+        if (!isRestoring && undoStack.length) undoStack[undoStack.length - 1] = JSON.stringify(captureDesignState());
       });
     }
     return;
@@ -3195,24 +3262,68 @@ function updatePrintSizePill() {
    SAVED DESIGNS
 ========================================================= */
 const savedDesigns = [];
+let savedDesignsReady = false;
 document.getElementById('saveDesignBtn').addEventListener('click', () => {
   saveCurrentDesign();
-  showToast('시안을 저장했어요 📁');
 });
 function saveCurrentDesign() {
+  if (!savedDesignsReady || isRestoring || drawBagPending) { showToast('불러오는 중이에요. 잠시 후 저장해 주세요'); return; }
   canvas.discardActiveObject();
   canvas.requestRenderAll();
-  const dataURL = canvas.toDataURL({ format:'png', multiplier:0.45 });
+  const state = captureDesignState();
+  const uploadIds = new Set();
+  const collectUploads = objects => objects.forEach(o => {
+    if (o.uploadId) uploadIds.add(o.uploadId);
+    if (o.objects) collectUploads(o.objects);
+  });
+  collectUploads(state.json.objects.concat(state.hiddenObjects));
   savedDesigns.push({
-    url: dataURL,
-    bag: currentBag.name,
-    bagObj: currentBag,
-    json: canvas.toJSON(['isUserObject','isOptionVisual','selectable','evented','uploadId','isCustomerUpload']),
-    options: [...activeOptions],
-    bagBodyColor, webbingColor, bagTexture, bagFabricId,
-    date: new Date(),
+    url: canvas.toDataURL({format:'png', multiplier:0.45}),
+    bag: currentBag.name, state,
+    uploads: [...originalUploads].filter(([id]) => uploadIds.has(id)), date: new Date(),
   });
   renderSaved();
+  persistSavedDesigns();
+}
+// IndexedDB also retains uploaded originals, so saved designs can be ordered after reload.
+let savedDBPromise;
+function savedDB() {
+  if (!savedDBPromise) savedDBPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open('yogibag-designs', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('designs');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return savedDBPromise;
+}
+async function persistSavedDesigns() {
+  try {
+    const snapshot = structuredClone(savedDesigns);
+    const db = await savedDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('designs', 'readwrite');
+      tx.objectStore('designs').put(snapshot, 'saved');
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+    showToast('이 브라우저의 보관함에 저장했어요');
+  } catch (e) {
+    showToast('브라우저 저장 실패 · 페이지를 닫으면 시안이 사라질 수 있어요');
+  }
+}
+async function readSavedDesigns() {
+  try {
+    const db = await savedDB();
+    const items = await new Promise((resolve, reject) => {
+      const req = db.transaction('designs').objectStore('designs').get('saved');
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+    savedDesigns.unshift(...items);
+    renderSaved();
+  } catch(e) { showToast('보관함을 읽을 수 없어요. 브라우저 저장 설정을 확인해 주세요'); }
+  finally { savedDesignsReady = true; }
 }
 function renderSaved() {
   const grid = document.getElementById('savedGrid');
@@ -3238,47 +3349,18 @@ function renderSaved() {
 
 function loadDesign(i) {
   const item = savedDesigns[i];
-  if (!item) return;
-  isRestoring = true;
-  canvas.loadFromJSON(item.json, () => {
-    rebindBagRefs();
-    canvas.renderAll();
-    isRestoring = false;
-
-    // JS 상태 복원
-    currentBag = item.bagObj;
-    bagBodyColor = item.bagBodyColor;
-    webbingColor = item.webbingColor;
-    bagTexture = item.bagTexture || null;
-    bagFabricId = item.bagFabricId || 'basic';
-    reapplyBodyStyle();   // 복원된 전역 상태로 몸통 질감/색 다시 입힘
-    document.getElementById('cbName').textContent = currentBag.name;
-    document.getElementById('arBagName').textContent = currentBag.name;
-    document.getElementById('miniBag').textContent = currentBag.emoji;
-
-    // 옵션 상태 복원 (optionVisuals는 rebindBagRefs에서 이미 재매핑됨)
-    activeOptions.clear();
-    item.options.forEach(o => activeOptions.add(o));
-    renderColorGridForBag();
-    updateOptionsForBag();   // 가방별 표시/라벨/잠금
-    // 저장된 옵션 active 반영 (data-opt 기준 — 라벨 변경 영향 없음)
-    document.querySelectorAll('#optionToggles .opt-pill').forEach(pill => {
-      if (pill.dataset.locked === '1') return;
-      pill.classList.toggle('active', activeOptions.has(pill.dataset.opt));
-    });
-    renderOptionChips();
-
-    // 색상 스와치 UI 동기화
-    syncColorSwatches();
-
+  if (!item || isRestoring) return;
+  (item.uploads || []).forEach(([id, upload]) => originalUploads.set(id, upload));
+  restore(item.state, () => {
     undoStack = []; redoStack = [];
     saveState();
-    showToast(`${item.bag} 시안을 불러왔어요 ✨`);
+    showToast(item.bag + ' 시안을 불러왔어요 ✨');
   });
 }
 
 function deleteDesign(i) {
   savedDesigns.splice(i, 1);
+  persistSavedDesigns();
   renderSaved();
   showToast('시안을 삭제했어요');
 }
@@ -3370,6 +3452,7 @@ function selectBag(bag, silent) {
     });
   }
   document.querySelectorAll('.opt-pill').forEach(p => p.classList.remove('active'));
+  dualBtn.classList.toggle('active', twoSided);
   // 가방 바꾸면 원단(질감)·색 선택을 기본(아이보리)으로 초기화
   bagTexture = null;
   bagFabricId = 'basic';
@@ -3401,7 +3484,6 @@ function selectBag(bag, silent) {
 ========================================================= */
 document.getElementById('saveBtn').addEventListener('click', () => {
   saveCurrentDesign();
-  showToast('임시저장 완료 · 보관함에 담았어요 💾');
 });
 let _lastOrderSpecs = [];
 
@@ -3616,6 +3698,10 @@ function openOrderModal() {
 function renderOrdQuote(){
   const box = document.getElementById('ordQuote');
   if (!box) return;
+  if (isConsultFabric()) {
+    box.textContent = '선택하신 원단은 상담 후 가격이 확정됩니다.';
+    return;
+  }
   const qv = parseInt(document.getElementById('ordQty').value, 10);
   const r = currentPrice(qv > 0 ? qv : null);
   if (!r) { box.innerHTML = ''; return; }
@@ -3835,7 +3921,7 @@ async function generateWorkOrderExcel(orderData) {
   L('A4','제작수량');     ws.mergeCells('B4:D4'); V('B4', qty+'개', {red:true, center:true, bold:true});
 
   // ── 본문 ──
-  L('A5','원단명');     V('B5','10수');             L('C5','포장');        V('D5', packType, {red:true});
+  L('A5','원단명');     V('B5', bagCategory(bag) === 'poly' ? '폴리' : (bagFabricId === 'basic' ? '기본 원단 (상담 확인)' : (FABRICS.find(f => f.id === bagFabricId)?.name || '상담 확인')));             L('C5','포장');        V('D5', packType, {red:true});
   L('A6','품명');       V('B6', bag.name);           L('C6','배송');        V('D6','택배', {red:true});
   L('A7','사이즈');     V('B7', sizeText);           L('C7','인쇄방법');    V('D7','전사');
   L('A8','원단컬러');   V('B8', bagColorName());     L('C8','인쇄컬러');    V('D8','');
@@ -3974,13 +4060,13 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
   const opp   = activeOptions.has('OPP개별포장');
   const request = document.getElementById('ordRequest').value.trim();
   const errs = [];
-  if (!qty || parseInt(qty) < 1) {
-    errs.push('• 제작 수량을 입력해 주세요');
+  if (!/^\d+$/.test(qty) || !Number.isSafeInteger(Number(qty)) || Number(qty) < 1) {
+    errs.push('• 제작 수량을 1 이상의 정수로 입력해 주세요');
   } else {
-    // 블랙·네이비 최소주문 상향(사각L·스몰) — 미만이면 접수 차단
+    // 상품별 최소 수량과 컬러별 상향 최소 수량을 모두 적용
     const rq = (typeof currentPrice === 'function') ? currentPrice(parseInt(qty)) : null;
-    if (rq && rq.baseMin != null && rq.min > rq.baseMin && parseInt(qty) < rq.min)
-      errs.push('• 블랙·네이비 컬러는 최소 ' + rq.min + '개부터 주문할 수 있어요');
+    if (rq && Number(qty) < rq.min)
+      errs.push('• 선택하신 상품은 최소 ' + rq.min + '개부터 주문할 수 있어요');
   }
   if (name.length < 2) errs.push('• 성함을 2자 이상 입력해 주세요');
   if (!/^01[0-9]-?\d{3,4}-?\d{4}$/.test(phone)) errs.push('• 전화번호 형식을 확인해 주세요 (010-1234-5678)');
@@ -4039,7 +4125,8 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
     // 고객이 처음 올린 원본 파일 첨부 (AI 배경제거가 어긋나도 직원이 원본으로 재작업)
     const seenUploads = new Set();
     let origIdx = 0;
-    canvas.getObjects().forEach(o => {
+    const orderObjects = canvas.getObjects().concat(twoSided ? sideDesigns[currentSide === 'front' ? 'back' : 'front'] : []);
+    orderObjects.forEach(o => {
       if (!o.uploadId || seenUploads.has(o.uploadId)) return;
       const orig = originalUploads.get(o.uploadId);
       if (!orig || !orig.dataURL) return;
@@ -4078,7 +4165,7 @@ document.getElementById('orderSubmit').addEventListener('click', async () => {
     if (res.ok && !data.error) {
       submitOk = true;
       showToast('주문이 접수되었어요! 🎉');
-      originalUploads.clear();   // 전송 완료 → 보관하던 원본 캐시 비움 (메모리 누적 방지)
+      // Keep originals available for edits and repeat orders of this design.
       // 시안 번호를 화면에 노출 (복사 가능)
       document.getElementById('orderNum').textContent = orderNum;
       var numBox = document.querySelector('.order-num-box');
@@ -4114,6 +4201,7 @@ function showToast(msg) {
 ========================================================= */
 window.addEventListener('load', () => {
   initCanvas();
+  readSavedDesigns();
   updateOptionsForBag();   // 초기 가방(데일리=에코백) 옵션 구성
   // Cafe24 상품번호/파라미터로 시작 가방 지정
   const startBag = findBagById(resolveStartBagId());
