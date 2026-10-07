@@ -1,5 +1,5 @@
-import { normalizeConfig, getProductProfile } from './config.mjs?v=1.2.7';
-import { isSharedProduct, SHARED_OPTIONS } from './sync.mjs?v=1.2.7';
+import { normalizeConfig, getProductProfile } from './config.mjs?v=1.2.8';
+import { isSharedProduct, SHARED_OPTIONS } from './sync.mjs?v=1.2.8';
 
 const PARTS = ['front', 'back', 'innerPocket'];
 const EMPTY_PRINT = { image: null, imageName: '', width: 100, height: 100, x: 0, y: 0, rotation: 0, enabled: true, lockAspect: true, appearance: 'print' };
@@ -190,6 +190,7 @@ export function createLegacyDesignBridge(env) {
       if (env.getState().currentBag.id !== s.currentBag.id) throw new Error('가방이 바뀌었습니다. 다시 열어 주세요.');
       const token='legacy_'+Date.now()+'_'+(++sequence);
       const snapshot={schemaVersion:1,productId:s.currentBag.id,dimensions:clone(env.getDimensions()),
+        ...clone(env.getCustomParts?.()||{}),
         body:{color:env.getBodyColor?.(s) || s.bagBodyColor || env.defaultBodyColor(s.bagFabricId),fabricId:s.bagFabricId},
         handle:{color:env.getHandleColor?.(s) || s.webbingColor || '#ece6d9'},options:[...s.options,...(s.twoSided?['양면인쇄']:[])],
         crossStrap:clone(normalizeConfig({productId:s.currentBag.id,dimensions:env.getDimensions(),crossStrap:env.getCrossStrap?.()}).crossStrap),
@@ -242,6 +243,7 @@ export function createLegacyDesignBridge(env) {
       const originalEntries = [];
       try {
         env.setRestoring(true);
+        env.setCustomParts?.({bottomPanel:snapshot.bottomPanel,pocket:snapshot.pocket,pocketEnabled:snapshot.pocketEnabled});
         env.setPrintAppearances?.(Object.fromEntries(PARTS.map(part=>[part,plans[part].preserve
           ? env.getPrintAppearances?.()?.[part] || 'print' : plans[part].print.appearance])));
         env.setDimensions(dimensions);
@@ -251,7 +253,7 @@ export function createLegacyDesignBridge(env) {
           options:Object.fromEntries(Object.entries(SHARED_OPTIONS).map(([key,label])=>[key,(snapshot.options||[]).includes(label)]))}).options;
         const options=Object.entries(SHARED_OPTIONS).filter(([key,label])=>normalizedOptions[key]
           && profile.allowedOptions.includes(key) && env.validOptions.includes(label)).map(([,label])=>label);
-        await env.applyAppearance({body:snapshot.body,handle:snapshot.handle,options,
+        await env.applyAppearance({body:snapshot.body,handle:snapshot.handle,options,currentSide:snapshot.currentSide,
           originalAppearance:baseline?.rawAppearance,
           preserveBody:Boolean(baseline && snapshot.body?.color===baseline.snapshot.body.color && snapshot.body?.fabricId===baseline.snapshot.body.fabricId),
           preserveHandle:Boolean(baseline && snapshot.handle?.color===baseline.snapshot.handle.color),

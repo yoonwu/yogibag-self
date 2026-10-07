@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.7';
-import { mmToScene, getProductProfile } from './config.mjs?v=1.2.7';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.8';
+import { mmToScene, getProductProfile } from './config.mjs?v=1.2.8';
 
 // Option sizes are visual references in millimetres. Options share the
 // viewer-owned materials; the inner pocket hangs as an independent pouch.

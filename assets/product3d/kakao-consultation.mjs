@@ -1,4 +1,4 @@
-import { normalizeConfig, serializeConfig, getConsultationSpecs } from './config.mjs?v=1.2.7';
+import { normalizeConfig, serializeConfig, getConsultationSpecs } from './config.mjs?v=1.2.8';
 
 export const KAKAO_CHAT_URL = 'https://pf.kakao.com/_dGxlxlj/chat';
 
@@ -42,7 +42,7 @@ function wrapText(context, text, maxWidth) {
 }
 
 export async function captureChatImage(config, viewer) {
-  const c = normalizeConfig(config);
+  const c = normalizeConfig(await config);
   const dataURL = await viewer.captureCurrentView();
   if (viewer.config && serializeConfig(viewer.config) !== serializeConfig(c)) throw new Error('시안이 변경되었습니다. 다시 캡쳐해 주세요.');
   const image = new Image(); image.src = dataURL; await image.decode();
@@ -74,7 +74,7 @@ function node(tag, className, text) {
 
 export function openKakaoConsultation({ config, viewer }) {
   const previousFocus = document.activeElement;
-  const editor = viewer.container?.closest('.p3d-dialog'), previousInert = editor?.inert;
+  const editor = viewer.container?.closest('.p3d-dialog') || viewer.container?.closest('.body'), previousInert = editor?.inert;
   if (editor) editor.inert = true;
   const root = node('div', 'p3dc-overlay'), dialog = node('section', 'p3dc-dialog p3dc-chat-dialog');
   dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'true'); dialog.setAttribute('aria-label', '카카오톡 시안 상담');

@@ -101,7 +101,7 @@ test('view switching preserves very small and large 2D designs without resizing'
 
 test('unsupported products cannot be silently converted into a daily design', () => {
   assert.throws(()=>configFrom2D({...snapshot(),productId:'other'}),/함께 편집/);
-  assert.throws(()=>snapshotFrom3D(createDefaultConfig()),/함께 편집/);
+  assert.throws(()=>snapshotFrom3D({...createDefaultConfig(),productId:'other'}),/함께 편집/);
 });
 
 test('all twelve live 2D products retain their own dimensions, artwork, fabric and option policy through repeated roundtrips',()=>{
@@ -133,4 +133,25 @@ test('switching product defaults never inherits another product structure or edi
   const changed=configFrom2D(next,previous),expected=createDefaultConfig('small');
   assert.equal(changed.handle.drop,expected.handle.drop);assert.equal(changed.crossStrap.length,800);
   assert.throws(()=>snapshotFrom3D(changed,snapshot()),/이전 가방/);
+});
+
+test('all three photo totes retain per-face artwork, removable pocket and linked or independent trim colors',()=>{
+  for(const id of ['sample-two-line-large','sample-two-line-small','two-tone-kids']){
+    const c=createDefaultConfig(id),s={...snapshot(),productId:id,dimensions:c.dimensions,
+      body:{color:'#6789ab',fabricId:'linen'},handle:{color:'#112233'},bottomPanel:{...c.bottomPanel,color:'#445566',height:55},
+      pocket:{...c.pocket,color:'#bc7788'},pocketEnabled:false};
+    s.print.back.appearance='embroidery';
+    let actual=configFrom2D(s);
+    for(let i=0;i<5;i++){
+      const next=snapshotFrom3D(actual,s);
+      assert.equal(next.bottomPanel.height,55,id);
+      assert.equal(next.body.color,id==='two-tone-kids'?'#ece6d9':'#6789ab',id);
+      assert.equal(next.bottomPanel.color,id==='two-tone-kids'?'#445566':'#112233',id);
+      assert.equal(next.handle.color,'#112233',id);
+      assert.deepEqual(next.print,s.print,id);assert.equal(next.currentSide,'back');
+      assert.equal(next.legacyToken,s.legacyToken);
+      if(id!=='two-tone-kids'){assert.equal(next.pocketEnabled,false);assert.equal(next.pocket.color,'#bc7788');}
+      actual=configFrom2D(next,actual);
+    }
+  }
 });
