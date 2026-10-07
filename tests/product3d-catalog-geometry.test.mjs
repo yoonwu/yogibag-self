@@ -74,7 +74,7 @@ test('flat products meet a narrow sewn bottom while gusset products have a drape
     const nominal=profile.nominalDepth;
     if(nominal===0){assert.ok(b.max.z-b.min.z<config.dimensions.depth*.35*MM_TO_SCENE,`${id} has no box bottom`);assert.equal(state.bag.userData.metrics.nominalDepth,0);}
     else assert.ok(b.max.z-b.min.z>config.dimensions.depth*.55*MM_TO_SCENE,`${id} has a real gusset footprint`);
-    const side=state.bag.getObjectByName('sideLeft').geometry.attributes.position;
+    const side=state.bag.getObjectByName(profile.supportsBottomPanel?'bottomSideLeftPanel':'sideLeft').geometry.attributes.position;
     assert.ok(side.getY(11)>side.getY(0)+1*MM_TO_SCENE,`${id} lower side seam lifts into a V fold`);
     assert.ok(p.array.every(Number.isFinite));state.dispose();
   }

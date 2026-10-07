@@ -1,14 +1,14 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.3';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.3';
-import { createProductModel } from './registry.mjs?v=1.2.3';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.3';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.3';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.3';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.3';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.4';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.4';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.4';
+import { createProductModel } from './registry.mjs?v=1.2.4';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.4';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.4';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.4';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.4';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.4';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;

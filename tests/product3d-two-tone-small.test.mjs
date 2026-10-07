@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {runInNewContext} from 'node:vm';
 import {createDefaultConfig,normalizeConfig,patchConfig,serializeConfig,parseConfig,
-  getConsultationSpecs,SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID} from '../assets/product3d/config.mjs';
+  getConsultationSpecs,SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID} from '../assets/product3d/config.mjs';
 import {isSharedProduct} from '../assets/product3d/sync.mjs';
 import {buildBagModel,disposeBagModel} from '../assets/product3d/model.mjs';
 import * as THREE from '../assets/vendor/three/three.module.js';
@@ -55,10 +55,10 @@ test('small webbing folds to a narrow cloth crown, joins the outside strips and 
   } finally {disposeBagModel(bag);Object.values(materials).forEach(material=>material.dispose());}
 });
 
-test('the real bag picker exposes both two-tone sizes with separate 3D entry targets and packaged preview assets',async()=>{
+test('the real bag picker exposes both two-line sizes and the separate two-tone kids product with packaged previews',async()=>{
   const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
   const bags=runInNewContext(`(${html.match(/const EXTRA_3D_BAGS = (\[[\s\S]*?\n\]);/)[1]})`);
-  assert.deepEqual(Array.from(bags,bag=>bag.id),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID]);
+  assert.deepEqual(Array.from(bags,bag=>bag.id),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID]);
   const small=bags.find(bag=>bag.id===TWO_TONE_SMALL_PRODUCT_ID);
   assert.equal(small.size,'스몰 · 34×24×10cm');assert.equal(small.editorMode,'3d');
   for(const bag of bags)assert.ok((await readFile(new URL(`../${bag.preview}`,import.meta.url))).length>0);
@@ -67,6 +67,6 @@ test('the real bag picker exposes both two-tone sizes with separate 3D entry tar
   const context={document,BAG_MODELS:{ecobag:[]},EXTRA_3D_BAGS:bags,BAG_IMAGES:{},currentBag:{id:'daily'}};
   runInNewContext(html.slice(html.indexOf('function renderBagGrid(cat)'),html.indexOf('function selectBag(bag, silent)')),context);
   runInNewContext("renderBagGrid('ecobag')",context);
-  assert.deepEqual(nodes.map(node=>node.dataset.p3dSelectProduct),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID]);
+  assert.deepEqual(nodes.map(node=>node.dataset.p3dSelectProduct),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID]);
   assert.ok(nodes[1].innerHTML.includes(small.size));
 });

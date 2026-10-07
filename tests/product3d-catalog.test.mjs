@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { createDefaultConfig, normalizeConfig, patchConfig, parseConfig, serializeConfig,
   getProductProfile, getProductLimits, getProductPrintArea, isSupportedProduct, PRODUCT3D_PROFILES,
-  DESIGN_OPTION_LABELS, getConsultationSpecs, getPrintBoundsWarnings, SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID } from '../assets/product3d/config.mjs';
+  DESIGN_OPTION_LABELS, getConsultationSpecs, getPrintBoundsWarnings, SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID } from '../assets/product3d/config.mjs';
 import { Product3DCatalog, Product3DRegistry, configForProduct } from '../assets/product3d/registry.mjs';
 import { Product3DEditor } from '../assets/product3d/editor.mjs';
 import { FABRIC_COLOR_PRESETS } from '../assets/product3d/fabrics.mjs';
@@ -18,7 +18,7 @@ const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-8
 test('every actual 2D product has one registered 3D profile with matching names, dimensions and options', () => {
   const ids = Object.values(bags2D).flat().map(bag => bag.id);
   assert.equal(ids.length, 12);
-  assert.deepEqual([...Product3DCatalog.keys()].sort(), [SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, ...ids].sort());
+  assert.deepEqual([...Product3DCatalog.keys()].sort(), [SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, ...ids].sort());
   for (const [category, bags] of Object.entries(bags2D)) for (const bag of bags) {
     const config = configForProduct(bag.id), profile = getProductProfile(config), optionConfig = options2D[category];
     assert.equal(profile.category, category);

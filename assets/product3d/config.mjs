@@ -1,6 +1,6 @@
-import { getFabricOption, getColorName } from './fabrics.mjs';
-import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs';
-export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs';
+import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.4';
+import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.4';
+export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.4';
 
 // Customer dimensions are millimetres. Only this boundary converts to scene units.
 export const MM_TO_SCENE = 0.001;
@@ -62,9 +62,9 @@ export function getProductPrintArea(config) {
     const size = profile.printGuideSize || 170;
     const bottom = config?.bottomPanel?.height ?? profile.defaultBottomPanel?.height ?? 75;
     const h = config?.handle || profile.defaultHandle;
-    const width = Math.min(size, Math.max(60, h.gap - h.width - 10));
-    const height = Math.min(size, dimensions.height - bottom - 20);
-    return { width, height, x: 0, y: bottom + height / 2 - dimensions.height / 2 };
+    const width = Math.min(size, Math.max(60, profile.supportsPocket ? h.gap - h.width - 10 : dimensions.width - 40));
+    const height = Math.min(size, dimensions.height - bottom - (profile.supportsPocket ? 20 : 30));
+    return { width, height, x: 0, y: bottom + (profile.supportsPocket ? 0 : 10) + height / 2 - dimensions.height / 2 };
   }
   const { image, body, print } = profile.referenceLayout;
   return { width: print.width * image.width / body.width * dimensions.width,
@@ -93,7 +93,7 @@ export function createDefaultConfig(product = SAMPLE_PRODUCT_ID) {
       back: { enabled: true, image: null, imageName: '', appearance: 'print', width: 100, height: 100, x: 0, y: 0, rotation: 0, lockAspect: true },
       innerPocket: { enabled: true, image: null, imageName: '', appearance: 'print', width: 70, height: 40, x: 0, y: 0, rotation: 0, lockAspect: true,
         partDimensions: { width: 140, height: 120 } } },
-    options: { pocket: sample, lining: false, ...Object.fromEntries(Object.keys(DESIGN_OPTION_LABELS).map(key => [key, profile.lockedOptions.includes(key)])) },
+    options: { pocket: profile.supportsPocket, lining: false, ...Object.fromEntries(Object.keys(DESIGN_OPTION_LABELS).map(key => [key, profile.lockedOptions.includes(key)])) },
     measurementBasis: 'finished-body-outer-mm',
     assumptions: [...profile.assumptions],
   };
@@ -265,7 +265,7 @@ export function getConsultationSpecs(config) {
       { label: '봉제 바닥 깊이', value: '0 mm · 평면 봉합형' },
       { label: '3D 입구 벌림 참고값', value: `${c.dimensions.depth} mm · 형태 확인용 추정, 제작 바닥 규격 아님` },
     ] : [{ label: '몸통 가로 × 높이 × 바닥 깊이', value: `${c.dimensions.width} × ${c.dimensions.height} × ${c.dimensions.depth} mm` }]),
-    { label: '원단 종류', value: `${profile.clothKind === 'poly' ? '폴리 / 합성 원단' : getFabricOption(c.body.fabricId).name} · ${profile.supportsPocket ? '몸통/주머니/밑단 공통' : '몸통 공통'}` },
+    { label: '원단 종류', value: `${profile.clothKind === 'poly' ? '폴리 / 합성 원단' : getFabricOption(c.body.fabricId).name} · ${profile.supportsPocket ? '몸통/주머니/밑단 공통' : profile.supportsBottomPanel ? '몸통/밑단 공통' : '몸통 공통'}` },
     ...(profile.supportsBottomPanel
       ? [{ label: '밑단 높이 / 색상', value: `${c.bottomPanel.height} mm / ${getColorName(c.bottomPanel.color)}` }]
       : [{ label: '밑단 배색', value: '없음 · 몸통과 같은 원단/색상' }]),
