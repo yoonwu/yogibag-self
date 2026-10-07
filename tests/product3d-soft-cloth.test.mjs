@@ -5,12 +5,12 @@ import { createDefaultConfig, MM_TO_SCENE } from '../assets/product3d/config.mjs
 import { buildBagModel, disposeBagModel, frontSurfaceMM } from '../assets/product3d/model.mjs';
 
 for(const id of ['sample-two-line-large','sample-two-line-small','two-tone-kids']) {
-  test(`${id}: cloth settles between handle roots and every curved side joins its front panel`,()=>{
+  test(`${id}: sewn mouth stays straight while curved cloth sides and lower folds remain natural`,()=>{
     const config=createDefaultConfig(id);
     const material=new THREE.MeshBasicMaterial();
     const bag=buildBagModel(config,{body:material});
     const rim=bag.getObjectByName('openTopRim').geometry.boundingBox;
-    assert.ok(rim.max.y-rim.min.y>2*MM_TO_SCENE,'mouth sags instead of staying a straight box edge');
+    assert.ok(rim.max.y-rim.min.y<.01*MM_TO_SCENE,'the sewn mouth does not ripple between handle roots');
     assert.ok(Math.abs(rim.max.y-config.dimensions.height*MM_TO_SCENE)<1e-6,'sewn roots keep the measured body height');
     for(const pair of [['bodyFront','sideLeft',0],['bodyFront','sideRight',32],
       ['bottomFrontPanel','bottomSideLeftPanel',0],['bottomFrontPanel','bottomSideRightPanel',32]]) {

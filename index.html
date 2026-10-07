@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="assets/product3d/editor.css?v=1.2.8">
-<link rel="stylesheet" href="assets/product3d/consultation.css?v=1.2.8">
+<link rel="stylesheet" href="assets/product3d/editor.css?v=1.2.9">
+<link rel="stylesheet" href="assets/product3d/consultation.css?v=1.2.9">
 <title>요기백 · 셀프 시안 에디터</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316a34a'/%3E%3Cpath d='M11 12v-2a5 5 0 0 1 10 0v2' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M7 12h18l-1.5 13.4a1.3 1.3 0 0 1-1.3 1.1H9.8a1.3 1.3 0 0 1-1.3-1.1z' fill='white'/%3E%3Ctext x='16' y='22.4' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='8.5' font-weight='bold' fill='%2316a34a'%3EYO%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -931,7 +931,7 @@
 <div class="toast" id="toast"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span id="toastMsg">저장되었어요</span></div>
 
 <!-- 버전 표시 — 배포할 때마다 아래 숫자를 올려주세요 (캐시로 옛 버전인지 바로 확인용) -->
-<div id="appVersion">v1.2.8 · 2026.10.07</div>
+<div id="appVersion">v1.2.9 · 2026.10.07</div>
 
 <!-- ORDER CONFIRM MODAL -->
 <div class="order-overlay" id="orderModal">
@@ -4548,9 +4548,9 @@ function showToast(msg) {
 // originals remain in this editor and are referenced by a short session token.
 let legacyDesignAPI = null;
 let customKakaoConsultation=null,customConfigFrom2D=null;
-const customTotes2DReady=Promise.all([import('./assets/product3d/custom-totes-2d.mjs?v=1.2.8'),import('./assets/product3d/kakao-consultation.mjs?v=1.2.8'),import('./assets/product3d/sync.mjs?v=1.2.8')])
+const customTotes2DReady=Promise.all([import('./assets/product3d/custom-totes-2d.mjs?v=1.2.9'),import('./assets/product3d/kakao-consultation.mjs?v=1.2.9'),import('./assets/product3d/sync.mjs?v=1.2.9')])
   .then(([photos,consultation,sync])=>{customKakaoConsultation=consultation.openKakaoConsultation;customConfigFrom2D=sync.configFrom2D;return photos;});
-const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mjs?v=1.2.8'),import('./assets/product3d/catalog.mjs?v=1.2.8'),import('./assets/product3d/embroidery-fabric.mjs')]).then(([{createLegacyDesignBridge},{PRODUCT3D_PROFILES},{installFabricEmbroideryPreview}]) => {
+const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mjs?v=1.2.9'),import('./assets/product3d/catalog.mjs?v=1.2.9'),import('./assets/product3d/embroidery-fabric.mjs')]).then(([{createLegacyDesignBridge},{PRODUCT3D_PROFILES},{installFabricEmbroideryPreview}]) => {
   embroideryPreview=installFabricEmbroideryPreview({fabric,getCanvas:()=>canvas,
     getAppearance:object=>printAppearances[artworkAppearancePart(object)],getMmPerPixel:()=>getCmPerPx()*10,designProps:DESIGN_PROPS});
   refreshEmbroideryPreview();
@@ -4651,6 +4651,6 @@ window.addEventListener('load', () => {
   updateDesignViewToggle();
 });
 </script>
-<script type="module" src="assets/product3d/bridge.mjs?v=1.2.8"></script>
+<script type="module" src="assets/product3d/bridge.mjs?v=1.2.9"></script>
 </body>
 </html>
