@@ -1,4 +1,4 @@
-import { configFrom2D, snapshotFrom3D, isSharedProduct } from './sync.mjs?v=1.2.7';
+import { configFrom2D, snapshotFrom3D, isSharedProduct } from './sync.mjs?v=1.2.8';
 
 // Each product owns its editor and reversible 2D token. Switching products
 // cannot reuse another bag's artwork, inner-pocket frame or custom structure.
@@ -135,13 +135,33 @@ export function createProductBridge(env) {
       env.setOpening?.(false);
     }
   }
-  return Object.freeze({ openProduct, switchProduct });
+  async function select2DProduct(productId) {
+    if(opening||switching)return false;
+    if(productId===env.currentProductId())return true;
+    switching=true;
+    const previousId=env.currentProductId();let previous;
+    try {
+      await env.ready?.();
+      previous=await env.legacy().exportDesign();
+      sessions.set(previousId,{snapshot:previous,config:configFrom2D(previous,sessions.get(previousId)?.config)});
+      await env.selectProduct(productId);
+      const saved=sessions.get(productId);
+      if(saved)await env.legacy().applyDesign(saved.snapshot,{restoreProductDraft:true});
+      releaseOtherEditors(productId,true);
+      env.show2DURL?.(productId);
+      return true;
+    }catch(error){
+      if(previous&&env.currentProductId()!==previousId){await env.selectProduct(previousId);await env.legacy().applyDesign(previous,{restoreProductDraft:true});}
+      throw error;
+    }finally{switching=false;}
+  }
+  return Object.freeze({ openProduct, switchProduct, select2DProduct });
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   const releaseQuery = new URL(import.meta.url).search;
   const bridge = createProductBridge({
-    load: () => Promise.all([import(`./editor.mjs${releaseQuery}`), import(`./consultation.mjs${releaseQuery}`), import('./registry.mjs?v=1.2.7')]),
+    load: () => Promise.all([import(`./editor.mjs${releaseQuery}`), import(`./consultation.mjs${releaseQuery}`), import('./registry.mjs?v=1.2.8')]),
     legacy: () => window.yogibagDesignBridge,
     currentProductId: () => window.getYogibagCurrentBag?.()?.id,
     selectProduct: id => window.selectYogibagBagFor3D(id),
@@ -166,6 +186,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       history.replaceState(history.state, '', url);
     },
   });
+  window.selectYogibagBagWithDraft=id=>bridge.select2DProduct(id);
   for (const id of ['product3dLaunch', 'product3dCanvasToggle']) {
     document.getElementById(id)?.addEventListener('click', () => bridge.openProduct(window.getYogibagCurrentBag?.()?.id, { from2D: true }));
   }

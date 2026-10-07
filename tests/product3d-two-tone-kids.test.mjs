@@ -56,7 +56,7 @@ test('the true two-tone kids bag uses 33 by 33 by 8 cm, short ivory cotton handl
   assert.equal(profile.handleFabric,'cotton-tape');assert.equal(c.handle.drop,215);
   assert.equal(c.handle.color,c.body.color);assert.equal(c.bottomPanel.color,'#171c28');assert.equal(c.bottomPanel.height,60);
   assert.equal(c.options.pocket,false);assert.equal(patchConfig(c,'options.pocket',true).options.pocket,false);
-  assert.equal(isSharedProduct(TWO_TONE_KIDS_PRODUCT_ID),false);
+  assert.equal(isSharedProduct(TWO_TONE_KIDS_PRODUCT_ID),true);
   assert.ok(c.assumptions.some(text=>text.includes('60mm')&&text.includes('추정')));
   assert.ok(c.printArea.width>=230,'a plain body can print across the front, not just between handle strips');
   const lowerEdge=c.printArea.y+c.dimensions.height/2-c.printArea.height/2;

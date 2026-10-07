@@ -77,6 +77,28 @@ test('export includes every editable front/back layer and separates inner artwor
   assert.deepEqual(snapshot.print.innerPocket.partDimensions,{width:140,height:120});
 });
 
+test('custom photo totes export their parts and apply the selected face before rebuilding the photograph',async()=>{
+  for(const productId of ['sample-two-line-large','sample-two-line-small','two-tone-kids']){
+    const f=fixture({productId,currentSide:'back',inner:false}),config=createDefaultConfig(productId);
+    let parts={bottomPanel:{...config.bottomPanel},...(productId==='two-tone-kids'?{}:{pocket:{...config.pocket},pocketEnabled:true})};
+    f.env.getCustomParts=()=>structuredClone(parts);
+    f.env.setCustomParts=value=>{parts={...parts,...Object.fromEntries(Object.entries(value).filter(([,v])=>v!==undefined))};};
+    const originalApply=f.env.applyAppearance;
+    f.env.applyAppearance=async value=>{
+      assert.equal(value.currentSide,'back');assert.equal(parts.bottomPanel.height,50);
+      if(productId!=='two-tone-kids')assert.equal(parts.pocketEnabled,false);
+      await originalApply(value);
+    };
+    const original=await f.api.exportDesign();
+    assert.deepEqual(original.bottomPanel,config.bottomPanel);
+    const next=configFrom2D(original);next.bottomPanel.height=50;next.options.pocket=false;
+    await f.api.applyDesign(snapshotFrom3D(next,original));
+    const returned=await f.api.exportDesign();assert.equal(returned.bottomPanel.height,50);
+    assert.equal(returned.currentSide,'back');assert.deepEqual(returned.print,original.print);
+    assert.equal(f.state.sideDesigns.front[0],f.front[0]);assert.equal(f.state.sideDesigns.back[0],f.back[0]);
+  }
+});
+
 test('all twelve products roundtrip editable originals with their exact dimensions and locked option policy',async()=>{
   for(const [id,profile] of Object.entries(PRODUCT3D_PROFILES).filter(([,profile])=>profile.category!=='sample')) {
     const f=fixture({productId:id,inner:profile.category!=='pouch'});

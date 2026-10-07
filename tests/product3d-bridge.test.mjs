@@ -7,11 +7,11 @@ import { SHARED_OPTIONS } from '../assets/product3d/sync.mjs';
 const clone = value => structuredClone(value);
 function fixture() {
   const ids = Object.keys(PRODUCT3D_PROFILES).filter(id => PRODUCT3D_PROFILES[id].category !== 'sample');
-  const snapshots = new Map(ids.map(id => {
+  const snapshots = new Map(Object.keys(PRODUCT3D_PROFILES).map(id => {
     const c = createDefaultConfig(id);
     c.print.front.image = `data:image/png;base64,${Buffer.from(id).toString('base64')}`;
     return [id, { productId:id, dimensions:c.dimensions, body:c.body, handle:{color:c.handle.color},
-      crossStrap:c.crossStrap, options:Object.entries(SHARED_OPTIONS).filter(([key])=>c.options[key]).map(([,label])=>label),
+      crossStrap:c.crossStrap,bottomPanel:c.bottomPanel,pocket:c.pocket,pocketEnabled:c.options.pocket, options:Object.entries(SHARED_OPTIONS).filter(([key])=>c.options[key]).map(([,label])=>label),
       print:c.print, currentSide:'front', twoSided:false, legacyToken:`token-${id}` }];
   }));
   const editors = [], messages = [], returnedURLs = [], applied = [];
@@ -170,4 +170,32 @@ test('failed picker selection restores the original 2D product and leaves its 3D
   assert.equal(f.snapshots.get('daily').body.color,'#123456');
   await daily.hooks.onReturnTo2D(daily.config);
   assert.equal(f.alive,1);
+});
+
+test('2D photo picker saves separate original artwork and resumes each custom bag as a linked 3D editor',async()=>{
+  const f=fixture(),ids=['sample-two-line-large','sample-two-line-small','two-tone-kids','daily'];
+  for(const id of ids){
+    assert.equal(await f.bridge.select2DProduct(id),true);
+    f.snapshots.get(id).print.front.width=63+ids.indexOf(id);
+    assert.equal(await f.bridge.openProduct(id,{from2D:true}),true);
+    const editor=f.editors.at(-1);
+    assert.equal(typeof editor.hooks.onReturnTo2D,'function');
+    editor.config.bottomPanel.height=52;
+    await editor.hooks.onReturnTo2D(editor.config);
+  }
+  for(const id of ids){
+    await f.bridge.select2DProduct(id);
+    assert.equal(f.snapshots.get(id).print.front.width,63+ids.indexOf(id));
+    assert.equal(f.snapshots.get(id).legacyToken,`token-${id}`);
+    if(id!=='daily')assert.equal(f.snapshots.get(id).bottomPanel.height,52);
+  }
+  assert.equal(f.maxAlive,1);assert.equal(f.messages.length,0);
+});
+
+test('failed 2D photo picker rolls back the product and its original editable snapshot',async()=>{
+  const f=fixture(),original=clone(f.snapshots.get('daily'));
+  f.env.selectProduct=async id=>{f.setCurrent(id);if(id==='two-tone-kids')throw new Error('photo failed');};
+  await assert.rejects(f.bridge.select2DProduct('two-tone-kids'),/photo failed/);
+  assert.equal(f.env.currentProductId(),'daily');assert.deepEqual(f.snapshots.get('daily'),original);
+  assert.equal(await f.bridge.select2DProduct('sample-two-line-small'),true,'failure releases the switching guard');
 });

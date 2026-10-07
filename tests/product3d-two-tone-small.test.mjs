@@ -15,7 +15,7 @@ test('two-tone small uses the provided body, bottom, handle and print-guide dime
   assert.equal(c.handle.color,c.bottomPanel.color);assert.equal(c.options.pocket,true);
   assert.deepEqual(c.printArea,{width:120,height:120,x:0,y:0});
   assert.ok(c.pocket.width>120&&c.pocket.height>120);
-  assert.equal(isSharedProduct(TWO_TONE_SMALL_PRODUCT_ID),false);
+  assert.equal(isSharedProduct(TWO_TONE_SMALL_PRODUCT_ID),true);
   const specs=getConsultationSpecs(c);
   assert.ok(specs.some(spec=>spec.value.includes('340 × 240 × 100')));
   assert.ok(specs.some(spec=>spec.value.includes('사진 비율로 추정')));
@@ -60,13 +60,13 @@ test('the real bag picker exposes both two-line sizes and the separate two-tone 
   const bags=runInNewContext(`(${html.match(/const EXTRA_3D_BAGS = (\[[\s\S]*?\n\]);/)[1]})`);
   assert.deepEqual(Array.from(bags,bag=>bag.id),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID]);
   const small=bags.find(bag=>bag.id===TWO_TONE_SMALL_PRODUCT_ID);
-  assert.equal(small.size,'스몰 · 34×24×10cm');assert.equal(small.editorMode,'3d');
+  assert.equal(small.size,'스몰 · 34×24×10cm');assert.equal(small.editorMode,'2d');
   for(const bag of bags)assert.ok((await readFile(new URL(`../${bag.preview}`,import.meta.url))).length>0);
   const nodes=[],document={getElementById:()=>({innerHTML:'',appendChild(node){nodes.push(node);}}),
     createElement:()=>({style:{},dataset:{},setAttribute(){},addEventListener(){}})};
   const context={document,BAG_MODELS:{ecobag:[]},EXTRA_3D_BAGS:bags,BAG_IMAGES:{},currentBag:{id:'daily'}};
   runInNewContext(html.slice(html.indexOf('function renderBagGrid(cat)'),html.indexOf('function selectBag(bag, silent)')),context);
   runInNewContext("renderBagGrid('ecobag')",context);
-  assert.deepEqual(nodes.map(node=>node.dataset.p3dSelectProduct),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID]);
+  assert.ok(nodes.every(node=>!node.dataset.p3dSelectProduct),'custom bags open the linked photo editor');
   assert.ok(nodes[1].innerHTML.includes(small.size));
 });

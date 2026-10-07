@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import * as surfaces from './model.mjs?v=1.2.7';
-import { MM_TO_SCENE } from './config.mjs?v=1.2.7';
+import * as surfaces from './model.mjs?v=1.2.8';
+import { MM_TO_SCENE } from './config.mjs?v=1.2.8';
 
 // Sewn layers have a continuous padded body, not just a patterned decal.
 // The rounded shoulder stays in the silhouette even when individual threads

@@ -1,4 +1,4 @@
-import { createDefaultConfig, normalizeConfig, getProductProfile, isSupportedProduct } from './config.mjs?v=1.2.7';
+import { createDefaultConfig, normalizeConfig, getProductProfile, isSupportedProduct } from './config.mjs?v=1.2.8';
 
 export const SHARED_OPTIONS = Object.freeze({
   innerPocket: '안주머니', innerPocketPrint: '안주머니인쇄',
@@ -8,7 +8,7 @@ export const SHARED_OPTIONS = Object.freeze({
 const clone = value => structuredClone(value);
 
 export function isSharedProduct(productId) {
-  return isSupportedProduct(productId) && getProductProfile(productId).category !== 'sample';
+  return isSupportedProduct(productId);
 }
 
 function requireSharedProduct(productId) {
@@ -26,6 +26,9 @@ export function configFrom2D(snapshot, previous) {
   base.body = { ...base.body, ...snapshot.body, color: snapshot.body?.color || base.body.color, fabricId: snapshot.body?.fabricId || base.body.fabricId };
   base.handle = { ...base.handle, ...snapshot.handle, color: snapshot.handle?.color || base.handle.color };
   base.crossStrap = { ...base.crossStrap, ...snapshot.crossStrap };
+  if(snapshot.bottomPanel)base.bottomPanel={...base.bottomPanel,...snapshot.bottomPanel};
+  if(snapshot.pocket)base.pocket={...base.pocket,...snapshot.pocket};
+  if(typeof snapshot.pocketEnabled==='boolean')base.options.pocket=snapshot.pocketEnabled;
   for (const [key, label] of Object.entries(SHARED_OPTIONS)) base.options[key] = selected.has(label);
   base.options.doubleSided = Boolean(snapshot.twoSided || selected.has('양면인쇄'));
   for (const side of ['front', 'back', 'innerPocket']) {
@@ -43,6 +46,8 @@ export function snapshotFrom3D(config, previous = {}) {
   return {
     ...clone(previous), schemaVersion: 1, productId: c.productId,
     dimensions: clone(c.dimensions), body: clone(c.body), handle: clone(c.handle), crossStrap: clone(c.crossStrap),
+    ...(profile.supportsBottomPanel?{bottomPanel:clone(c.bottomPanel)}:{}),
+    ...(profile.supportsPocket?{pocket:clone(c.pocket),pocketEnabled:c.options.pocket}:{}),
     options: Object.entries(SHARED_OPTIONS).filter(([key]) => c.options[key] && profile.allowedOptions.includes(key)).map(([, label]) => label),
     twoSided: c.options.doubleSided,
     currentSide: c.options.doubleSided && previous.currentSide === 'back' ? 'back' : 'front',

@@ -1,6 +1,6 @@
-import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings, getProductProfile } from './config.mjs?v=1.2.7';
-import { dataURLBytes } from './zip.mjs?v=1.2.7';
-import { openKakaoConsultation } from './kakao-consultation.mjs?v=1.2.7';
+import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings, getProductProfile } from './config.mjs?v=1.2.8';
+import { dataURLBytes } from './zip.mjs?v=1.2.8';
+import { openKakaoConsultation } from './kakao-consultation.mjs?v=1.2.8';
 
 const EMAIL_ENDPOINT = 'https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email';
 const STAFF_EMAIL = 'thdghkstlr@gmail.com';
