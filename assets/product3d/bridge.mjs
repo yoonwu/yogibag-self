@@ -100,8 +100,9 @@ export function createProductBridge(env) {
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  const releaseQuery = new URL(import.meta.url).search;
   const bridge = createProductBridge({
-    load: () => Promise.all([import('./editor.mjs'), import('./consultation.mjs'), import('./registry.mjs')]),
+    load: () => Promise.all([import(`./editor.mjs${releaseQuery}`), import(`./consultation.mjs${releaseQuery}`), import('./registry.mjs')]),
     legacy: () => window.yogibagDesignBridge,
     currentProductId: () => window.getYogibagCurrentBag?.()?.id,
     ready: () => document.readyState === 'complete' ? Promise.resolve()
