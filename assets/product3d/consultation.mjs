@@ -1,5 +1,5 @@
-import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings } from './config.mjs?v=1.2.4';
-import { dataURLBytes } from './zip.mjs?v=1.2.4';
+import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings } from './config.mjs?v=1.2.5';
+import { dataURLBytes } from './zip.mjs?v=1.2.5';
 
 const EMAIL_ENDPOINT = 'https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email';
 const STAFF_EMAIL = 'thdghkstlr@gmail.com';

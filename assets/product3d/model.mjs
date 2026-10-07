@@ -1,8 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.4';
-import { mmToScene, getProductProfile } from './config.mjs?v=1.2.4';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.5';
+import { mmToScene, getProductProfile } from './config.mjs?v=1.2.5';
 import { addBagOptions, getInnerPocketLayout, innerPocketHalfWidth, innerPocketContourVisible,
-  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.4';
+  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.5';
 
 // Shape coordinates are millimetres until a vertex is written. Width, depth,
 // webbing width/thickness and print size never depend on an Object3D scale.

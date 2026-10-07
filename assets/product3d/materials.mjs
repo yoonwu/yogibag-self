@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { MM_TO_SCENE, getProductProfile } from './config.mjs?v=1.2.4';
-import { getFabricOption } from './fabrics.mjs?v=1.2.4';
+import { MM_TO_SCENE, getProductProfile } from './config.mjs?v=1.2.5';
+import { getFabricOption } from './fabrics.mjs?v=1.2.5';
 
 // The legacy poly products use their own photos, not the canvas fabric picker.
 // Keep the shared fabric setting intact while rendering their finer synthetic

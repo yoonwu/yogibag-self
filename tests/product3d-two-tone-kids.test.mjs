@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../assets/vendor/three/three.module.js';
 import {createDefaultConfig,normalizeConfig,patchConfig,serializeConfig,parseConfig,getProductProfile,
-  SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID} from '../assets/product3d/config.mjs';
+  SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID,getConsultationSpecs} from '../assets/product3d/config.mjs';
 import {buildBagModel,disposeBagModel,frontSurfaceMM} from '../assets/product3d/model.mjs';
 import {isSharedProduct} from '../assets/product3d/sync.mjs';
 
@@ -20,15 +20,44 @@ test('renaming the two-line bags preserves the old entry IDs and saved customer 
   }
 });
 
+test('the ivory body is enforced through edits and old drafts without changing the separate trims or artwork',()=>{
+  const draft=createDefaultConfig(TWO_TONE_KIDS_PRODUCT_ID);
+  draft.body.color='#c2141c';draft.body.fabricId='linen';draft.bottomPanel.color='#5f82a8';draft.handle.color='#7d9070';
+  draft.options.innerPocket=true;draft.print.front.image='data:image/png;base64,AA==';draft.print.front.y=31;
+  const restored=parseConfig(serializeConfig(draft));
+  assert.equal(restored.body.color,'#ece6d9');assert.equal(restored.body.fabricId,'linen');
+  assert.equal(restored.bottomPanel.color,'#5f82a8');assert.equal(restored.handle.color,'#7d9070');
+  assert.deepEqual(restored.print.front,draft.print.front);assert.equal(restored.options.innerPocket,true);
+  assert.equal(patchConfig(restored,'body.color','#171c28').body.color,'#ece6d9');
+  assert.match(getConsultationSpecs(restored).find(s=>s.label==='몸통 색상').value,/아이보리.*고정/);
+});
+
+test('both pocket tote sizes enforce one trim color through either old control and draft restoration',()=>{
+  for(const id of [SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID]){
+    let c=createDefaultConfig(id);c.body.color='#5f82a8';c.pocket.color='#f0c3cd';
+    for(const [path,value] of [['handle.color','#7d9070'],['bottomPanel.color','#c2141c']]){
+      c=patchConfig(c,path,value);assert.equal(c.handle.color,value);assert.equal(c.bottomPanel.color,value);
+      assert.equal(c.body.color,'#5f82a8');assert.equal(c.pocket.color,'#f0c3cd');
+      assert.deepEqual(parseConfig(serializeConfig(c)),c);
+    }
+    const oldDraft=normalizeConfig({...c,handle:{...c.handle,color:'#1a2a4a'},bottomPanel:{...c.bottomPanel,color:'#c2141c'}});
+    assert.equal(oldDraft.handle.color,'#1a2a4a');assert.equal(oldDraft.bottomPanel.color,'#1a2a4a');
+    assert.equal(normalizeConfig({productId:id,bottomPanel:{color:'#7d9070'}}).handle.color,'#7d9070');
+    const specs=getConsultationSpecs(oldDraft);
+    assert.equal(specs.filter(s=>s.label==='손잡이·밑단 공통 색상').length,1);
+    assert.ok(!specs.some(s=>s.label==='밑단 높이 / 색상'));
+  }
+});
+
 test('the true two-tone kids bag uses 33 by 33 by 8 cm, short ivory cotton handles and a separate black band',()=>{
   const c=normalizeConfig(createDefaultConfig(TWO_TONE_KIDS_PRODUCT_ID)),profile=getProductProfile(c);
   assert.equal(c.productName,'투톤 에코백 · 키즈');assert.deepEqual(c.dimensions,{width:330,height:330,depth:80});
   assert.equal(profile.referenceHandleLength,480);assert.equal(profile.handleAttachment,'mouth');
   assert.equal(profile.handleFabric,'cotton-tape');assert.equal(c.handle.drop,215);
-  assert.equal(c.handle.color,c.body.color);assert.equal(c.bottomPanel.color,'#171c28');assert.equal(c.bottomPanel.height,55);
+  assert.equal(c.handle.color,c.body.color);assert.equal(c.bottomPanel.color,'#171c28');assert.equal(c.bottomPanel.height,60);
   assert.equal(c.options.pocket,false);assert.equal(patchConfig(c,'options.pocket',true).options.pocket,false);
   assert.equal(isSharedProduct(TWO_TONE_KIDS_PRODUCT_ID),false);
-  assert.ok(c.assumptions.some(text=>text.includes('55mm')&&text.includes('추정')));
+  assert.ok(c.assumptions.some(text=>text.includes('60mm')&&text.includes('추정')));
   assert.ok(c.printArea.width>=230,'a plain body can print across the front, not just between handle strips');
   const lowerEdge=c.printArea.y+c.dimensions.height/2-c.printArea.height/2;
   assert.ok(lowerEdge>=c.bottomPanel.height+10);

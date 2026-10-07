@@ -1,6 +1,6 @@
-import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.4';
-import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.4';
-export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.4';
+import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.5';
+import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.5';
+export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.5';
 
 // Customer dimensions are millimetres. Only this boundary converts to scene units.
 export const MM_TO_SCENE = 0.001;
@@ -83,7 +83,7 @@ export function createDefaultConfig(product = SAMPLE_PRODUCT_ID) {
     productName: profile.name,
     dimensions: { ...profile.dimensions }, nominalDepth: profile.nominalDepth, depthBasis: profile.depthBasis,
     bottomPanel: profile.defaultBottomPanel ? { ...profile.defaultBottomPanel } : sample ? { height: 75, color: '#171c28' } : { height: 0, color: '#ece6d9' },
-    body: { color: profile.clothKind === 'poly' ? '#1a1a1a' : '#ece6d9', fabricId: 'basic' },
+    body: { color: profile.fixedBodyColor || (profile.clothKind === 'poly' ? '#1a1a1a' : '#ece6d9'), fabricId: 'basic' },
     handle: { ...profile.defaultHandle },
     crossStrap: { length: 800 },
     pocket: profile.defaultPocket ? { ...profile.defaultPocket } : { width: 180, height: 190, bottom: 75, color: '#ece6d9' },
@@ -126,12 +126,18 @@ export function normalizeConfig(input = {}) {
     put(c, path, clamp(number(at(input, path), at(c, path)), limit.min, limit.max));
   }
   c.crossStrap.length = Math.max(c.crossStrap.length, getCrossStrapLengthMin(c));
-  c.body.color = color(input.body?.color, c.body.color);
+  c.body.color = profile.fixedBodyColor || color(input.body?.color, c.body.color);
   c.body.fabricId = profile.clothKind === 'poly' ? 'basic' : getFabricOption(input.body?.fabricId).id;
   // Existing saved samples inherited the pocket color from the body.
   c.pocket.color = color(input.pocket?.color, c.body.color);
   c.bottomPanel.color = color(input.bottomPanel?.color, c.bottomPanel.color);
   c.handle.color = color(input.handle?.color, c.handle.color);
+  // Older drafts can contain independent colors. The visible handle selector
+  // owns the shared trim color; a bottom-only draft still keeps its selection.
+  if (profile.linkedHandleBottomColor) {
+    c.handle.color = color(input.handle?.color, color(input.bottomPanel?.color, c.handle.color));
+    c.bottomPanel.color = c.handle.color;
+  }
   for (const option of Object.keys(c.options)) c.options[option] = bool(input.options?.[option], c.options[option]);
   if (!profile.supportsPocket) c.options.pocket = false;
   if (profile.category !== 'sample') c.options.lining = false;
@@ -189,6 +195,9 @@ export function patchConfig(config, path, value) {
   if (!SETTABLE.has(path)) throw new Error('지원하지 않는 설정 항목입니다.');
   const c = normalizeConfig(config);
   put(c, path, value);
+  if (getProductProfile(c).linkedHandleBottomColor && ['handle.color', 'bottomPanel.color'].includes(path)) {
+    c.handle.color = c.bottomPanel.color = value;
+  }
   if (path === 'options.innerPocket' && value === false) c.options.innerPocketPrint = false;
   if (['options.snap', 'options.magnet', 'options.zipper'].includes(path) && value === true) {
     for (const key of ['snap', 'magnet', 'zipper']) c.options[key] = path === `options.${key}`;
@@ -267,12 +276,17 @@ export function getConsultationSpecs(config) {
     ] : [{ label: '몸통 가로 × 높이 × 바닥 깊이', value: `${c.dimensions.width} × ${c.dimensions.height} × ${c.dimensions.depth} mm` }]),
     { label: '원단 종류', value: `${profile.clothKind === 'poly' ? '폴리 / 합성 원단' : getFabricOption(c.body.fabricId).name} · ${profile.supportsPocket ? '몸통/주머니/밑단 공통' : profile.supportsBottomPanel ? '몸통/밑단 공통' : '몸통 공통'}` },
     ...(profile.supportsBottomPanel
-      ? [{ label: '밑단 높이 / 색상', value: `${c.bottomPanel.height} mm / ${getColorName(c.bottomPanel.color)}` }]
+      ? [profile.linkedHandleBottomColor
+        ? { label: '밑단 높이', value: `${c.bottomPanel.height} mm` }
+        : { label: '밑단 높이 / 색상', value: `${c.bottomPanel.height} mm / ${getColorName(c.bottomPanel.color)}` }]
       : [{ label: '밑단 배색', value: '없음 · 몸통과 같은 원단/색상' }]),
-    { label: '몸통 색상', value: getColorName(c.body.color) },
+    { label: '몸통 색상', value: `${getColorName(c.body.color)}${profile.fixedBodyColor ? ' · 고정' : ''}` },
     ...(profile.supportsHandles ? [
       { label: '손잡이 폭 / 두께 / 길이', value: `${c.handle.width} / ${c.handle.thickness} / ${c.handle.drop} mm` },
-      { label: '손잡이 중심 간격 / 색상', value: `${c.handle.gap} mm / ${getColorName(c.handle.color)}` },
+      ...(profile.linkedHandleBottomColor ? [
+        { label: '손잡이 중심 간격', value: `${c.handle.gap} mm` },
+        { label: '손잡이·밑단 공통 색상', value: getColorName(c.handle.color) },
+      ] : [{ label: '손잡이 중심 간격 / 색상', value: `${c.handle.gap} mm / ${getColorName(c.handle.color)}` }]),
       { label: '손잡이 원단', value: profile.handleFabricLabel },
     ] : []),
     ...(profile.supportsHandles && profile.handleAttachment === 'mouth' ? [
