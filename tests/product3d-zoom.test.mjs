@@ -163,6 +163,20 @@ test('raycast focus selects a real bag surface and stays fixed across a layout r
   assert.equal(viewer.getZoomMetrics().percent, 200);
 });
 
+test('chat capture waits for artwork and embroidery while retaining the exact rotated, zoomed and panned current view',async t=>{
+  const {viewer}=viewerForTest(t);viewer.setMagnifier(true);viewer.zoomBy(1.25);viewer.setPanMode(true);
+  const position=viewer.camera.position.clone(),target=viewer.controls.target.clone(),zoom=viewer.getZoomMetrics();
+  const view=viewer._view,projection=[viewer.camera.fov,viewer.camera.near,viewer.camera.far],config=JSON.stringify(viewer.config);
+  const events=[];
+  viewer._printStates={front:{pending:{promise:Promise.resolve().then(()=>events.push('artwork'))}}};
+  viewer._waitForEmbroidery=async()=>events.push('embroidery');
+  const capture=viewer.capture.bind(viewer);viewer.capture=()=>{events.push('capture');return capture();};
+  const png=await viewer.captureCurrentView();assert.match(png,/^data:image\/png/);
+  assert.deepEqual(events,['artwork','embroidery','capture']);vectorClose(viewer.camera.position,position);vectorClose(viewer.controls.target,target);
+  assert.deepEqual(viewer.getZoomMetrics(),zoom);assert.equal(viewer._view,view);assert.equal(viewer.isPanMode(),true);
+  assert.deepEqual([viewer.camera.fov,viewer.camera.near,viewer.camera.far],projection);assert.equal(JSON.stringify(viewer.config),config);
+});
+
 test('a three-view consultation capture restores focused zoom and suppresses temporary UI state', async t => {
   const { viewer } = viewerForTest(t);
   viewer.setMagnifier(true);

@@ -102,7 +102,7 @@ const REFERENCE_LAYOUTS = {
 function product(id, name, category, construction, dimensions, defaultHandle, extra = {}) {
   const flat = ['flat', 'pouch-flat', 'poly'].includes(construction);
   const supportsHandles = category !== 'pouch' || construction === 'tumbler';
-  const profile = { id, name, category, construction,
+  const profile = { id, name, category, construction, consultationMode: category === 'sample' ? 'kakao' : 'email',
     type: ({ sample: 'bottom-color-tote', flat: 'flat-tote', gusset: 'gusset-tote',
       'pouch-flat': 'flat-pouch', 'pouch-gusset': 'gusset-pouch', tumbler: 'tumbler-pouch', poly: 'poly-tote' })[construction],
     dimensions, defaultHandle, supportsHandles,

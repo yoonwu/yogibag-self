@@ -1,9 +1,9 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.5';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.5';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.5';
-import { Product3DViewer } from './viewer.mjs?v=1.2.5';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.5';
-import { openProductPicker } from './product-picker.mjs?v=1.2.5';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.6';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.6';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.6';
+import { Product3DViewer } from './viewer.mjs?v=1.2.6';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.6';
+import { openProductPicker } from './product-picker.mjs?v=1.2.6';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -708,6 +708,8 @@ export class Product3DEditor {
     const p = this.config.pocket;
     const fabricName = profile.clothKind === 'poly' ? '폴리 / 합성' : FABRICS3D.find(fabric => fabric.id === this.config.body.fabricId)?.name || '기본';
     this.dimensionSummary.textContent = `${fabricName} 원단 · ${flat ? `몸통 ${width} × ${height} mm · 입구 벌림 ${depth} mm (참고)` : `가방 ${width} × ${height} × ${depth} mm`}${profile.supportsBottomPanel ? ` · 배색 높이 ${this.config.bottomPanel.height} mm` : ''}${profile.supportsHandles ? ` · 손잡이 너비 ${h.width} / 길이 ${h.drop} / 간격 ${h.gap} mm` : ''}${profile.supportsPocket && this.config.options.pocket ? ` · 포켓 ${p.width} × ${p.height} mm` : ''}`;
+    if (this.consultButton) this.consultButton.title = profile.consultationMode === 'kakao'
+      ? '현재 시안을 캡쳐하고 카카오톡에서 상담합니다' : '시안과 상담 정보를 메일로 접수합니다';
     this.syncZoomToolbar();
   }
 
