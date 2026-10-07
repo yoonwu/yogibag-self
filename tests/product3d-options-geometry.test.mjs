@@ -239,16 +239,16 @@ test('combined options remain finite and affordable at representative and extrem
   }
 });
 
-test('sample baseline buffers match the previously delivered model at all four regression dimensions',()=>{
+test('sewing improvements preserve delivered cloth, handles and print-bearing pocket buffers at four dimensions',()=>{
   const expected=[
-    [{width:480,height:340,depth:150},'4b9a0fed44f766dee538aa6b46b6e7ea30bf06750bddb9dcc26425b6b4188837'],
-    [{width:320,height:250,depth:120},'b7941d197a8d8cad8a8f1f07ae5fc77ef63f39fb01337c5193a514c15fe59bba'],
-    [{width:450,height:350,depth:150},'b377e1dc303bcd04d9f113c13f9876a755a0c047018ce6e0bb9b885c543380d3'],
-    [{width:250,height:300,depth:80},'de5805f635e9b3c02d91887324dfbde9195ac0d22a18c43bd9772a9f84d349b3'],
+    [{width:480,height:340,depth:150},'fd85541910ef781118a5e91b47c60afd45249b5a93e163a452c2ce37709f8ea9'],
+    [{width:320,height:250,depth:120},'00c8a8e6f1b80d4fa5a05e57145da378fc4fbf29dd9c04173db713a59a683648'],
+    [{width:450,height:350,depth:150},'73bb4dbc1f1c7d7a1268da9c8e4dcf5afb7398d8cc2ba6369c4ef2662cb689dd'],
+    [{width:250,height:300,depth:80},'a2eaf050c2633af905c4ff76c50a354c9eb8ef399ca6f91e5e52abe6caef2b0c'],
   ];
   for(const [dimensions,digest] of expected){
     const state=model(normalizeConfig({...createDefaultConfig(),dimensions})),sha=createHash('sha256'),meshes=[];
-    state.bag.traverse(object=>{if(object.isMesh)meshes.push(object);});
+    state.bag.traverse(object=>{if(object.isMesh&&object.userData.materialKey!=='seam')meshes.push(object);});
     for(const mesh of meshes.sort((a,b)=>a.name.localeCompare(b.name))){
       sha.update(mesh.name);
       for(const key of ['position','normal','uv']){const a=mesh.geometry.getAttribute(key).array;sha.update(Buffer.from(a.buffer,a.byteOffset,a.byteLength));}

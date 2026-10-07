@@ -236,7 +236,7 @@ export function createBagMaterials(config) {
     pocketShadow: fabric(null, 0.0001),
     nameTag: fabric(nameTagBump, nameTagFabric.bumpScale * 0.6),
     nameTagBorder: new THREE.MeshStandardMaterial({ color: '#8b8a87', roughness: 1, metalness: 0, side: THREE.DoubleSide }),
-    seam: new THREE.MeshStandardMaterial({ color: '#d2cabd', roughness: 1, metalness: 0 }),
+    seam: new THREE.MeshStandardMaterial({ color: '#d2cabd', roughness: .78, metalness: 0, side: THREE.DoubleSide }),
     zipper: new THREE.MeshStandardMaterial({ color: '#353941', roughness: 0.67, metalness: 0.18 }),
     snap: new THREE.MeshStandardMaterial({ color: '#888a8c', roughness: 0.42, metalness: 0.65 }),
   };
@@ -299,7 +299,6 @@ export function updateBagMaterials(materials, config) {
   materials.crossStrapStitch.emissive.copy(materials.crossStrapStitch.color);
   materials.crossStrapStitch.emissiveIntensity = darkWebbing ? 0.025 : 0;
   materials.inside.color.set(config.body.color).multiplyScalar(0.82);
-  materials.seam.color.set(config.body.color).multiplyScalar(0.78);
   // The inside pocket uses the chosen body's hue and fabric. Tiny changes in
   // reflected light make its folded edge and stitching visible on both pale
   // canvas and very dark cloth without recording a different customer color.
@@ -307,14 +306,14 @@ export function updateBagMaterials(materials, config) {
   const hsl = base.getHSL({ h: 0, s: 0, l: 0 });
   const luminance = base.r * 0.2126 + base.g * 0.7152 + base.b * 0.0722;
   const dark = luminance < 0.06;
-  materials.innerPocket.color.setHSL(hsl.h, hsl.s, Math.max(dark ? 0.022 : 0.006, hsl.l * 0.91));
-  materials.pocketEdge.color.setHSL(hsl.h, hsl.s, dark ? Math.min(0.8, hsl.l * 0.85 + 0.085) : hsl.l * 0.66);
-  materials.pocketStitch.color.setHSL(hsl.h, hsl.s, dark ? Math.min(0.8, hsl.l * 0.85 + 0.14) : hsl.l * 0.55);
+  materials.innerPocket.color.setHSL(hsl.h, hsl.s, Math.max(dark ? 0.04 : 0.006, hsl.l * 0.98));
+  materials.pocketEdge.color.setHSL(hsl.h, hsl.s, dark ? Math.min(0.8, hsl.l * 0.85 + 0.10) : hsl.l * 0.55);
+  materials.pocketStitch.color.setHSL(hsl.h, hsl.s, dark ? Math.min(0.8, hsl.l * 0.85 + 0.18) : hsl.l * 0.32);
+  materials.seam.color.setHSL(hsl.h,hsl.s,dark?Math.min(.8,hsl.l*.85+.16):hsl.l*.46);
   // A very small shadow-independent contribution keeps thin dark-cloth
   // stitches readable inside the bag. Pale fabrics retain their prior shade.
   materials.pocketStitch.emissive.copy(materials.pocketStitch.color);
   materials.pocketStitch.emissiveIntensity = dark ? 0.035 : 0;
-  if (dark) materials.seam.color.copy(materials.pocketStitch.color);
   materials.seam.emissive.copy(materials.seam.color);
   materials.seam.emissiveIntensity = dark ? 0.015 : 0;
   materials.pocketShadow.color.setHSL(hsl.h, hsl.s, hsl.l * 0.28 + 0.001);

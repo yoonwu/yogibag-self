@@ -1,7 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.3';
 import { mmToScene, getProductProfile } from './config.mjs';
 import { addBagOptions, getInnerPocketLayout, innerPocketHalfWidth, innerPocketContourVisible,
-  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs';
+  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.3';
 
 // Shape coordinates are millimetres until a vertex is written. Width, depth,
 // webbing width/thickness and print size never depend on an Object3D scale.
@@ -205,7 +206,7 @@ function innerPocketShape(config, s) {
       rear=Math.max(rear,hits[0]); front=Math.min(front,hits[1]);
     }
   }
-  const gap = Math.min(0.9, Math.max(0.35,(front-rear)*0.2));
+  const gap = Math.min(2.4, Math.max(0.35,(front-rear)*0.2));
   const planeZ = rear + 1.05 + gap;
   if(planeZ+0.65>front)throw new RangeError('Inner pocket has no safe interior hanging plane.');
   const value = {...layout,planeZ,backZ:planeZ-gap,gap,belly:0.18};
@@ -234,10 +235,10 @@ function innerPocketPointMM(x, y, s, config) {
     const v=THREE.MathUtils.clamp((y+layout.height/2)/(layout.height*0.8),0,1);
     z += Math.sin(Math.PI*u)**2*Math.sin(Math.PI*v)**2*layout.belly;
     const lipTop=layout.mouthY-layout.openingHeight/2;
-    if(y>=lipTop-layout.lipHeight)z+=Math.sin(Math.PI*(y-lipTop+layout.lipHeight)/layout.lipHeight)*0.22;
+    if(y>=lipTop-layout.lipHeight)z+=Math.sin(Math.PI*(y-lipTop+layout.lipHeight)/layout.lipHeight)*0.4;
   }
   if(region!=='opening'&&distance>=0&&distance<=layout.bindingWidth) {
-    z+=Math.sin(Math.PI*distance/layout.bindingWidth)*0.32;
+    z+=Math.sin(Math.PI*distance/layout.bindingWidth)*0.5;
   }
   return {x,y:layout.centerY+y,z};
 }
@@ -826,28 +827,28 @@ function roundedMouthHandleLoop(s,front) {
 }
 
 function stitchGeometry(s, y, front, x0, x1) {
-  const positions = [], uvs = [], indices = [];
-  const count = Math.max(1, Math.floor((x1 - x0) / 4));
-  for (let i = 0; i < count; i++) {
-    const x = x0 + i * 4;
-    const quad = [[x, y - 0.28], [x + 2.3, y - 0.28], [x, y + 0.28], [x + 2.3, y + 0.28]];
-    const base = positions.length / 3;
-    for (const [qx, qy] of quad) {
-      const p = panelPoint(qx, qy, s, front);
-      p.z += front ? 0.3 : -0.3;
-      positions.push(mmToScene(p.x), mmToScene(p.y), mmToScene(p.z));
-      uvs.push(mmToScene(qx), mmToScene(qy));
-    }
-    if (front) indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
-    else indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
+  return sewnThreadGeometry(x1-x0,(distance,across)=>{
+    const p=panelPoint(x0+distance,y+across,s,front);
+    return {...p,nz:front?1:-1};
+  },{maxCount:s.seamMaxCount});
+}
+
+function sideStitchGeometry(s,y,right) {
+  // Resolve arc length along the folded side so spacing stays physical even
+  // when the mouth narrows. The thread follows the actual cloth surface.
+  const samples=[{distance:0,t:0,point:sidePoint(0,y,s,right)}];
+  for(let i=1;i<=80;i++){
+    const point=sidePoint(i/80,y,s,right),previous=samples.at(-1);
+    samples.push({distance:previous.distance+Math.hypot(point.x-previous.point.x,point.z-previous.point.z),t:i/80,point});
   }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingBox();
-  return geometry;
+  const length=samples.at(-1).distance;
+  return sewnThreadGeometry(length,(distance,across)=>{
+    const end=samples.findIndex(sample=>sample.distance>=distance),a=samples[Math.max(0,end-1)],b=samples[Math.max(1,end)];
+    const t=THREE.MathUtils.lerp(a.t,b.t,(distance-a.distance)/Math.max(.0001,b.distance-a.distance));
+    const p=sidePoint(t,y+across,s,right),previous=sidePoint(Math.max(0,t-.001),y,s,right),next=sidePoint(Math.min(1,t+.001),y,s,right);
+    const dx=next.x-previous.x,dz=next.z-previous.z,norm=Math.max(.0001,Math.hypot(dx,dz)),sign=right?-1:1;
+    return {...p,nx:sign*dz/norm,nz:-sign*dx/norm};
+  },{maxCount:s.sideSeamMaxCount,rounded:false});
 }
 
 function pocketGeometry(s, pocket) {
@@ -863,6 +864,10 @@ function pocketGeometry(s, pocket) {
 /** Materials are supplied/owned by the viewer; the model owns only geometry. */
 export function buildBagModel(config, materials) {
   const s = shape(config);
+  // Keep the existing full-options triangle budget when a long cross strap
+  // is present. Ordinary bags retain the denser seam spacing for close views.
+  s.seamMaxCount=config.options?.crossStrap?48:110;
+  s.sideSeamMaxCount=config.options?.crossStrap?24:60;
   const bag = new THREE.Group();
   bag.name = 'Bag';
   const aliases = { handle: 'webbing', inside: 'lining', seam: 'stitch', innerPocket: 'inside',
@@ -926,6 +931,8 @@ export function buildBagModel(config, materials) {
     const { a, r } = sliceAt(y, s);
     add(`${name}FrontStitches`, stitchGeometry(s, y, true, -a + r + 3, a - r - 3), 'seam', seams);
     add(`${name}BackStitches`, stitchGeometry(s, y, false, -a + r + 3, a - r - 3), 'seam', seams);
+    add(`${name}LeftStitches`, sideStitchGeometry(s,y,false), 'seam', seams);
+    add(`${name}RightStitches`, sideStitchGeometry(s,y,true), 'seam', seams);
   }
   if (s.profile.supportsPocket && config.options?.pocket && config.pocket) {
     add('frontPocket', pocketGeometry(s, config.pocket), 'pocket');

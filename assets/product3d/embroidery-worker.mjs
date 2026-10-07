@@ -1,4 +1,4 @@
-import {computeEmbroideryJob,embroideryTransferables} from './embroidery-job.mjs';
+import {computeEmbroideryJob,embroideryTransferables} from './embroidery-job.mjs?v=1.2.3';
 
 self.onmessage=({data:{id,job}})=>{
   try {

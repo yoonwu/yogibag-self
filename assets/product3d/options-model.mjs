@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.3';
 import { mmToScene, getProductProfile } from './config.mjs';
 
 // Option sizes are visual references in millimetres. Options share the
@@ -18,8 +19,8 @@ export function getInnerPocketLayout(config) {
   return { width: pocketWidth, height: pocketHeight, top,
     bottom: top - pocketHeight, centerX: 0, centerY: top - pocketHeight / 2,
     bandHeight: pocketHeight*0.2, mouthY: pocketHeight*0.3,
-    openingHeight: 0.8, bindingWidth: pocketWidth*0.04,
-    cornerRadius: Math.min(pocketWidth*0.08, pocketHeight*0.24), lipHeight: 1.1 };
+    openingHeight: 1.8, bindingWidth: pocketWidth*0.04,
+    cornerRadius: Math.min(pocketWidth*0.08, pocketHeight*0.24), lipHeight: 2.2 };
 }
 
 export function innerPocketHalfWidth(y, layout, inset = 0) {
@@ -178,12 +179,10 @@ function bindingKnots(layout,inset) {
 function pocketStitches(layout,h) {
   const parts=[];
   const run=(length,point,maxCount)=>{
-    const pitch=Math.max(4,length/maxCount);
-    for(let d=0;d+2.1<=length;d+=pitch)parts.push(grid(2,1,(u,v)=>{
-      const at=point((d+v*2.1)/length), across=(u-.5)*.45;
-      const p=h.innerPoint(at.x+at.dy*across,at.y-at.dx*across);
-      p.z+=.1+Math.sin(Math.PI*u)*.05;return p;
-    }));
+    parts.push(sewnThreadGeometry(length,(distance,across)=>{
+      const at=point(distance/length);
+      return h.innerPoint(at.x+at.dy*across,at.y-at.dx*across);
+    },{maxCount,width:.75}));
   };
   const inset=layout.bindingWidth*.75, path=bindingPath(layout,inset,0);
   run(path.length,t=>bindingPath(layout,inset,t),96);

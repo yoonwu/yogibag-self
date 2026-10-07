@@ -141,7 +141,7 @@ export function createProductBridge(env) {
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   const releaseQuery = new URL(import.meta.url).search;
   const bridge = createProductBridge({
-    load: () => Promise.all([import(`./editor.mjs${releaseQuery}`), import(`./consultation.mjs${releaseQuery}`), import('./registry.mjs')]),
+    load: () => Promise.all([import(`./editor.mjs${releaseQuery}`), import(`./consultation.mjs${releaseQuery}`), import('./registry.mjs?v=1.2.3')]),
     legacy: () => window.yogibagDesignBridge,
     currentProductId: () => window.getYogibagCurrentBag?.()?.id,
     selectProduct: id => window.selectYogibagBagFor3D(id),

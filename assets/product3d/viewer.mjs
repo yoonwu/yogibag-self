@@ -1,13 +1,13 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
 import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs';
-import { getInnerPocketLayout } from './options-model.mjs';
-import { createProductModel } from './registry.mjs';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs';
-import { EmbroideryProcessor } from './embroidery-processor.mjs';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.3';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.3';
+import { createProductModel } from './registry.mjs?v=1.2.3';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.3';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.3';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.3';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.3';
 import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs';
 
 const BACKGROUND = '#f5f4f1';
