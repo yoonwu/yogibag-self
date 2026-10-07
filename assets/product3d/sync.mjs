@@ -1,4 +1,4 @@
-import { createDefaultConfig, normalizeConfig, getProductProfile, isSupportedProduct } from './config.mjs?v=1.2.10';
+import { createDefaultConfig, normalizeConfig, getProductProfile, isSupportedProduct } from './config.mjs?v=1.2.11';
 
 export const SHARED_OPTIONS = Object.freeze({
   innerPocket: '안주머니', innerPocketPrint: '안주머니인쇄',

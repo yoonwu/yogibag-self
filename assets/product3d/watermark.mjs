@@ -5,22 +5,14 @@ export const WATERMARK_TEXT = '요기에코백';
 export function drawWatermark(context, width, height) {
   context.clearRect(0, 0, width, height);
   context.save();
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.font = '700 26px "Noto Sans KR", "Malgun Gothic", sans-serif';
-  context.fillStyle = 'rgba(65, 72, 80, 0.15)';
-  context.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+  context.textAlign = 'right';
+  context.textBaseline = 'bottom';
+  context.font = '500 14px "Noto Sans KR", "Malgun Gothic", sans-serif';
+  context.fillStyle = 'rgba(65, 72, 80, 0.32)';
+  context.strokeStyle = 'rgba(255, 255, 255, 0.45)';
   context.lineWidth = 2;
-  for (let y = 95, row = 0; y < height + 100; y += 190, row++) {
-    for (let x = row % 2 ? 50 : 190; x < width + 130; x += 330) {
-      context.save();
-      context.translate(x, y);
-      context.rotate(-Math.PI / 8);
-      context.strokeText(WATERMARK_TEXT, 0, 0);
-      context.fillText(WATERMARK_TEXT, 0, 0);
-      context.restore();
-    }
-  }
+  context.strokeText(WATERMARK_TEXT, width - 18, height - 16);
+  context.fillText(WATERMARK_TEXT, width - 18, height - 16);
   context.restore();
 }
 
