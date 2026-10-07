@@ -18,6 +18,7 @@ function fixture() {
   let current = 'daily', alive = 0, maxAlive = 0;
   const env = {
     currentProductId:()=>current, ready:async()=>{}, toast:message=>messages.push(message),
+    selectProduct:async id=>{assert.ok(snapshots.has(id));current=id;},
     show2DURL:id=>returnedURLs.push(id),
     legacy:()=>({ exportDesign:async()=>clone(snapshots.get(current)), applyDesign:async value=>{
       assert.equal(value.productId,current);applied.push(clone(value));snapshots.set(current,clone(value));
@@ -111,4 +112,62 @@ test('URL opening waits for the 2D startup selection before deciding which desig
   assert.equal(editor.config.productId,'tumbler');assert.equal(editor.config.options.zipper,true);
   await editor.hooks.onReturnTo2D(editor.config);
   assert.deepEqual(f.returnedURLs,['tumbler']);
+});
+
+test('3D picker visits every ordinary bag and restores its own artwork, options and 3D handle dimensions',async()=>{
+  const f=fixture();await f.bridge.openProduct('daily',{from2D:true});
+  const expected=new Map();
+  for(const id of f.ids) {
+    if(f.editors.at(-1).config.productId!==id) assert.equal(await f.editors.at(-1).hooks.onSelectProduct(id),true);
+    const editor=f.editors.at(-1);
+    assert.equal(typeof editor.hooks.onReturnTo2D,'function',id);
+    const c=editor.config;
+    c.print.front.width+=11.25;c.body.color='#6789ab';c.handle.width+=1;
+    if(PRODUCT3D_PROFILES[id].allowedOptions.includes('innerPocket')) c.options.innerPocket=true;
+    expected.set(id,clone(c));
+  }
+  for(const id of f.ids) {
+    assert.equal(await f.editors.at(-1).hooks.onSelectProduct(id),true);
+    const actual=f.editors.at(-1).config,wanted=expected.get(id);
+    assert.equal(actual.print.front.image,wanted.print.front.image,id);
+    assert.equal(actual.print.front.width,wanted.print.front.width,id);
+    assert.equal(actual.handle.width,wanted.handle.width,id);
+    assert.equal(actual.body.color,wanted.body.color,id);
+    assert.equal(actual.options.innerPocket,wanted.options.innerPocket,id);
+    assert.equal(f.snapshots.get(id).legacyToken,`token-${id}`);
+  }
+  const last=f.editors.at(-1);await last.hooks.onReturnTo2D(last.config);
+  assert.deepEqual(f.returnedURLs,[last.config.productId],'internal 3D switches do not return to the 2D URL');
+  assert.equal(f.maxAlive,1);assert.equal(f.messages.length,0);
+});
+
+test('3D picker preserves two-tone and linked bag drafts across sample/ordinary transitions',async()=>{
+  const f=fixture();await f.bridge.openProduct('daily',{from2D:true});
+  const daily=f.editors.at(-1);daily.config.print.front.width=127.5;daily.config.options.innerPocket=true;
+  await daily.hooks.onSelectProduct('sample-two-line-small');
+  const small=f.editors.at(-1);small.config.print.front.width=83.25;small.config.handle.color='#111111';
+  await small.hooks.onSelectProduct('sample-two-line-large');
+  const large=f.editors.at(-1);large.config.dimensions.width=500;
+  await large.hooks.onSelectProduct('minja');
+  const pouch=f.editors.at(-1);assert.equal(typeof pouch.hooks.onReturnTo2D,'function');
+  await pouch.hooks.onSelectProduct('sample-two-line-small');
+  assert.equal(f.editors.at(-1).config.print.front.width,83.25);
+  assert.equal(f.editors.at(-1).config.handle.color,'#111111');
+  await f.editors.at(-1).hooks.onSelectProduct('sample-two-line-large');
+  assert.equal(f.editors.at(-1).config.dimensions.width,500);
+  await f.editors.at(-1).hooks.onSelectProduct('daily');
+  assert.equal(f.editors.at(-1).config.print.front.width,127.5);
+  assert.equal(f.editors.at(-1).config.options.innerPocket,true);
+  assert.equal(f.maxAlive,1);assert.equal(f.messages.length,0);
+});
+
+test('failed picker selection restores the original 2D product and leaves its 3D editor alive',async()=>{
+  const f=fixture();await f.bridge.openProduct('daily',{from2D:true});
+  const daily=f.editors.at(-1);daily.config.body.color='#123456';
+  f.env.selectProduct=async id=>{f.setCurrent(id);if(id==='minja')throw new Error('image load failed');};
+  await assert.rejects(daily.hooks.onSelectProduct('minja'),/image load failed/);
+  assert.equal(f.env.currentProductId(),'daily');assert.equal(daily.disposed,false);
+  assert.equal(f.snapshots.get('daily').body.color,'#123456');
+  await daily.hooks.onReturnTo2D(daily.config);
+  assert.equal(f.alive,1);
 });
