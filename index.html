@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="assets/product3d/editor.css">
+<link rel="stylesheet" href="assets/product3d/consultation.css">
 <title>요기백 · 셀프 시안 에디터</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316a34a'/%3E%3Cpath d='M11 12v-2a5 5 0 0 1 10 0v2' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M7 12h18l-1.5 13.4a1.3 1.3 0 0 1-1.3 1.1H9.8a1.3 1.3 0 0 1-1.3-1.1z' fill='white'/%3E%3Ctext x='16' y='22.4' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='8.5' font-weight='bold' fill='%2316a34a'%3EYO%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -236,6 +238,8 @@
     margin-bottom: 9px; text-align: left;
   }
   .action-row:hover { background: var(--gray-6); border-color: var(--gray-4); }
+  #embroideryBtn:disabled { opacity: .55; cursor: default; }
+  #embroideryBtn[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-light); }
   .action-row svg { width: 20px; height: 20px; color: var(--gray-1); flex-shrink: 0; }
   .action-row .ar-text { flex: 1; }
   .action-row .ar-main { font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
@@ -431,12 +435,15 @@
   }
   .floating-toolbar {
     position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+    width: max-content; max-width: calc(100% - 32px); overflow-x: auto; scrollbar-width: none;
     background: var(--white); border-radius: 14px; box-shadow: var(--shadow-lg);
     display: flex; align-items: center; padding: 7px; gap: 3px; z-index: 20;
     border: 1px solid var(--gray-5);
   }
+  .floating-toolbar::-webkit-scrollbar { display: none; }
   .ft-btn {
     width: 46px; height: 46px; border-radius: 10px; display: flex; flex-direction: column;
+    flex-shrink: 0;
     align-items: center; justify-content: center; gap: 2px; color: var(--gray-1); transition: all .12s;
   }
   .ft-btn svg { width: 20px; height: 20px; }
@@ -444,12 +451,23 @@
   .ft-btn:hover:not(:disabled) { background: var(--gray-6); color: var(--ink); }
   .ft-btn:disabled { opacity: .3; cursor: default; }
   .ft-btn.danger:hover { background: #fef0f1; color: var(--red); }
-  .ft-divider { width: 1px; height: 30px; background: var(--gray-5); margin: 0 4px; }
+  .ft-divider { width: 1px; height: 30px; background: var(--gray-5); margin: 0 4px; flex-shrink: 0; }
 
   .canvas-wrap {
     position: relative; border-radius: var(--radius); overflow: hidden;
     box-shadow: var(--shadow-md); background: var(--white);
   }
+  .canvas-view-toggle {
+    position: absolute; top: 14px; right: 14px; z-index: 5; transform-origin: top right;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-height: 44px; padding: 10px 14px; border: 1px solid #cddfff; border-radius: 11px;
+    background: #eef5ff; color: var(--blue); box-shadow: 0 2px 8px rgba(49,130,246,.12);
+    font-size: 13px; font-weight: 700; white-space: nowrap; touch-action: manipulation;
+  }
+  .canvas-view-toggle svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .canvas-view-toggle:hover:not(:disabled) { background: #dfecff; }
+  .canvas-view-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .canvas-view-toggle:disabled { opacity: .55; cursor: default; }
   #editor-canvas { display: block; }
 
   .zoom-ctrl {
@@ -581,6 +599,7 @@
   }
   .bag-card .bc-name { font-size: 14.5px; font-weight: 800; }
   .bag-card .bc-size { font-size: 11.5px; color: var(--gray-2); margin-top: 2px; font-weight: 500; }
+  .bag-card .bc-mode { font-size: 11.5px; color: var(--blue); margin-top: 5px; font-weight: 700; }
   .bag-card .bc-price { font-size: 12.5px; color: var(--blue); font-weight: 700; margin-top: 4px; }
 
   /* toast */
@@ -660,7 +679,7 @@
     .sheet-grabber { width: 42px; height: 4px; background: var(--gray-4); border-radius: 2px; }
 
     /* 플로팅 툴바 축소 */
-    .floating-toolbar { top: 8px; padding: 4px; gap: 1px; max-width: 94vw; overflow-x: auto; }
+    .floating-toolbar { top: 8px; padding: 4px; gap: 1px; max-width: calc(100% - 16px); }
     .floating-toolbar::-webkit-scrollbar { display: none; }
     .ft-btn { width: 40px; height: 40px; flex-shrink: 0; }
     .ft-btn svg { width: 17px; height: 17px; }
@@ -715,6 +734,10 @@
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2a10 10 0 000 20 2 2 0 002-2 2 2 0 00-.5-1.3 2 2 0 01-.5-1.3 2 2 0 012-2H17a5 5 0 005-5 10 10 0 00-10-8z"/></svg>
       <span>가방/손잡이 색상</span>
     </button>
+    <button class="p3d-entry" id="product3dLaunch" type="button" aria-label="선택한 가방 3D 꾸미기 열기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10M7.5 4.5l9 5"/></svg>
+      <span>3D 가방 꾸미기</span>
+    </button>
   </nav>
 
   <!-- OPTION PANEL -->
@@ -730,6 +753,13 @@
         <div class="ub-sub">JPG, PNG, SVG, PDF · 최대 20MB</div>
       </button>
       <input type="file" id="fileInput" accept="image/*,image/svg+xml,.svg,application/pdf,.pdf" class="hidden">
+      <button class="action-row" id="embroideryBtn" type="button" aria-pressed="false" disabled>
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m5 4 14 16M19 4 5 20M4 9h16M4 15h16"/></svg>
+        <div class="ar-text">
+          <div class="ar-main" id="embroideryBtnLabel">자수 모양으로 변경</div>
+          <div class="ar-sub" id="embroideryBtnHint">시안을 올리면 실의 질감으로 미리 볼 수 있어요</div>
+        </div>
+      </button>
       <button class="action-row" id="removeBgBtn">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z"/></svg>
         <div class="ar-text">
@@ -858,6 +888,10 @@
 
     <div class="canvas-wrap" id="canvasWrap">
       <canvas id="editor-canvas"></canvas>
+      <button class="canvas-view-toggle" id="product3dCanvasToggle" type="button" aria-label="3D로 보기" disabled title="가방을 불러오는 중입니다">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>
+        <span>3D로 보기</span>
+      </button>
     </div>
 
     <div class="canvas-hint">
@@ -897,7 +931,7 @@
 <div class="toast" id="toast"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span id="toastMsg">저장되었어요</span></div>
 
 <!-- 버전 표시 — 배포할 때마다 아래 숫자를 올려주세요 (캐시로 옛 버전인지 바로 확인용) -->
-<div id="appVersion">v1.1.0 · 2026.08.01</div>
+<div id="appVersion">v1.2.0 · 2026.10.07</div>
 
 <!-- ORDER CONFIRM MODAL -->
 <div class="order-overlay" id="orderModal">
@@ -957,24 +991,31 @@
 ========================================================= */
 const BAG_MODELS = {
   ecobag: [
-    { id: 'small',  name: '스몰 에코백',   size: '20×22cm',     price: '',  ratio: 0.91, emoji: '🛍️' },
-    { id: 'sgak_s', name: '사각 S',        size: '29×33cm',     price: '',  ratio: 0.88, emoji: '🛍️' },
-    { id: 'kids',   name: '키즈 에코백',   size: '33×33×8cm',   price: '',  ratio: 1.0,  emoji: '🎒' },
-    { id: 'sgak_m', name: '사각 M',        size: '33×36cm',     price: '',  ratio: 0.92, emoji: '🛍️' },
-    { id: 'daily',  name: '데일리 에코백', size: '36×36×10cm',  price: '',  ratio: 1.0,  emoji: '🛍️' },
-    { id: 'market', name: '마켓 에코백',   size: '43×30cm',     price: '',  ratio: 1.43, emoji: '🧺' },
-    { id: 'sgak_l', name: '사각 L',        size: '36×40cm',     price: '',  ratio: 0.9,  emoji: '🛍️' },
+    { id: 'small',  name: '스몰 에코백',   size: '20×22cm',     dimensions:{width:200,height:220,depth:30}, price: '', ratio:0.91, emoji:'🛍️' },
+    { id: 'sgak_s', name: '사각 S',        size: '29×33cm',     dimensions:{width:290,height:330,depth:30}, price: '', ratio:0.88, emoji:'🛍️' },
+    { id: 'kids',   name: '키즈 에코백',   size: '33×33×8cm',   dimensions:{width:330,height:330,depth:80}, price: '', ratio:1.0, emoji:'🎒' },
+    { id: 'sgak_m', name: '사각 M',        size: '33×36cm',     dimensions:{width:330,height:360,depth:30}, price: '', ratio:0.92, emoji:'🛍️' },
+    { id: 'daily',  name: '데일리 에코백', size: '36×36×10cm',  dimensions:{width:360,height:360,depth:100}, price: '', ratio:1.0, emoji:'🛍️' },
+    { id: 'market', name: '마켓 에코백',   size: '43×30×10cm',  dimensions:{width:430,height:300,depth:100}, price: '', ratio:1.43, emoji:'🧺' },
+    { id: 'sgak_l', name: '사각 L',        size: '36×40cm',     dimensions:{width:360,height:400,depth:30}, price: '', ratio:0.9, emoji:'🛍️' },
   ],
   pouch: [
-    { id: 'minja',  name: '민자 파우치',   size: '20×15cm',     price: '',  ratio: 1.33, emoji: '👝' },
-    { id: 'mitdan', name: '밑단 파우치',   size: '23×15cm',     price: '',  ratio: 1.53, emoji: '👝' },
-    { id: 'tumbler',name: '텀블러 파우치', size: '19×20cm',     price: '',  ratio: 0.95, emoji: '🥤' },
+    { id: 'minja',  name: '민자 파우치',   size: '20×15cm',     dimensions:{width:200,height:150,depth:30}, price: '', ratio:1.33, emoji:'👝' },
+    { id: 'mitdan', name: '밑단 파우치',   size: '23×15×6cm',   dimensions:{width:230,height:150,depth:60}, price: '', ratio:1.53, emoji:'👝' },
+    { id: 'tumbler',name: '텀블러 파우치', size: '19×20×9cm',   dimensions:{width:190,height:200,depth:90}, price: '', ratio:0.95, emoji:'🥤' },
   ],
   poly: [
-    { id: 'poly_v', name: '폴리백 세로',   size: '세로형',      price: '',  ratio: 0.75, emoji: '🛍️' },
-    { id: 'poly_h', name: '폴리백 가로',   size: '가로형',      price: '',  ratio: 1.33, emoji: '🛍️' },
+    { id: 'poly_v', name: '폴리백 세로',   size: '33×36cm',     dimensions:{width:330,height:360,depth:30}, price: '', ratio:0.92, emoji:'🛍️' },
+    { id: 'poly_h', name: '폴리백 가로',   size: '38×31cm',     dimensions:{width:380,height:310,depth:30}, price: '', ratio:1.23, emoji:'🛍️' },
   ]
 };
+
+const EXTRA_3D_BAGS = [
+  { id:'sample-two-line-large', name:'투톤 에코백', size:'라지 · 48×34×15cm',
+    category:'ecobag', preview:'assets/product3d/two-tone-preview.png', editorMode:'3d' },
+  { id:'sample-two-line-small', name:'투톤 에코백', size:'스몰 · 34×24×10cm',
+    category:'ecobag', preview:'assets/product3d/two-tone-small-preview.svg', editorMode:'3d' },
+];
 
 /* Cafe24 상품번호(product_no) → 에디터 가방 id */
 const PRODUCT_BAG_MAP = {
@@ -1198,8 +1239,11 @@ function updatePriceBar(){
 /* URL 파라미터로 시작 가방 결정: ?bag=daily 직접 지정 또는 ?product_no=397 */
 function resolveStartBagId() {
   const p = new URLSearchParams(location.search);
+  const product = p.get('product');
+  if (p.get('mode') === '3d' && product && findBagById(product)) return product;
   const bag = p.get('bag');
   if (bag) return bag;
+  if (product && findBagById(product)) return product;
   const pno = p.get('product_no') || p.get('productno') || p.get('pno');
   if (pno && PRODUCT_BAG_MAP[pno]) return PRODUCT_BAG_MAP[pno];
   return null;
@@ -1421,6 +1465,8 @@ const PRINT_AREAS = {
 ========================================================= */
 let canvas;
 let currentBag = BAG_MODELS.ecobag[4]; // daily
+// The 3D launcher reads a copied identifier without changing the 2D editor state.
+window.getYogibagCurrentBag = () => Object.freeze({ id: currentBag.id, name: currentBag.name });
 let currentFont = FONTS[0];
 let currentTextColor = '#191f28';
 let bagBodyColor = null;   // null = 원본(아이보리), 오버레이 없음
@@ -1432,6 +1478,62 @@ let bagScale = 0.5, bagOffX = 0, bagOffY = 0; // 몸통 배율·위치 (크로�
 let undoStack = [], redoStack = [];
 let isRestoring = false;
 const activeOptions = new Set();
+// Linked 3D measurements survive view switches, undo and local 2D saves.
+const linkedDesignDimensions = new Map();
+const linkedCrossStrapSettings = new Map();
+let printAppearances = {front:'print',back:'print',innerPocket:'print'};
+let embroideryPreview = null;
+function normalizePrintAppearances(value) {
+  return Object.fromEntries(['front','back','innerPocket'].map(part=>[part,value?.[part]==='embroidery'?'embroidery':'print']));
+}
+function artworkAppearancePart(object) {
+  return isInnerPocketObj(object)?'innerPocket':currentSide;
+}
+function updateEmbroideryButton() {
+  const button=document.getElementById('embroideryBtn');
+  if(!button || !canvas) return;
+  const selected=canvas.getActiveObject?.();
+  const part=selected?.isUserObject?artworkAppearancePart(selected):currentSide;
+  const artwork=canvas.getObjects().filter(object=>object.isUserObject && artworkAppearancePart(object)===part);
+  const stitched=printAppearances[part]==='embroidery';
+  button.disabled=!artwork.length || !embroideryPreview || isRestoring || legacySyncBusy;
+  button.setAttribute('aria-pressed',String(stitched));
+  document.getElementById('embroideryBtnLabel').textContent=stitched?'인쇄 모양으로 변경':'자수 모양으로 변경';
+  document.getElementById('embroideryBtnHint').textContent=artwork.length
+    ? `${{front:'앞면',back:'뒷면',innerPocket:'안주머니'}[part]} 시안 · ${stitched?'실의 질감으로 미리 보고 있어요':'색상과 위치를 유지하며 자수 질감을 입혀요'}`
+    : '시안을 올리면 실의 질감으로 미리 볼 수 있어요';
+}
+function refreshEmbroideryPreview() {
+  if(canvas) {
+    embroideryPreview?.invalidate([...canvas.getObjects(),...sideDesigns.front,...sideDesigns.back].filter(object=>object.isUserObject));
+    canvas.requestRenderAll();
+  }
+  updateEmbroideryButton();
+}
+let product3DProfiles = null;
+function getCrossStrapSettings() {
+  return {...(linkedCrossStrapSettings.get(currentBag.id) || {length:800})};
+}
+let legacySyncBusy = false;
+function getBagRealSize() {
+  const linked = linkedDesignDimensions.get(currentBag.id);
+  if (linked) return {...linked};
+  const defaults = product3DProfiles?.[currentBag.id]?.dimensions || currentBag.dimensions;
+  if (defaults) return {...defaults};
+  const match = (currentBag.size || '').match(/(\d+(?:\.\d+)?)\s*[×xX]\s*(\d+(?:\.\d+)?)(?:\s*[×xX]\s*(\d+(?:\.\d+)?))?/);
+  return match ? {width:+match[1]*10,height:+match[2]*10,depth:match[3]?+match[3]*10:30} : {width:360,height:360,depth:100};
+}
+function updateDesignViewToggle() {
+  const available = Boolean(findBagById(currentBag.id));
+  const loading = legacySyncBusy || !canvas || drawBagPending || isRestoring || !window.yogibagDesignBridge?.isReady();
+  for (const id of ['product3dCanvasToggle','product3dLaunch']) {
+    const button = document.getElementById(id);
+    if (!button) continue;
+    button.dataset.p3dUnavailable = available ? 'false' : 'true';
+    button.disabled = !available || loading;
+    button.title = !available ? '이 가방의 3D 보기는 준비 중입니다' : loading ? '가방과 디자인을 불러오는 중입니다' : '같은 디자인을 3D로 보기';
+  }
+}
 
 const CW = 560, CH = 720;
 
@@ -1454,6 +1556,10 @@ function initCanvas() {
   canvas.on('object:scaling', checkPrintBounds);
   canvas.on('object:rotating', checkPrintBounds);
   canvas.on('object:added', checkPrintBounds);
+  canvas.on('object:added', updateDesignViewToggle);
+  canvas.on('object:removed', updateDesignViewToggle);
+  for(const event of ['object:added','object:removed','object:modified','selection:created','selection:updated','selection:cleared']) canvas.on(event,updateEmbroideryButton);
+  canvas.on('object:modified',refreshEmbroideryPreview);
   // 인쇄 크기 변화 → 가격바 실시간 갱신 (드래그 중 디바운스)
   // 주의: object:added/removed는 옵션(크로스끈 등) 비동기 배치와 충돌하므로 제외.
   //       사용자 디자인 변경(modified/scaling)에서만 갱신. 옵션 가격은 renderOptionChips가 처리.
@@ -1511,6 +1617,7 @@ let drawBagToken = 0;
 let drawBagPending = false;
 function drawBag() {
   drawBagPending = true;
+  updateDesignViewToggle();
   const myToken = ++drawBagToken; // 이 호출의 세대 번호 (최신 호출만 반영)
   canvas.getObjects().filter(o => o.bagPart).forEach(o => canvas.remove(o));
   webbingPaths = [];
@@ -1550,6 +1657,7 @@ function drawBag() {
     if (typeof activeOptions !== 'undefined') activeOptions.forEach(opt => addOptionVisual(opt));
     canvas.requestRenderAll();
     saveState();
+    updateDesignViewToggle();
   }
 
   if (layers.length === 0) { finalize(); return; }
@@ -1574,7 +1682,8 @@ function drawBag() {
         bagBodyRect = img;
         bagScale = sc; bagOffX = left; bagOffY = top;
         // 폴리백은 PNG 교체 방식이라 질감/틴트 미적용
-        if (bagCategory(currentBag) !== 'poly') applyBodyLook(img);
+        if (bagCategory(currentBag) === 'poly') applyPolyBodyLook(img);
+        else applyBodyLook(img);
       }
       if (part === 'handle') {
         if (webbingColor) applyColorTint(img, webbingColor, 0.85);
@@ -1608,6 +1717,14 @@ function clearColorTint(img) {
 }
 
 // 원단 질감을 가방 몸통에 곱셈(multiply) 합성 — 몸통 PNG의 명암/실루엣 위에 텍스처를 얹음
+// Palette choices keep the photographed PNG. Custom 3D colors tint its silhouette.
+function applyPolyBodyLook(img) {
+  if (!img || !bagBodyColor || !img.applyFilters) return;
+  const BlendColor = fabric.Image.filters.BlendColor;
+  img.filters = (img.filters || []).filter(filter => !(filter instanceof BlendColor));
+  img.filters.push(new BlendColor({ color:bagBodyColor, mode:'tint', alpha:0.88 }));
+  img.applyFilters(); canvas.requestRenderAll();
+}
 const _texCache = {};
 function loadTexImage(file, cb) {
   if (_texCache[file]) { cb(_texCache[file]); return; }
@@ -1750,7 +1867,7 @@ function applyBodyLook(img) {
 // 가방 재생성/복원 후, 현재 전역 상태로 몸통 룩을 다시 입힘
 function reapplyBodyStyle() {
   if (!bagBodyRect) return;
-  if (bagCategory(currentBag) === 'poly') return;  // 폴리백은 PNG 교체 방식
+  if (bagCategory(currentBag) === 'poly') { applyPolyBodyLook(bagBodyRect); return; }
   applyBodyLook(bagBodyRect);
 }
 
@@ -1768,15 +1885,24 @@ function reorderBag() {
   canvas.getObjects().forEach(o => { if (o.isUserObject) canvas.bringToFront(o); }); // 사용자 디자인
 }
 
-/* 인쇄 가능 영역(cm) = 가방 몸통 가로/세로 각 -2cm */
+/* 실제 점선 영역을 불투명 몸통의 가로·세로 실측 비율로 환산 */
 function updatePrintSizeHint() {
   const hint = document.getElementById('printSizeHint');
   if (!hint) return;
-  const m = (currentBag.size || '').match(/(\d+)\s*[×xX]\s*(\d+)/);
-  if (!m) { hint.textContent = '인쇄 가능 영역'; return; }
-  const W = +m[1], H = +m[2];
-  const pw = Math.max(1, W - 2), ph = Math.max(1, H - 2);
-  hint.textContent = `인쇄 가능 영역: 약 ${pw} × ${ph} cm`;
+  const physical = getBagRealSize();
+  if (!(physical.width > 0 && physical.height > 0)) { hint.textContent = '인쇄 가능 영역'; return; }
+  let pw = Math.max(1, physical.width / 10 - 2), ph = Math.max(1, physical.height / 10 - 2);
+  if (bagBodyRect && printArea) {
+    const body = getOpaqueBBox(bagBodyRect.getElement(), currentBag.id + '_body');
+    const bodyWidthPx = body.w * Math.abs(bagBodyRect.scaleX);
+    const bodyHeightPx = body.h * Math.abs(bagBodyRect.scaleY);
+    const guide = printArea.getBoundingRect();
+    if (bodyWidthPx > 0 && bodyHeightPx > 0 && guide.width > 0 && guide.height > 0) {
+      pw = guide.width / bodyWidthPx * physical.width / 10;
+      ph = guide.height / bodyHeightPx * physical.height / 10;
+    }
+  }
+  hint.textContent = `인쇄 가능 영역: 약 ${pw.toFixed(1)} × ${ph.toFixed(1)} cm`;
 }
 
 /* 캔버스 1px가 실제 몇 cm인지 (가방 몸통 천 폭 = 가방 실제 가로) */
@@ -1784,7 +1910,7 @@ function getCmPerPx() {
   if (!bagBodyRect) return null;
   const m = (currentBag.size || '').match(/(\d+)\s*[×xX]\s*(\d+)/);
   if (!m) return null;
-  const bagWcm = +m[1];
+  const bagWcm = getBagRealSize().width/10;
   const bsc = bagBodyRect.scaleX;
   const bBox = getOpaqueBBox(bagBodyRect.getElement(), currentBag.id + '_body');
   const bodyWpx = bBox.w * bsc;
@@ -1801,14 +1927,16 @@ function updateDesignSizeHint(obj) {
   if (!cpp) { updatePrintSizeHint(); return; }
   const r = opaqueBoundingRect(obj);   // 투명 여백 제외 → 실제 인쇄되는 크기
   const wcm = r.width * cpp;
-  const hcm = r.height * cpp;
+  const bodyBounds = getOpaqueBBox(bagBodyRect.getElement(), currentBag.id + '_body');
+  const bodyHeightPx = bodyBounds.h * bagBodyRect.scaleY;
+  const hcm = r.height * (bodyHeightPx ? getBagRealSize().height / 10 / bodyHeightPx : cpp);
   hint.textContent = `🖼️ 선택한 디자인 인쇄 크기: ${wcm.toFixed(1)} × ${hcm.toFixed(1)} cm`;
 }
 
 /* =========================================================
    STATE / UNDO-REDO
 ========================================================= */
-const DESIGN_PROPS = ['isUserObject','isOptionVisual','optName','bagPart','selectable','evented','uploadId','isCustomerUpload'];
+const DESIGN_PROPS = ['isUserObject','isOptionVisual','optName','bagPart','selectable','evented','uploadId','isCustomerUpload','legacyPrintPart','p3dPrintDisabled'];
 function captureDesignState() {
   sideMeasured[currentSide] = measurePrintObjs();
   const hiddenSide = currentSide === 'front' ? 'back' : 'front';
@@ -1817,8 +1945,11 @@ function captureDesignState() {
     bagBodyColor, webbingColor, bagTexture, bagFabricId, polyBodyKey,
     bagScale, bagOffX, bagOffY, options: [...activeOptions],
     twoSided, currentSide,
-    hiddenObjects: twoSided ? sideDesigns[hiddenSide].map(o => o.toObject(DESIGN_PROPS)) : [],
+    hiddenObjects: sideDesigns[hiddenSide].map(o => o.toObject(DESIGN_PROPS)),
     sideMeasured: {...sideMeasured},
+    linkedDimensions: typeof linkedDesignDimensions === 'undefined' ? [] : [...linkedDesignDimensions],
+    linkedCrossStraps: typeof linkedCrossStrapSettings === 'undefined' ? [] : [...linkedCrossStrapSettings],
+    printAppearances: typeof printAppearances === 'undefined' ? {front:'print',back:'print',innerPocket:'print'} : {...printAppearances},
   };
 }
 function saveState() {
@@ -1852,6 +1983,15 @@ function restore(json, onDone) {
   drawBagPending = false;
   updateUndoRedo();
   currentBag = state.currentBag;
+  if(typeof printAppearances !== 'undefined') printAppearances=normalizePrintAppearances(state.printAppearances);
+  if (typeof linkedDesignDimensions !== 'undefined') {
+    linkedDesignDimensions.clear();
+    (state.linkedDimensions || []).forEach(([id, dimensions]) => linkedDesignDimensions.set(id, dimensions));
+  }
+  if (typeof linkedCrossStrapSettings !== 'undefined') {
+    linkedCrossStrapSettings.clear();
+    (state.linkedCrossStraps || []).forEach(([id, settings]) => linkedCrossStrapSettings.set(id, settings));
+  }
   bagBodyColor = state.bagBodyColor;
   webbingColor = state.webbingColor;
   bagTexture = state.bagTexture;
@@ -1891,6 +2031,8 @@ function restore(json, onDone) {
       canvas.renderAll();
       isRestoring = false;
       updateUndoRedo();
+      if (typeof updateDesignViewToggle === 'function') updateDesignViewToggle();
+      if (typeof refreshEmbroideryPreview === 'function') refreshEmbroideryPreview();
       if (onDone) onDone();
     });
   });
@@ -1964,6 +2106,15 @@ document.querySelector('.canvas-area').addEventListener('pointerdown', () => { i
    PHOTO: upload, designs, remove-bg
 ========================================================= */
 document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('embroideryBtn').addEventListener('click', () => {
+  if(!canvas || !embroideryPreview || isRestoring || legacySyncBusy) return;
+  const selected=canvas.getActiveObject();
+  const part=selected?.isUserObject?artworkAppearancePart(selected):currentSide;
+  if(!canvas.getObjects().some(object=>object.isUserObject && artworkAppearancePart(object)===part)) return;
+  printAppearances[part]=printAppearances[part]==='embroidery'?'print':'embroidery';
+  refreshEmbroideryPreview();saveState();
+  showToast(printAppearances[part]==='embroidery'?'자수 모양으로 바꿨어요':'인쇄 모양으로 바꿨어요');
+});
 
 /* 고객이 처음 올린 '원본 파일'을 보관 (배경제거가 잘못돼도 직원이 원본으로 재작업).
    큰 dataURL은 히스토리에 넣지 않고 이 Map에만 보관 → 객체엔 작은 uploadId만 붙임 */
@@ -2277,10 +2428,14 @@ function syncFontSize(v) {
   v = Math.max(10, Math.min(400, parseInt(v)||48));
   fontSlider.value = Math.min(200, v); fontNum.value = v;
   const obj = canvas.getActiveObject();
-  if (obj && obj.type === 'i-text') { obj.set('fontSize', v); canvas.requestRenderAll(); }
+  if (obj && obj.type === 'i-text') {
+    obj.set('fontSize', v); obj.setCoords(); canvas.requestRenderAll();
+    updateDesignSizeHint(obj); checkPrintBounds();
+  }
 }
 fontSlider.addEventListener('input', e => syncFontSize(e.target.value));
 fontNum.addEventListener('input', e => syncFontSize(e.target.value));
+fontSlider.addEventListener('change', saveState);
 fontNum.addEventListener('change', saveState);
 
 /* =========================================================
@@ -2374,7 +2529,7 @@ function renderColorGridForBag() {
     bagTexture = null; bagFabricId = 'basic';
     POLY_COLORS.forEach((c) => {
       const el = document.createElement('button');
-      el.className = 'color-sw' + (c.key === polyBodyKey ? ' active' : '');
+      el.className = 'color-sw' + (!bagBodyColor && c.key === polyBodyKey ? ' active' : '');
       el.style.background = c.display; el.title = c.name;
       el.addEventListener('click', () => {
         grid.querySelectorAll('.color-sw').forEach(x => x.classList.remove('active'));
@@ -2392,7 +2547,7 @@ function renderColorGridForBag() {
       grid.appendChild(swatchWithLabel(el, c.name));
     });
     const cur = POLY_COLORS.find(c => c.key === polyBodyKey) || POLY_COLORS[0];
-    nameEl.textContent = '● ' + cur.name;
+    nameEl.textContent = '● ' + (bagBodyColor ? '직접 선택 '+bagBodyColor.toUpperCase() : cur.name);
   } else {
     // 원단 종류 탭 — 1열: 기본(단가 확정) / 2열: 나머지(상담문의)
     if (fabSection) fabSection.style.display = '';
@@ -2503,6 +2658,9 @@ function isColorActive(fab, c) {
 // 현재 룩의 표시 이름
 function currentLookName() {
   const fab = FABRICS.find(f => f.id === bagFabricId) || FABRICS[0];
+  if (bagBodyColor && !fab.colors.some(c => (c.hex || '').toLowerCase() === bagBodyColor.toLowerCase())) {
+    return (fab.id === 'basic' ? '' : fab.name + ' ') + '직접 선택 ' + bagBodyColor.toUpperCase();
+  }
   if (fab.id === 'basic') {
     const c = fab.colors.find(x => x.hex === bagBodyColor) || fab.colors[0];
     return c.name;
@@ -2579,6 +2737,7 @@ function needSelect(){ showToast('먼저 이미지나 글자를 선택해주세�
 
 /* keyboard */
 document.addEventListener('keydown', (e) => {
+  if (!canvas || legacySyncBusy || document.querySelector('.body')?.inert) return;
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
   if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); undo(); }
   else if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey && e.key==='z'))) { e.preventDefault(); redo(); }
@@ -2835,6 +2994,7 @@ function switchSide(side) {
   canvas.discardActiveObject();
   canvas.requestRenderAll();
   updateSideTabUI();
+  refreshEmbroideryPreview();
   showToast(side === 'front' ? '앞면' : '뒷면');
   saveState();
   checkPrintBounds();
@@ -2844,6 +3004,7 @@ function switchSide(side) {
 /* 안주머니인쇄 영역(좌상단)에 올린 디자인인지 — 양면 공통으로 다룸 */
 function isInnerPocketObj(o) {
   if (!o || !o.isUserObject) return false;
+  if (o.legacyPrintPart === 'innerPocket') return true;
   if (!activeOptions.has('안주머니인쇄')) return false;
   const ip = optionVisuals['안주머니인쇄'];
   if (!ip) return false;
@@ -2867,6 +3028,8 @@ function captureAllSides() {
   ['front','back'].forEach(side => {
     canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o)).forEach(o => canvas.remove(o));
     sideDesigns[side].forEach(o => canvas.add(o));
+    currentSide=side;
+    embroideryPreview?.invalidate(canvas.getObjects().filter(o=>o.isUserObject));
     canvas.discardActiveObject();
     canvas.renderAll();
     result.push({ label: side === 'front' ? '앞면' : '뒷면', data: shot() });
@@ -2875,6 +3038,7 @@ function captureAllSides() {
   canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o)).forEach(o => canvas.remove(o));
   sideDesigns[saved].forEach(o => canvas.add(o));
   currentSide = saved;
+  embroideryPreview?.invalidate(canvas.getObjects().filter(o=>o.isUserObject));
   canvas.renderAll();
   return result;
 }
@@ -2888,7 +3052,7 @@ dualBtn.addEventListener('click', () => {
     twoSided = true;
     dualBtn.classList.add('active');
     sideDesigns.front = canvas.getObjects().filter(o => o.isUserObject && !isInnerPocketObj(o));
-    sideDesigns.back = [];
+    // A 3D view may retain a dormant back design while double-sided printing is off.
     sideMeasured.front = null; sideMeasured.back = null;
     currentSide = 'front';
     sideTabs.style.display = 'flex';
@@ -2896,7 +3060,7 @@ dualBtn.addEventListener('click', () => {
     showToast('양면 인쇄 ON · 앞면/뒷면 따로 디자인하세요');
   } else {
     if (currentSide === 'back') switchSide('front');
-    sideDesigns.back = [];          // 뒷면 디자인 폐기
+    // Keep the back objects editable if double-sided printing is enabled again.
     sideMeasured.front = null; sideMeasured.back = null;
     twoSided = false;
     dualBtn.classList.remove('active');
@@ -3376,9 +3540,32 @@ function syncColorSwatches() {
    ZOOM
 ========================================================= */
 let zoom = 1;
+function updateCanvasViewButtonPosition() {
+  const card=document.getElementById('canvasWrap'),button=document.getElementById('product3dCanvasToggle');
+  const stage=document.querySelector('.canvas-area');
+  if(!card || !button || !stage) return;
+  const cardRect=card.getBoundingClientRect(),stageRect=stage.getBoundingClientRect();
+  if(!cardRect.width || !cardRect.height) return;
+  const inset=14,scale=zoom || 1;
+  const visibleLeft=Math.max(cardRect.left,stageRect.left),visibleRight=Math.min(cardRect.right,stageRect.right);
+  const visibleTop=Math.max(cardRect.top,stageRect.top),visibleBottom=Math.min(cardRect.bottom,stageRect.bottom);
+  // Keep the overlay's screen size constant while the actual canvas zooms.
+  const buttonWidth=button.offsetWidth,buttonHeight=button.offsetHeight;
+  const right=Math.max(visibleLeft+buttonWidth+inset,visibleRight-inset);
+  let top=visibleTop+inset;
+  const toolbar=document.querySelector('.floating-toolbar')?.getBoundingClientRect();
+  if(toolbar && toolbar.right>right-buttonWidth && toolbar.left<right && toolbar.bottom>top && toolbar.top<top+buttonHeight) {
+    top=toolbar.bottom+10;
+  }
+  top=Math.min(top,visibleBottom-buttonHeight-inset);
+  button.style.right=`${Math.max(0,(cardRect.right-right)/scale)}px`;
+  button.style.top=`${Math.max(0,(top-cardRect.top)/scale)}px`;
+  button.style.transform=`scale(${1/scale})`;
+}
 function applyZoom() {
   document.getElementById('canvasWrap').style.transform = `scale(${zoom})`;
   document.getElementById('zoomVal').textContent = Math.round(zoom*100)+'%';
+  updateCanvasViewButtonPosition();
 }
 /* 캔버스를 영역 크기에 맞게 자동 줌 (모바일 대응) */
 function fitZoom() {
@@ -3419,10 +3606,18 @@ document.querySelectorAll('.modal-tab').forEach(tab => {
 function renderBagGrid(cat) {
   const grid = document.getElementById('bagGrid');
   grid.innerHTML = '';
-  BAG_MODELS[cat].forEach(bag => {
-    const card = document.createElement('div');
+  const bags = [...BAG_MODELS[cat], ...EXTRA_3D_BAGS.filter(bag => bag.category === cat)];
+  bags.forEach(bag => {
+    const standalone3D = bag.editorMode === '3d';
+    const card = document.createElement(standalone3D ? 'button' : 'div');
     card.className = 'bag-card' + (bag.id===currentBag.id?' selected':'');
-    const bodyUrl   = BAG_IMAGES[bag.id + '_body'] || '';
+    if (standalone3D) {
+      card.type = 'button';
+      card.dataset.p3dSelectProduct = bag.id;
+      card.setAttribute('aria-label', `${bag.name} ${bag.size} 3D 꾸미기`);
+      card.style.fontFamily = 'inherit';
+    }
+    const bodyUrl   = bag.preview || BAG_IMAGES[bag.id + '_body'] || '';
     const handleUrl = BAG_IMAGES[bag.id + '_handle'] || BAG_IMAGES[bag.id + '_zipper'] || '';
     card.innerHTML = `
       <div class="bag-preview" style="position:relative;background:var(--gray-7);">
@@ -3430,8 +3625,9 @@ function renderBagGrid(cat) {
         ${bodyUrl   ? `<img src="${bodyUrl}" loading="lazy" style="position:absolute;inset:6%;width:88%;height:88%;object-fit:contain;">` : ''}
       </div>
       <div class="bc-name">${bag.name}</div>
-      <div class="bc-size">${bag.size}</div>`;
-    card.addEventListener('click', () => selectBag(bag));
+      <div class="bc-size">${bag.size}</div>
+      ${standalone3D ? '<div class="bc-mode">3D 꾸미기</div>' : ''}`;
+    if (!standalone3D) card.addEventListener('click', () => selectBag(bag));
     grid.appendChild(card);
   });
 }
@@ -3514,7 +3710,8 @@ function exportDesignFiles() {
   canvas.renderAll();
 
   // 고화질 PNG(3배) + SVG (디자인 영역만)
-  const png = canvas.toDataURL({ format:'png', left, top, width, height, multiplier: 3 });
+  const originalPNG=()=>canvas.toDataURL({ format:'png', left, top, width, height, multiplier: 3 });
+  const png = embroideryPreview ? embroideryPreview.withOriginalArtwork(originalPNG) : originalPNG();
   const svg = canvas.toSVG({ viewBox:{ x:left, y:top, width, height }, width, height });
 
   // 복원
@@ -3537,6 +3734,8 @@ function exportDesignFilesAllSides() {
   ['front','back'].forEach(side => {
     pick().forEach(o => canvas.remove(o));
     sideDesigns[side].forEach(o => canvas.add(o));
+    currentSide=side;
+    embroideryPreview?.invalidate(canvas.getObjects().filter(o=>o.isUserObject));
     canvas.discardActiveObject();
     canvas.renderAll();
     canvas.getObjects().filter(o => o.isUserObject).forEach(o => o.setCoords());
@@ -3546,6 +3745,7 @@ function exportDesignFilesAllSides() {
   pick().forEach(o => canvas.remove(o));
   sideDesigns[saved].forEach(o => canvas.add(o));
   currentSide = saved;
+  embroideryPreview?.invalidate(canvas.getObjects().filter(o=>o.isUserObject));
   canvas.renderAll();
   return out;
 }
@@ -3571,14 +3771,15 @@ function makeOrderNum(name) {
 function bagColorName() {
   // 폴리백은 PNG 교체 방식이라 bagBodyColor가 항상 null → polyBodyKey로 실제 색 이름 반환
   if (bagCategory(currentBag) === 'poly') {
+    if (bagBodyColor) return '직접 선택 '+bagBodyColor.toUpperCase();
     const pc = POLY_COLORS.find(x => x.key === polyBodyKey);
     return pc ? pc.name : '블랙';
   }
   return (typeof currentLookName === 'function') ? currentLookName() : '아이보리';
 }
 function webbingColorName() {
-  const c = WEBBING_COLORS.find(x => x.hex === webbingColor);
-  return c ? c.name : '없음';
+  const c = WEBBING_COLORS.find(x => (x.hex || '').toLowerCase() === (webbingColor || '').toLowerCase());
+  return c ? c.name : webbingColor ? '직접 선택 ' + webbingColor.toUpperCase() : '없음';
 }
 
 document.getElementById('orderBtn').addEventListener('click', () => {
@@ -3969,6 +4170,13 @@ async function generateWorkOrderExcel(orderData) {
     ws.getRow(row).height = 22; row++;
   }
 
+  if (activeOptions.has('크로스끈')) {
+    L(`A${row}`, '크로스끈 길이');
+    ws.mergeCells(`B${row}:D${row}`);
+    V(`B${row}`, `${getCrossStrapSettings().length} mm`, {blue:true, bold:true});
+    ws.getRow(row).height = 22; row++;
+  }
+
   // ── 고객 요청 사항 ──
   ws.mergeCells(`A${row}:D${row}`); SEC(`A${row}`, '고객 요청 사항');
   ws.getRow(row).height = 22; row++;
@@ -4199,6 +4407,90 @@ function showToast(msg) {
 /* =========================================================
    BOOT
 ========================================================= */
+// The public API exposes design snapshots only; Fabric layers and customer
+// originals remain in this editor and are referenced by a short session token.
+let legacyDesignAPI = null;
+const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mjs'),import('./assets/product3d/catalog.mjs'),import('./assets/product3d/embroidery-fabric.mjs')]).then(([{createLegacyDesignBridge},{PRODUCT3D_PROFILES},{installFabricEmbroideryPreview}]) => {
+  embroideryPreview=installFabricEmbroideryPreview({fabric,getCanvas:()=>canvas,
+    getAppearance:object=>printAppearances[artworkAppearancePart(object)],getMmPerPixel:()=>getCmPerPx()*10,designProps:DESIGN_PROPS});
+  refreshEmbroideryPreview();
+  product3DProfiles = PRODUCT3D_PROFILES;
+  legacyDesignAPI = createLegacyDesignBridge({
+    fabric, designProps:DESIGN_PROPS, originalUploads, newUploadId, validOptions:OPTIONS,
+    getState:() => ({canvas,currentBag,bagBodyRect,bagBodyColor,bagFabricId,bagTexture,webbingColor,polyBodyKey,
+      options:[...activeOptions],twoSided,currentSide,sideDesigns,optionVisuals,isRestoring,drawBagPending}),
+    getOpaqueBBox, boundsOf:opaqueBoundingRect, isInnerPocketObj,
+    getDimensions:getBagRealSize,
+    setDimensions:dimensions => linkedDesignDimensions.set(currentBag.id,{...dimensions}),
+    getCrossStrap:getCrossStrapSettings,
+    getPrintAppearances:()=>({...printAppearances}),
+    setPrintAppearances:value=>{printAppearances=normalizePrintAppearances(value);},
+    setCrossStrap:settings => linkedCrossStrapSettings.set(currentBag.id,{...settings}),
+    getBodyColor:state => bagCategory(state.currentBag)==='poly' && !state.bagBodyColor
+      ? (POLY_COLORS.find(color=>color.key===state.polyBodyKey)||POLY_COLORS[0]).display : state.bagBodyColor,
+    getHandleColor:state => state.webbingColor || (bagCategory(state.currentBag)==='poly'?'#040000':'#ece6d9'),
+    defaultBodyColor: id => {
+      const fab = FABRICS.find(f => f.id === id) || FABRICS[0];
+      return fab.base || fab.colors[0]?.hex || '#ece6d9';
+    },
+    captureState:captureDesignState,
+    restoreState:state => new Promise(resolve => restore(state,resolve)),
+    setRestoring:value => { isRestoring=value; updateUndoRedo(); },
+    applyAppearance:({body,handle,options,twoSided:dual,originalAppearance,preserveBody,preserveHandle}) => {
+      const fab=FABRICS.find(f=>f.id===body?.fabricId) || FABRICS[0];
+      if(bagCategory(currentBag)==='poly') {
+        bagFabricId='basic'; bagTexture=null;
+        const palette=POLY_COLORS.find(color=>color.display.toLowerCase()===(body?.color||'').toLowerCase());
+        polyBodyKey=preserveBody ? originalAppearance.polyBodyKey || polyBodyKey : palette?.key || 'black';
+        bagBodyColor=preserveBody ? originalAppearance.bodyColor : palette ? null : body.color;
+        BAG_IMAGES[currentBag.id+'_body']=POLY_BODY[currentBag.id][polyBodyKey];
+      } else if(preserveBody) {
+        bagFabricId=fab.id; bagBodyColor=originalAppearance.bodyColor; bagTexture=originalAppearance.texture;
+      } else applyFabricColor(fab,{hex:/^#[0-9a-f]{6}$/i.test(body?.color||'')?body.color:'#ece6d9'});
+      webbingColor=preserveHandle ? originalAppearance.handleColor : /^#[0-9a-f]{6}$/i.test(handle?.color||'')?handle.color:'#ece6d9';
+      const optionConf=BAG_OPT_CONF[bagCategory(currentBag)] || BAG_OPT_CONF.ecobag;
+      activeOptions.clear(); options.filter(option=>optionConf.available.includes(option)).forEach(option=>activeOptions.add(option));
+      optionConf.locked.forEach(option=>activeOptions.add(option));
+      if(activeOptions.has('안주머니인쇄') && optionConf.available.includes('안주머니')) activeOptions.add('안주머니');
+      twoSided=dual;
+      drawBag();
+    },
+    installArtwork:(parts,side) => {
+      canvas.discardActiveObject();
+      canvas.getObjects().filter(object=>object.isUserObject).forEach(object=>canvas.remove(object));
+      sideDesigns.front=parts.front; sideDesigns.back=parts.back;
+      currentSide=side; sideMeasured.front=null; sideMeasured.back=null;
+      [...parts[side],...parts.innerPocket].forEach(object=>canvas.add(object));
+      reorderBag(); canvas.requestRenderAll();
+    },
+    refreshUI:() => {
+      renderColorGridForBag(); updateOptionsForBag();
+      Object.entries(optButtons).forEach(([option,pill])=>pill.classList.toggle('active',activeOptions.has(option)));
+      dualBtn.classList.toggle('active',twoSided); sideTabs.style.display=twoSided?'flex':'none';
+      updateSideTabUI(); syncColorSwatches();
+      const name=document.getElementById('webbingColorName'); if(name) name.textContent='● '+webbingColorName();
+      renderOptionChips(); renderOptionPreviews(); updatePrintSizeHint(); checkPrintBounds();
+      updatePriceBar(); updateDesignViewToggle(); canvas.requestRenderAll();
+      refreshEmbroideryPreview();
+    },
+    saveState,
+    lockUI:() => {
+      const nodes=[document.querySelector('.body'),document.querySelector('.header')].filter(Boolean);
+      const previous=nodes.map(node=>node.inert); nodes.forEach(node=>{node.inert=true;});
+      return ()=>nodes.forEach((node,i)=>{node.inert=previous[i];});
+    },
+    onBusy:value=>{legacySyncBusy=value;updateDesignViewToggle();},
+  });
+  updateDesignViewToggle();
+  return legacyDesignAPI;
+});
+window.yogibagDesignBridge=Object.freeze({
+  exportDesign:async()=> (await legacyDesignReady).exportDesign(),
+  applyDesign:async snapshot=> (await legacyDesignReady).applyDesign(snapshot),
+  isReady:()=>Boolean(legacyDesignAPI?.isReady()),
+});
+updateDesignViewToggle();
+
 window.addEventListener('load', () => {
   initCanvas();
   readSavedDesigns();
@@ -4208,8 +4500,15 @@ window.addEventListener('load', () => {
   if (startBag && startBag.id !== currentBag.id) selectBag(startBag, true);
   fitZoom();
   setTimeout(fitZoom, 80);  // 레이아웃 안정 후 재계산 (모바일)
+  if(typeof ResizeObserver !== 'undefined') {
+    const observer=new ResizeObserver(updateCanvasViewButtonPosition);
+    observer.observe(document.getElementById('canvasWrap'));
+    observer.observe(document.querySelector('.canvas-area'));
+  }
   if (typeof updatePriceBar === 'function') updatePriceBar();
+  updateDesignViewToggle();
 });
 </script>
+<script type="module" src="assets/product3d/bridge.mjs"></script>
 </body>
 </html>

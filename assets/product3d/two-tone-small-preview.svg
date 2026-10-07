@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 460">
+  <defs>
+    <linearGradient id="cloth" x2="1" y2=".7"><stop stop-color="#f5f0e5"/><stop offset="1" stop-color="#ded6c5"/></linearGradient>
+    <linearGradient id="red" x2="1" y2=".5"><stop stop-color="#c03b50"/><stop offset="1" stop-color="#972139"/></linearGradient>
+    <pattern id="weave" width="3" height="3" patternUnits="userSpaceOnUse"><path d="M0 0H3M0 0V3" stroke="#6e5745" stroke-opacity=".09" stroke-width=".6"/></pattern>
+  </defs>
+  <ellipse cx="190" cy="434" rx="133" ry="8" fill="#000" opacity=".09"/>
+  <path d="M104 214C117 131 143 29 181 24C224 18 252 127 268 214" fill="none" stroke="#882037" stroke-width="15"/>
+  <path d="M119 214C126 137 155 32 189 25C219 19 246 142 260 214" fill="none" stroke="url(#red)" stroke-width="16"/>
+  <path d="M40 208Q191 202 340 208L333 397Q328 425 296 433H84Q53 426 47 397Z" fill="url(#cloth)"/>
+  <path d="M128 307H252V379H128Z" fill="#e9e2d3" stroke="#d0c7b7" stroke-width="1.4"/>
+  <path d="M122 207L112 387M264 207L275 387" stroke="url(#red)" stroke-width="27"/>
+  <path d="M47 377Q190 389 334 377L329 405Q317 435 289 434H89Q61 430 52 407Z" fill="url(#red)"/>
+  <path d="M40 208Q191 202 340 208L333 397Q328 425 296 433H84Q53 426 47 397Z" fill="url(#weave)"/>
+  <path d="M48 214Q190 210 332 214M132 314H249M59 388Q188 399 323 388" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1.2"/>
+</svg>
