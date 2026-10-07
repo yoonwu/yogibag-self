@@ -1,5 +1,6 @@
-import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings } from './config.mjs?v=1.2.5';
-import { dataURLBytes } from './zip.mjs?v=1.2.5';
+import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings, getProductProfile } from './config.mjs?v=1.2.6';
+import { dataURLBytes } from './zip.mjs?v=1.2.6';
+import { openKakaoConsultation } from './kakao-consultation.mjs?v=1.2.6';
 
 const EMAIL_ENDPOINT = 'https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email';
 const STAFF_EMAIL = 'thdghkstlr@gmail.com';
@@ -95,6 +96,7 @@ export async function buildConsultationFiles(config, views, customer = {}, refer
 }
 
 export async function openConsultation({config,viewer}) {
+  if (getProductProfile(config).consultationMode === 'kakao') return openKakaoConsultation({config,viewer});
   const c = normalizeConfig(config), reference = identifier();
   const previousFocus = document.activeElement;
   const editorDialog = viewer.container?.closest('.p3d-dialog');

@@ -1,14 +1,14 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.5';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.5';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.5';
-import { createProductModel } from './registry.mjs?v=1.2.5';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.5';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.5';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.5';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.5';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.5';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.6';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.6';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.6';
+import { createProductModel } from './registry.mjs?v=1.2.6';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.6';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.6';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.6';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.6';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.6';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
@@ -841,6 +841,15 @@ export class Product3DViewer {
     this._updateEmbroideryLOD();
     this.renderer.render(this.scene, this.camera);
     return this.renderer.domElement.toDataURL('image/png');
+  }
+
+  async captureCurrentView() {
+    if (this._printStates) await Promise.all(Object.values(this._printStates).map(state => state.pending?.promise).filter(Boolean));
+    else if (this._pendingTexture) await this._pendingTexture.promise;
+    await this._waitForEmbroidery();
+    // Keep the customer's rotation, zoom and pan; email's multi-view capture
+    // deliberately changes cameras, but the chat image is the current view.
+    return this.capture();
   }
 
   async captureViews() {
