@@ -1,5 +1,5 @@
-import { createDefaultConfig, SAMPLE_PRODUCT_ID, PRODUCT3D_PROFILES } from './config.mjs?v=1.2.8';
-import { buildBagModel } from './model.mjs?v=1.2.8';
+import { createDefaultConfig, SAMPLE_PRODUCT_ID, PRODUCT3D_PROFILES } from './config.mjs?v=1.2.9';
+import { buildBagModel } from './model.mjs?v=1.2.9';
 
 // New product shapes register a generator; products sharing a shape register defaults.
 export const Product3DRegistry = new Map([

@@ -1,8 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.8';
-import { mmToScene, getProductProfile } from './config.mjs?v=1.2.8';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.9';
+import { mmToScene, getProductProfile } from './config.mjs?v=1.2.9';
 import { addBagOptions, getInnerPocketLayout, innerPocketHalfWidth, innerPocketContourVisible,
-  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.8';
+  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.9';
 
 // Shape coordinates are millimetres until a vertex is written. Width, depth,
 // webbing width/thickness and print size never depend on an Object3D scale.
@@ -78,20 +78,6 @@ function bottomLift(x,s,sideT=null) {
   return edge+gusset;
 }
 
-// Keep the sewn handle roots at the measured height. Unsupported cloth between
-// the roots and at the corners settles a few millimetres below them.
-function mouthSag(x,s) {
-  if(!s.soft)return 0;
-  const distance=Math.abs(Math.abs(x)-s.handle.gap/2);
-  const t=THREE.MathUtils.clamp((distance-s.handle.width*1.15)/Math.max(12,s.handle.gap*.18),0,1);
-  return Math.min(7,s.height*.022)*t*t*(3-2*t);
-}
-
-function clothRowY(x,y,s) {
-  const t=THREE.MathUtils.clamp((y/s.height-.78)/.22,0,1);
-  return y-mouthSag(x,s)*t*t*(3-2*t);
-}
-
 function drapedRowPoint(fraction,rawY,s,front=true,side=false,inset=0) {
   if(!s.draped){
     if(side)return sidePoint(fraction,rawY,s,front,inset);
@@ -105,12 +91,8 @@ function drapedRowPoint(fraction,rawY,s,front=true,side=false,inset=0) {
     else {const {a,r}=sliceAt(y,s);p=panelPoint((fraction*2-1)*(a-r),y,s,front,inset);}
     y=rawY+bottomLift(p.x,s,side?fraction:null)*fade;
   }
-  const baseY=y;
-  for(let step=0;step<4;step++){
-    const {a,r}=sliceAt(y,s);
-    const x=side?sidePoint(fraction,y,s,front,inset).x:(fraction*2-1)*(a-r);
-    y=clothRowY(x,baseY,s);
-  }
+  // The folded mouth is sewn straight across. Softness comes from the curved
+  // gussets and lower cloth folds, not height waves between handle roots.
   if(side)return sidePoint(fraction,y,s,front,inset);
   const {a,r}=sliceAt(y,s);
   return panelPoint((fraction*2-1)*(a-r),y,s,front,inset);
@@ -125,8 +107,7 @@ function panelPoint(x, y, s, front = true, inset = 0) {
   // high-frequency wrinkles. Fade to zero at side joins and the handle roots.
   const settling=s.soft?Math.min(5,s.depth*.045)*edgeFade*Math.sin(Math.PI*v)
     *(0.45+0.55*Math.cos(t*Math.PI*2+v*1.7)**2):0;
-  const mouthGather=s.soft?mouthSag(x,s)*.28*edgeFade*THREE.MathUtils.smoothstep(v,.72,1):0;
-  const z = Math.min(s.depth / 2, b + puff * (1 - t * t) + wrinkle-settling-mouthGather) - inset;
+  const z = Math.min(s.depth / 2, b + puff * (1 - t * t) + wrinkle-settling) - inset;
   return { x, y, z: front ? z : -z };
 }
 
@@ -135,7 +116,7 @@ function printableBodyPoint(x, y, s, front = true) {
   // The daily tote's print may reach the rounded front corner, but should
   // never bridge empty space outside the folded bottom silhouette.
   if (s.draped) {
-    p.visible=y>=bottomLift(x,s)&&y<=s.height-mouthSag(x,s);
+    p.visible=y>=bottomLift(x,s)&&y<=s.height;
     const { a, b, r } = sliceAt(y, s);
     if (Math.abs(x) > a - r) {
       // The recessed gusset is not a rigid quarter circle. Resolve the actual
@@ -864,9 +845,9 @@ function roundedMouthHandleLoop(s,front) {
 
 function stitchGeometry(s, y, front, x0, x1) {
   return sewnThreadGeometry(x1-x0,(distance,across)=>{
-    const x=x0+distance,p=panelPoint(x,clothRowY(x,y+across,s),s,front);
+    const x=x0+distance,p=panelPoint(x,y+across,s,front);
     return {...p,nz:front?1:-1};
-  },{maxCount:s.seamMaxCount});
+  },{maxCount:s.seamMaxCount,rounded:s.seamRounded!==false});
 }
 
 function sideStitchGeometry(s,y,right) {
@@ -881,8 +862,7 @@ function sideStitchGeometry(s,y,right) {
   return sewnThreadGeometry(length,(distance,across)=>{
     const end=samples.findIndex(sample=>sample.distance>=distance),a=samples[Math.max(0,end-1)],b=samples[Math.max(1,end)];
     const t=THREE.MathUtils.lerp(a.t,b.t,(distance-a.distance)/Math.max(.0001,b.distance-a.distance));
-    const rowPoint=sidePoint(t,y+across,s,right);
-    const p=sidePoint(t,clothRowY(rowPoint.x,y+across,s),s,right),previous=sidePoint(Math.max(0,t-.001),y,s,right),next=sidePoint(Math.min(1,t+.001),y,s,right);
+    const p=sidePoint(t,y+across,s,right),previous=sidePoint(Math.max(0,t-.001),y,s,right),next=sidePoint(Math.min(1,t+.001),y,s,right);
     const dx=next.x-previous.x,dz=next.z-previous.z,norm=Math.max(.0001,Math.hypot(dx,dz)),sign=right?-1:1;
     return {...p,nx:sign*dz/norm,nz:-sign*dx/norm};
   },{maxCount:s.sideSeamMaxCount,rounded:false});
@@ -903,8 +883,9 @@ export function buildBagModel(config, materials) {
   const s = shape(config);
   // Keep the existing full-options triangle budget when a long cross strap
   // is present. Ordinary bags retain the denser seam spacing for close views.
-  s.seamMaxCount=config.options?.crossStrap?48:110;
-  s.sideSeamMaxCount=config.options?.crossStrap?24:60;
+  s.seamMaxCount=config.options?.crossStrap?40:110;
+  s.sideSeamMaxCount=config.options?.crossStrap?20:60;
+  s.seamRounded=!config.options?.crossStrap;
   const bag = new THREE.Group();
   bag.name = 'Bag';
   const aliases = { handle: 'webbing', inside: 'lining', seam: 'stitch', innerPocket: 'inside',
@@ -972,6 +953,7 @@ export function buildBagModel(config, materials) {
   seams.name = 'seams';
   bag.add(seams);
   const seamRows = [['mouth', s.height - 5]];
+  if(s.supportsHandles&&!s.poly&&!s.pouch)seamRows.push(['mouthHem',s.height-35]);
   if (s.profile.supportsBottomPanel) seamRows.push(['bottomPanel', s.panelHeight + 2.5]);
   for (const [name, y] of seamRows) {
     const { a, r } = sliceAt(y, s);
