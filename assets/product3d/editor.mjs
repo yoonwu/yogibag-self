@@ -1,8 +1,7 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, serializeConfig, parseConfig, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs';
 import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs';
 import { configForProduct, Product3DCatalog } from './registry.mjs';
 import { Product3DViewer } from './viewer.mjs';
-import { saveLocalConfig, loadLocalConfig } from './storage.mjs';
 import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -451,8 +450,6 @@ export class Product3DEditor {
     print.append(this.printSideSelect);
     for (const side of PRINT_SIDES) this.buildPrintSide(print, side);
     /* Existing front controls are built by the shared per-side helper. */
-    const save = this.panel('시안 보관', '이 브라우저에 저장하거나 파일로 보관할 수 있어요.');
-    this.buildSaveControls(save);
   }
 
   buildPrintSide(parent, side) {
@@ -531,35 +528,6 @@ export class Product3DEditor {
     for (const key of ['uploadInput', 'uploadButton', 'deleteImageButton', 'imagePreview', 'imageThumbnail', 'imageName', 'warnings']) {
       this[key] = this.printControls.get('front')[key];
     }
-  }
-
-  buildSaveControls(save) {
-    const localActions = element('div', 'p3d-action-row');
-    const saveLocal = button('이 기기에 저장');
-    const loadLocal = button('저장한 시안 열기');
-    this.listen(saveLocal, 'click', () => this.run(async () => {
-      await saveLocalConfig(serializeConfig(this.config), this.config.productId);
-      this.setStatus('이 브라우저에 시안을 저장했어요.');
-    }));
-    this.listen(loadLocal, 'click', () => this.run(async () => {
-      const saved = await loadLocalConfig(this.config.productId);
-      if (!saved) { this.setStatus('이 브라우저에 저장한 시안이 아직 없어요.'); return; }
-      await this.replaceConfig(parseConfig(saved), { notify: true });
-      this.setStatus('저장한 시안을 불러왔어요.');
-    }));
-    localActions.append(saveLocal, loadLocal);
-    const fileActions = element('div', 'p3d-action-row');
-    const download = button('시안 파일 내려받기');
-    const importButton = button('시안 파일 열기');
-    this.importInput = element('input', 'p3d-file-input');
-    this.importInput.type = 'file';
-    this.importInput.accept = '.json,application/json';
-    this.importInput.setAttribute('aria-label', '저장한 3D 시안 JSON 파일 열기');
-    this.listen(download, 'click', () => this.download());
-    this.listen(importButton, 'click', () => this.importInput.click());
-    this.listen(this.importInput, 'change', () => this.importFile(this.importInput.files?.[0]));
-    fileActions.append(download, importButton);
-    save.append(localActions, fileActions, this.importInput);
   }
 
   change(path, value) {
@@ -903,38 +871,13 @@ export class Product3DEditor {
     this.imageRatios = ratios;
   }
 
-  async importFile(file) {
-    this.importInput.value = '';
-    if (!file) return;
-    await this.run(async () => {
-      if (file.size > 64 * 1024 * 1024) throw new Error('시안 파일이 너무 커요. 64MB 이하의 파일을 열어 주세요.');
-      const next = parseConfig(await file.text());
-      await this.replaceConfig(next, { notify: true });
-      this.setStatus('시안 파일을 불러왔어요.');
-    });
-  }
-
-  download() {
-    try {
-      const url = URL.createObjectURL(new Blob([serializeConfig(this.config)], { type: 'application/json' }));
-      const link = element('a');
-      link.href = url;
-      link.download = `요기백_3D시안_${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      this.setStatus('시안 파일을 내려받았어요.');
-    } catch (error) { this.setStatus(error.message, true); }
-  }
-
   async consult() {
     if (this.busy || this.disposed) return;
     if (!this.viewer) { this.setStatus('3D 미리보기를 연 뒤 다시 시도해 주세요.', true); return; }
     this.consultButton.disabled = true;
     await this.run(async () => {
       if (this.onConsult) await this.onConsult({ config: this.getConfig(), viewer: this.viewer });
-      else this.setStatus('이 시안을 저장한 뒤 상담할 때 함께 보내 주세요.');
+      else this.setStatus('상담 연결을 확인해 주세요.');
     });
     if (!this.disposed) this.consultButton.disabled = false;
   }
@@ -967,7 +910,7 @@ export class Product3DEditor {
             const message = error?.message || String(error);
             this.viewerError.textContent = message;
             this.viewerError.hidden = false;
-            this.setStatus('3D 미리보기를 표시하지 못했어요. 설정한 시안은 파일로 저장할 수 있어요.', true);
+            this.setStatus('3D 미리보기를 표시하지 못했어요. 잠시 후 다시 열어 주세요.', true);
           },
           onMetrics: metrics => {
             if (this.diagnostics) this.diagnostics.textContent = JSON.stringify(metrics);
@@ -978,7 +921,7 @@ export class Product3DEditor {
       } catch (error) {
         this.viewerError.textContent = error.message || '3D 미리보기를 표시하지 못했어요.';
         this.viewerError.hidden = false;
-        this.setStatus('3D 미리보기를 표시하지 못했어요. 설정한 시안은 파일로 저장할 수 있어요.', true);
+        this.setStatus('3D 미리보기를 표시하지 못했어요. 잠시 후 다시 열어 주세요.', true);
       }
     }
     this.updateProductURL();

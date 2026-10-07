@@ -1,5 +1,5 @@
 import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings } from './config.mjs';
-import { dataURLBytes, makeZip, downloadFile } from './zip.mjs';
+import { dataURLBytes } from './zip.mjs';
 
 const EMAIL_ENDPOINT = 'https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email';
 const STAFF_EMAIL = 'thdghkstlr@gmail.com';
@@ -137,12 +137,12 @@ export async function openConsultation({config,viewer}) {
   const request = node('label','p3dc-field p3dc-wide','추가 요청 사항'), textarea = document.createElement('textarea');
   textarea.maxLength = 3000; textarea.setAttribute('aria-label','상담 추가 요청 사항'); request.append(textarea); fields.request = textarea; form.append(request);
   const localSample = !['self.yogibag.co.kr','yoonwu.github.io'].includes(location.hostname);
-  const note = node('p','p3dc-note',localSample ? '로컬 샘플에서는 상담 자료를 다운로드해 확인할 수 있습니다. 연락처 입력은 선택입니다.' : '상담 접수 시 성함과 연락처를 입력해 주세요.');
+  const note = node('p','p3dc-note',localSample ? '로컬 샘플에서는 상담 시안을 확인할 수 있습니다. 상담 접수는 운영 사이트에서 진행해 주세요.' : '상담 접수 시 성함과 연락처를 입력해 주세요.');
   content.append(form,note); dialog.append(content);
   const footer = node('footer','p3dc-footer'), status = node('p','p3dc-status'); status.setAttribute('role','status');
-  const actions = node('div','p3dc-actions'), download = node('button','p3dc-button p3dc-primary','상담자료 다운로드');
-  const submit = node('button','p3dc-button','상담 접수하기'); submit.disabled = localSample;
-  actions.append(download,submit); footer.append(status,actions); dialog.append(footer); root.append(dialog); document.body.append(root);
+  const actions = node('div','p3dc-actions');
+  const submit = node('button','p3dc-button p3dc-primary','상담 접수하기'); submit.disabled = localSample;
+  actions.append(submit); footer.append(status,actions); dialog.append(footer); root.append(dialog); document.body.append(root);
   const controller = new AbortController(), signal = controller.signal;
   let busy = false, lastBundle, lastCustomer = '';
   const customer = () => Object.fromEntries(Object.entries(fields).map(([key,input]) => [key,input.value.trim()]));
@@ -166,17 +166,13 @@ export async function openConsultation({config,viewer}) {
   },{signal});
   form.addEventListener('submit',e=>e.preventDefault(),{signal});
   const work = async action => {
-    if(busy)return;busy=true;download.disabled=true;submit.disabled=true;close.disabled=true;
+    if(busy)return;busy=true;submit.disabled=true;close.disabled=true;
     status.textContent='상담 자료를 준비하고 있습니다…';
     try {await action();} catch(error){status.textContent=error.message;}
-    finally {busy=false;download.disabled=false;submit.disabled=localSample || submit.dataset.completed === 'true';close.disabled=false;}
+    finally {busy=false;submit.disabled=localSample || submit.dataset.completed === 'true';close.disabled=false;}
   };
-  download.addEventListener('click',()=>work(async()=>{
-    const data = await bundle(); downloadFile(`${reference}_상담자료.zip`,makeZip(data.files),'application/zip');
-    status.textContent='시안 이미지·설정·상담표·인쇄 원본을 한 파일로 다운로드했습니다.';
-  }),{signal});
   submit.addEventListener('click',()=>work(async()=>{
-    if(localSample) throw new Error('로컬 샘플에서는 상담 자료 다운로드만 사용할 수 있습니다.');
+    if(localSample) throw new Error('상담 접수는 운영 사이트에서 진행해 주세요.');
     const value=customer();
     if(value.name.length<2 || !/^01\d-?\d{3,4}-?\d{4}$/.test(value.phone)) throw new Error('성함과 올바른 연락처를 입력해 주세요.');
     if(value.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value.email)) throw new Error('이메일 형식을 확인해 주세요.');
@@ -186,7 +182,7 @@ export async function openConsultation({config,viewer}) {
     const html=`<h2>요기백 3D 시안 상담 요청</h2><p>${escape(reference)}</p><p>성함: ${escape(value.name)}<br>연락처: ${escape(value.phone)}<br>이메일: ${escape(value.email)}<br>희망 수량: ${escape(value.quantity)}</p><table>${getConsultationSpecs(c).map(s=>`<tr><th>${escape(s.label)}</th><td>${escape(s.value)}</td></tr>`).join('')}</table><p style="white-space:pre-wrap">${escape(value.request)}</p>`;
     const response=await fetch(EMAIL_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:STAFF_EMAIL,subject:`[요기백 3D 상담] ${reference} · ${value.name}`,html,attachments:data.files.map(file=>({filename:file.name,content:base64(file.data)}))})});
     const result=await response.json();
-    if(!response.ok || result.error) throw new Error(result.error || '상담 접수를 완료하지 못했습니다. 자료를 다운로드해 상담 시 전달해 주세요.');
+    if(!response.ok || result.error) throw new Error(result.error || '상담 접수를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     status.textContent=`상담 요청이 접수되었습니다. 시안 번호 ${reference}`;
     submit.textContent='상담 접수 완료'; submit.dataset.completed='true';
   }),{signal});
