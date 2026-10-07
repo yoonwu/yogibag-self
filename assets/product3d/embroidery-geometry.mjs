@@ -1,8 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { MM_TO_SCENE } from './config.mjs?v=1.2.6';
-import * as surfaces from './model.mjs?v=1.2.6';
-import { stitchLift } from './embroidery-plan.mjs?v=1.2.6';
-import { sampleEmbroideryElevation } from './embroidery-relief.mjs?v=1.2.6';
+import { MM_TO_SCENE } from './config.mjs?v=1.2.7';
+import * as surfaces from './model.mjs?v=1.2.7';
+import { stitchLift } from './embroidery-plan.mjs?v=1.2.7';
+import { sampleEmbroideryElevation } from './embroidery-relief.mjs?v=1.2.7';
 
 export const MAX_THREAD_TRIANGLES = 120000;
 

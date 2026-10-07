@@ -67,7 +67,7 @@ test('every catalog product builds finite physical geometry, its own handles and
 
 test('flat products meet a narrow sewn bottom while gusset products have a draped floor and raised V folds',()=>{
   for(const [id,profile] of Object.entries(PRODUCT3D_PROFILES)){
-    if(profile.construction==='sample')continue;
+    if(profile.construction==='sample'&&!profile.softCloth)continue;
     const config=normalizeConfig(createDefaultConfig(id)),state=model(config),floor=state.bag.getObjectByName('bottom').geometry;
     const p=floor.attributes.position,b=floor.boundingBox;
     assert.ok(b.max.y-b.min.y>3*MM_TO_SCENE,`${id} floor follows cloth folds instead of a horizontal plate`);

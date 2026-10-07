@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.6';
-import { mmToScene, getProductProfile } from './config.mjs?v=1.2.6';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.7';
+import { mmToScene, getProductProfile } from './config.mjs?v=1.2.7';
 
 // Option sizes are visual references in millimetres. Options share the
 // viewer-owned materials; the inner pocket hangs as an independent pouch.
@@ -13,7 +13,7 @@ export function getInnerPocketLayout(config) {
   const pocketWidth = Math.min(positive(part.width, 140), width - 40);
   const pocketHeight = Math.min(positive(part.height, 120), height - 30);
   const profile=getProductProfile(config),depth=config.dimensions.depth;
-  const folded=profile.construction&&profile.construction!=='sample'||profile.id==='daily';
+  const folded=profile.softCloth||profile.construction&&profile.construction!=='sample'||profile.id==='daily';
   const floorClearance=folded?Math.min(height*.035,depth*.08+2)+Math.min(height*.02,depth*.12)+3.5:0;
   const top = Math.max(height - 25,pocketHeight+floorClearance);
   return { width: pocketWidth, height: pocketHeight, top,

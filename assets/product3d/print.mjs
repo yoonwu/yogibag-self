@@ -1,11 +1,11 @@
 import * as THREE from '../vendor/three/three.module.js';
-import * as surfaces from './model.mjs?v=1.2.6';
-import { MM_TO_SCENE } from './config.mjs?v=1.2.6';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.6';
-import { renderEmbroideryCanvas,readEmbroiderySource,embroideryCanvases } from './embroidery.mjs?v=1.2.6';
-import { createEmbroideryThreadMesh,createEmbroideryThreadObject } from './embroidery-geometry.mjs?v=1.2.6';
-import { embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.6';
-import { createEmbroideryReliefGeometry, createEmbroideryContactShadow } from './embroidery-relief.mjs?v=1.2.6';
+import * as surfaces from './model.mjs?v=1.2.7';
+import { MM_TO_SCENE } from './config.mjs?v=1.2.7';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.7';
+import { renderEmbroideryCanvas,readEmbroiderySource,embroideryCanvases } from './embroidery.mjs?v=1.2.7';
+import { createEmbroideryThreadMesh,createEmbroideryThreadObject } from './embroidery-geometry.mjs?v=1.2.7';
+import { embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.7';
+import { createEmbroideryReliefGeometry, createEmbroideryContactShadow } from './embroidery-relief.mjs?v=1.2.7';
 
 function clipPolygon(polygon, axis, boundary, keepGreater) {
   const output=[];

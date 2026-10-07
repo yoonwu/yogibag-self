@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { mmToScene } from './config.mjs?v=1.2.6';
+import { mmToScene } from './config.mjs?v=1.2.7';
 
 // Millimetre-sized, crowned thread dashes share one mesh per seam. Rounded
 // cross-sections catch the studio light without a draw call per stitch.

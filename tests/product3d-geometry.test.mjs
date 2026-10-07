@@ -60,7 +60,8 @@ for (const dimensions of [
     const box = bodyBounds(bag);
     close(box.min.y, 0);
     close(box.max.y, mmToScene(dimensions.height));
-    close(box.max.x - box.min.x, mmToScene(dimensions.width), 0.0002);
+    assert.ok(box.max.x-box.min.x<=mmToScene(dimensions.width)+1e-6);
+    assert.ok(box.max.x-box.min.x>mmToScene(dimensions.width*.90),'relaxed sides retain the stated maximum-width envelope');
     assert.ok(box.max.z <= mmToScene(dimensions.depth / 2) + 1e-6);
     assert.ok(box.min.z >= -mmToScene(dimensions.depth / 2) - 1e-6);
     for (const side of ['Front', 'Back']) {
@@ -98,8 +99,8 @@ test('outer panels face out, inner panels face in and floor seals the open bag',
   assert.ok(average('sideRight', 'x') > 0.6);
   assert.ok(average('liningFront', 'z') < -0.95);
   assert.ok(average('liningBack', 'z') > 0.95);
-  close(average('bottom', 'y'), -1);
-  close(average('liningBottom', 'y'), 1);
+  assert.ok(average('bottom','y')<-.95,'curved cloth floor faces down');
+  assert.ok(average('liningBottom','y')>.95,'curved lining floor faces up');
   disposeBagModel(bag);
 });
 
@@ -171,9 +172,10 @@ test('short broad straps remain attached on the smallest body and never become t
       assert.ok(config.handle.gap >= config.handle.width + 12);
       bag.updateMatrixWorld(true);
       const x = mmToScene(config.handle.gap / 2 + config.handle.width / 2 - 0.5);
-      const y = mmToScene(Math.max(2.5, config.bottomPanel.height + 0.5));
+      const y = bag.getObjectByName('handleFrontLeft').geometry.boundingBox.min.y+mmToScene(1.5);
       const raycaster = new THREE.Raycaster(new THREE.Vector3(x, y, 1), new THREE.Vector3(0, 0, -1));
-      const hits = raycaster.intersectObjects([bag.getObjectByName('bodyFront')]);
+      const hits = raycaster.intersectObjects(['bodyFront','sideRight','bottomFrontPanel','bottomSideRightPanel']
+        .map(name=>bag.getObjectByName(name)).filter(Boolean));
       assert.ok(hits.length > 0, 'outer webbing edge still lies over the body, including its bottom fold');
       const loop = bag.getObjectByName('handlesLoopFront');
       close(loop.geometry.boundingBox.max.y, mmToScene(config.dimensions.height + 80), 0.0002);
