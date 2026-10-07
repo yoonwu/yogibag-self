@@ -1,9 +1,9 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.3';
-import { Product3DViewer } from './viewer.mjs?v=1.2.3';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs';
-import { openProductPicker } from './product-picker.mjs';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.4';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.4';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.4';
+import { Product3DViewer } from './viewer.mjs?v=1.2.4';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.4';
+import { openProductPicker } from './product-picker.mjs?v=1.2.4';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -595,7 +595,7 @@ export class Product3DEditor {
     this.fields.get('bottomPanel.color').group.hidden = !profile.supportsBottomPanel;
     this.fields.get('bottomPanel.height').row.hidden = !profile.supportsBottomPanel;
     this.fabricDescription.textContent = profile.clothKind === 'poly' ? '폴리 / 합성 원단의 색상을 적용해요.' : profile.supportsPocket && profile.supportsBottomPanel
-      ? '몸통·주머니·밑단에 같은 원단을 적용해요.' : '몸통에 선택한 원단을 적용해요.';
+      ? '몸통·주머니·밑단에 같은 원단을 적용해요.' : profile.supportsBottomPanel ? '몸통·밑단에 같은 원단을 적용해요.' : '몸통에 선택한 원단을 적용해요.';
     const flat = profile.depthBasis === 'opening-estimate';
     this.sizeDescription.textContent = flat ? '평면 봉합형이에요. 입구 벌림은 3D 형태를 보기 위한 참고값이에요.' : profile.supportsBottomPanel
       ? '높이는 하단 배색을 포함한 전체 몸통 높이예요.' : '높이는 손잡이를 제외한 전체 몸통 높이예요.';

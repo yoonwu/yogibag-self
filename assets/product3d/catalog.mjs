@@ -2,6 +2,7 @@
 // A flat product has no sewn bottom gusset; depth only opens its mouth in preview.
 export const SAMPLE_PRODUCT_ID = 'sample-two-line-large';
 export const TWO_TONE_SMALL_PRODUCT_ID = 'sample-two-line-small';
+export const TWO_TONE_KIDS_PRODUCT_ID = 'two-tone-kids';
 export const DAILY_PRODUCT_ID = 'daily';
 export const POLY_BODY_COLOR_PRESETS = Object.freeze([
   { name: '블랙', hex: '#1a1a1a' }, { name: '네이비', hex: '#1a2a4a' }, { name: '그린', hex: '#104727' },
@@ -131,7 +132,7 @@ function product(id, name, category, construction, dimensions, defaultHandle, ex
 }
 const dims = (width, height, depth) => ({ width, height, depth });
 export const PRODUCT3D_PROFILES = Object.freeze({
-  [SAMPLE_PRODUCT_ID]: product(SAMPLE_PRODUCT_ID, '투톤 에코백 · 라지', 'sample', 'sample', dims(480, 340, 150), handle(290, 220, 38, '#171c28'),
+  [SAMPLE_PRODUCT_ID]: product(SAMPLE_PRODUCT_ID, '투라인 포켓 에코백 · 라지', 'sample', 'sample', dims(480, 340, 150), handle(290, 220, 38, '#171c28'),
     { handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true,
       dimensionLimits: {}, assumptions: [
         '가로 480mm는 완성 몸통의 상단 좌우 폭, 깊이 150mm는 펼친 바닥 깊이로 가정했습니다.',
@@ -147,7 +148,7 @@ export const PRODUCT3D_PROFILES = Object.freeze({
       '기본 손잡이 길이 269mm(입구에서 위끝까지), 폭 34mm, 중심 간격 146mm는 기존 2D 사진을 몸통 규격에 맞춰 측정한 추정값입니다. 부착 깊이 25mm와 3D 꼬임은 시각 추정값입니다.',
       '권장 인쇄 영역은 기존 2D 상품 이미지의 가이드와 같은 위치 및 비율을 사용합니다.',
     ] }),
-  [TWO_TONE_SMALL_PRODUCT_ID]: product(TWO_TONE_SMALL_PRODUCT_ID, '투톤 에코백 · 스몰', 'sample', 'sample', dims(340, 240, 100), handle(190, 160, 30, '#b52b43'),
+  [TWO_TONE_SMALL_PRODUCT_ID]: product(TWO_TONE_SMALL_PRODUCT_ID, '투라인 포켓 에코백 · 스몰', 'sample', 'sample', dims(340, 240, 100), handle(190, 160, 30, '#b52b43'),
     { handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true,
       defaultBottomPanel: Object.freeze({ height: 60, color: '#b52b43' }),
       defaultPocket: Object.freeze({ width: 130, height: 135, bottom: 60, color: '#ece6d9' }),
@@ -156,6 +157,19 @@ export const PRODUCT3D_PROFILES = Object.freeze({
         '몸통 높이에는 하단 배색이 포함되고 손잡이는 제외됩니다.',
         '손잡이 폭 30mm, 중심 간격 160mm와 앞면 포켓 130×135mm는 사진 비율로 추정했습니다.',
         '12×12cm 표시는 권장 인쇄 영역으로 해석했습니다. 뒷면 포켓은 없는 것으로 가정했습니다.',
+      ] }),
+  [TWO_TONE_KIDS_PRODUCT_ID]: product(TWO_TONE_KIDS_PRODUCT_ID, '투톤 에코백 · 키즈', 'sample', 'gusset', dims(330,330,80), photoHandle('kids'),
+    { supportsBottomPanel:true, supportsPocket:false, handleShape:'rounded',
+      handleFabric:'cotton-tape', handleFabricLabel:'면 테이프',
+      handleDrape:HANDLES_FROM_PHOTOS.kids.handleDrape, handleReference:HANDLES_FROM_PHOTOS.kids.handleReference,
+      defaultBottomPanel:Object.freeze({height:55,color:'#171c28'}),
+      referenceHandleLength:480, printGuideSize:240, dimensionsSource:'user-provided-photo',
+      assumptions:[
+        '사용자 제공 투톤 에코백 키즈 규격은 몸통 330×330×80mm입니다. 몸통 높이는 하단 배색을 포함하며 손잡이를 제외합니다.',
+        '사진의 끈길이 480mm는 기존 키즈 상품과 같은 두른길이(시접 제외) 기준으로 해석했습니다. 입구에서 위끝까지의 길이와 다릅니다.',
+        '손잡이는 입구 안쪽에 부착하는 면 테이프이며, 세로 웨빙과 앞면 외부 포켓은 없습니다.',
+        '하단 배색 높이 55mm와 손잡이 폭 38mm, 입구에서 위끝까지 215mm, 중심 간격 146mm는 사진 비율에 따른 추정값입니다.',
+        '몸통과 손잡이는 아이보리, 하단 배색은 블랙이 기본값이며 각 색상은 따로 변경할 수 있습니다.',
       ] }),
   small: product('small', '스몰 에코백', 'ecobag', 'flat', dims(200, 220, 30), photoHandle('small'), { referenceHandleLength: 570, handleShape: 'rounded' }),
   sgak_s: product('sgak_s', '사각 S', 'ecobag', 'flat', dims(290, 330, 30), photoHandle('sgak_s'), { referenceHandleLength: 560, handleShape: 'rounded' }),

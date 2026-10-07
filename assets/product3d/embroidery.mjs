@@ -1,5 +1,5 @@
-import { planEmbroidery, stitchLift } from './embroidery-plan.mjs';
-import { sampleEmbroideryElevation } from './embroidery-relief.mjs?v=1.2.3';
+import { planEmbroidery, stitchLift } from './embroidery-plan.mjs?v=1.2.4';
+import { sampleEmbroideryElevation } from './embroidery-relief.mjs?v=1.2.4';
 
 const clamp = value => Math.max(0,Math.min(255,Math.round(value)));
 const dimension = value => Number.isFinite(Number(value))&&Number(value)>0?Number(value):100;
