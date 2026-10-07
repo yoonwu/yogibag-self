@@ -1,15 +1,15 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.10';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.10';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.10';
-import { createProductModel } from './registry.mjs?v=1.2.10';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.10';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.10';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.10';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.10';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.10';
-import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.10';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.11';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.11';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.11';
+import { createProductModel } from './registry.mjs?v=1.2.11';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.11';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.11';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.11';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.11';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.11';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.11';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
