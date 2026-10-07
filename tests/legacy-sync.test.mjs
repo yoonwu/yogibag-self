@@ -195,6 +195,34 @@ test('invalid or stale payload leaves artwork untouched; a redraw failure restor
   await assert.rejects(f.api.applyDesign(snapshot),/2D 디자인이 변경/);assert.equal(f.locked,0);
 });
 
+test('product draft restoration reinstalls editable layers only into an empty product view',async()=>{
+  const f=fixture(),snapshot=await f.api.exportDesign();
+  f.front[0].name='customer changed text';
+  await assert.rejects(f.api.applyDesign(snapshot,{restoreProductDraft:true}),/2D 디자인이 변경/);
+  f.front[0].name='editable front text';
+  f.env.installArtwork({front:[],back:[],innerPocket:[]},'front');
+  await assert.rejects(f.api.applyDesign(snapshot),/2D 디자인이 변경/);
+  await f.api.applyDesign(snapshot,{restoreProductDraft:true});
+  assert.equal(f.state.sideDesigns.front[0],f.front[0]);
+  assert.equal(f.state.sideDesigns.front[1],f.front[1]);
+  assert.equal(f.state.sideDesigns.back[0],f.back[0]);
+  assert.ok(f.objects.includes(f.innerObjects[0]));
+  assert.equal(f.env.originalUploads.get('front-original').dataURL,'original FRONT');
+});
+
+test('the latest draft for an untouched product retains original layers beyond the global token limit',async()=>{
+  const f=fixture({inner:false}),daily=await f.api.exportDesign();
+  f.env.installArtwork({front:[],back:[],innerPocket:[]},'front');
+  f.state.currentBag={id:'minja'};f.env.setDimensions(PRODUCT3D_PROFILES.minja.dimensions);
+  f.state.options=['지퍼'];f.state.optionVisuals={};
+  for(let i=0;i<70;i++)await f.api.exportDesign();
+  f.state.currentBag={id:'daily'};f.env.setDimensions(PRODUCT3D_PROFILES.daily.dimensions);
+  await f.api.applyDesign(daily,{restoreProductDraft:true});
+  assert.equal(f.state.sideDesigns.front[0],f.front[0]);
+  assert.equal(f.state.sideDesigns.back[0],f.back[0]);
+  assert.equal(f.env.originalUploads.get('front-original').dataURL,'original FRONT');
+});
+
 test('ten view roundtrips preserve exact canonical PNG, millimetres and rotations through body and print resizing',async()=>{
   const f=fixture(),originals={front:[...f.front],back:[...f.back],inner:[...f.innerObjects]};
   const backSource=[...f.back[0].matrix],backSourceBounds={left:224,top:376,width:72,height:28};

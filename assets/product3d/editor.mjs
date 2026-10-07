@@ -3,6 +3,7 @@ import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs';
 import { configForProduct, Product3DCatalog } from './registry.mjs';
 import { Product3DViewer } from './viewer.mjs';
 import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs';
+import { openProductPicker } from './product-picker.mjs';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -74,12 +75,14 @@ export function createProduct3DEditor(options = {}) {
 }
 
 export class Product3DEditor {
-  constructor({ onConsult, onClose, initialConfig, onReturnTo2D, onDesignChange, onChange } = {}) {
+  constructor({ onConsult, onClose, initialConfig, onReturnTo2D, onDesignChange, onChange, onSelectProduct, productChoices } = {}) {
     this.config = normalizeConfig(initialConfig || createDefaultConfig());
     this.onConsult = onConsult;
     this.onClose = onClose;
     this.onReturnTo2D = onReturnTo2D;
     this.onDesignChange = onDesignChange || onChange;
+    this.onSelectProduct = onSelectProduct;
+    this.productChoices = productChoices;
     this.linked = typeof onReturnTo2D === 'function';
     this.printSide = 'front';
     this.cameraView = 'initial';
@@ -127,7 +130,13 @@ export class Product3DEditor {
     this.closeButton = button(this.linked ? '2D로 보기' : '닫기', 'p3d-button p3d-close');
     this.closeButton.setAttribute('aria-label', this.linked ? '현재 시안을 유지하고 2D로 보기' : '3D 셀프 시안 닫기');
     this.listen(this.closeButton, 'click', () => this.close());
-    header.append(heading, this.closeButton);
+    const headerActions = element('div', 'p3d-header-actions');
+    this.productPickerButton = button('가방 선택', 'p3d-button p3d-pick-product');
+    this.productPickerButton.hidden = this.linked && !this.onSelectProduct;
+    this.productPickerButton.setAttribute('aria-haspopup', 'dialog');
+    this.listen(this.productPickerButton, 'click', () => this.openProductPicker());
+    headerActions.append(this.productPickerButton, this.closeButton);
+    header.append(heading, headerActions);
 
     const main = element('div', 'p3d-main');
     this.controls = element('aside', 'p3d-controls');
@@ -377,7 +386,7 @@ export class Product3DEditor {
 
   buildControls() {
     const product = this.panel('가방 선택');
-    product.hidden = this.linked;
+    product.hidden = this.linked && !this.onSelectProduct;
     const productRow = element('div', 'p3d-select-field');
     const productLabel = element('label', 'p3d-field-label', '3D 가방 선택');
     this.productSelect = element('select', 'p3d-select');
@@ -390,10 +399,7 @@ export class Product3DEditor {
       option.value = productId;
       this.productSelect.append(option);
     }
-    this.listen(this.productSelect, 'change', event => {
-      try { this.switchProduct(event.target.value); }
-      catch (error) { this.sync(); this.setStatus(error.message, true); }
-    });
+    this.listen(this.productSelect, 'change', event => this.selectProduct(event.target.value));
     productRow.append(productLabel, this.productSelect);
     product.append(productRow);
 
@@ -572,7 +578,8 @@ export class Product3DEditor {
     crossStrapLength.row.hidden = !this.config.options.crossStrap;
     crossStrapLength.number.min = crossStrapLength.range.min = String(getCrossStrapLengthMin(this.config));
     this.productSelect.value = this.config.productId;
-    this.productSelect.disabled = this.busy || this.linked;
+    this.productSelect.disabled = this.busy || (this.linked && !this.onSelectProduct);
+    if (this.productPickerButton) this.productPickerButton.disabled = this.busy;
     this.pocketPanel.hidden = !profile.supportsPocket;
     if (this.handlePanel) this.handlePanel.hidden = !profile.supportsHandles;
     if (this.handleFabricNote) this.handleFabricNote.textContent = `손잡이 원단: ${profile.handleFabricLabel}`;
@@ -722,10 +729,10 @@ export class Product3DEditor {
   }
 
   updateProductURL() {
-    if (this.linked) return;
     const url = new URL(location.href);
     url.searchParams.set('mode', '3d');
     url.searchParams.set('product', this.config.productId);
+    if (this.linked) url.searchParams.set('bag', this.config.productId);
     history.replaceState(history.state, '', url);
   }
 
@@ -753,6 +760,29 @@ export class Product3DEditor {
     this.setStatus('가방을 바꿨어요. 작업 중인 시안은 가방별로 유지됩니다.');
   }
 
+  openProductPicker() {
+    if (this.disposed || this.busy || this.picker) return;
+    const choices = this.productChoices || [...Product3DCatalog.keys()].map(id => {
+      const profile = getProductProfile(id), dimensions = profile.dimensions;
+      return { id, name: profile.name, category: ['pouch', 'poly'].includes(profile.category) ? profile.category : 'ecobag',
+        size: `${dimensions.width / 10}×${dimensions.height / 10}cm` };
+    });
+    this.picker = openProductPicker({ host: this.root, editorDialog: this.dialog, choices,
+      selected: this.config.productId, onSelect: id => this.selectProduct(id), onClose: () => { this.picker = null; } });
+  }
+
+  async selectProduct(productId) {
+    if (productId === this.config.productId || this.disposed || this.busy) { this.sync(); return; }
+    if (!this.onSelectProduct) {
+      try { this.switchProduct(productId); } catch (error) { this.sync(); this.setStatus(error.message, true); }
+      return;
+    }
+    await this.run(async () => {
+      if (this.pendingUpload) await this.pendingUpload;
+      if (!await this.onSelectProduct(productId)) throw new Error('가방을 바꾸지 못했어요. 다시 선택해 주세요.');
+    });
+  }
+
   openProduct(productId) {
     this.switchProduct(productId);
     return this.open();
@@ -768,11 +798,12 @@ export class Product3DEditor {
     if (this.busy || this.disposed) return;
     this.busy = true;
     this.productSelect.disabled = true;
+    if (this.productPickerButton) this.productPickerButton.disabled = true;
     this.dialog.setAttribute('aria-busy', 'true');
     try { await callback(); } catch (error) { this.setStatus(error.message || '작업을 완료하지 못했어요.', true); }
     finally {
       this.busy = false;
-      if (!this.disposed) this.productSelect.disabled = this.linked;
+      if (!this.disposed) this.sync();
       if (!this.disposed) this.dialog.removeAttribute('aria-busy');
     }
   }
@@ -950,6 +981,7 @@ export class Product3DEditor {
 
   hide() {
     if (!this.visible) return;
+    this.picker?.close();
     this.visible = false;
     this.root.hidden = true;
     document.body.style.overflow = this.previousBodyOverflow;

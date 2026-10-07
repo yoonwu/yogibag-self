@@ -15,6 +15,17 @@ test('all inline scripts parse', () => {
   for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) new vm.Script(m[1]);
 });
 
+test('the actual 2D bridge forwards controlled product draft restoration options', async () => {
+  const calls = [], api = { applyDesign: async (...args) => { calls.push(args); return 'applied'; }, isReady: () => true };
+  const context = vm.createContext({ window: {}, legacyDesignReady: Promise.resolve(api), legacyDesignAPI: api });
+  vm.runInContext(section('window.yogibagDesignBridge=Object.freeze({', 'updateDesignViewToggle();'), context);
+  const snapshot = { productId: 'daily' }, options = { restoreProductDraft: true };
+  assert.equal(await context.window.yogibagDesignBridge.applyDesign(snapshot, options), 'applied');
+  assert.equal(calls[0][0], snapshot); assert.equal(calls[0][1], options);
+  await context.window.yogibagDesignBridge.applyDesign(snapshot);
+  assert.equal(calls[1][1], undefined);
+});
+
 function editor() {
   const nodes = new Map();
   const node = () => ({textContent:'',style:{},classList:{toggle(){}},disabled:false});

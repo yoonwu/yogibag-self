@@ -54,6 +54,7 @@ function validatePrint(print) {
 
 export function createLegacyDesignBridge(env) {
   const tokens = new Map();
+  const latestProductTokens = new Map();
   const productCaches = new Map();
   let busy = false, sequence = 0;
   function productCache(productId) {
@@ -195,7 +196,11 @@ export function createLegacyDesignBridge(env) {
         twoSided:s.twoSided,currentSide:s.currentSide,
         print:Object.fromEntries(PARTS.map(part=>[part,clone(captures[part].print)])),legacyToken:token};
       tokens.set(token,{snapshot:clone(snapshot),captures,rawAppearance:{bodyColor:s.bagBodyColor,handleColor:s.webbingColor,texture:s.bagTexture,polyBodyKey:s.polyBodyKey}});
-      if(tokens.size>48) tokens.delete(tokens.keys().next().value);
+      latestProductTokens.set(snapshot.productId, token);
+      if(tokens.size>48) {
+        const retained = new Set(latestProductTokens.values());
+        tokens.delete([...tokens.keys()].find(key => !retained.has(key)));
+      }
       return snapshot;
     });
   }
@@ -212,7 +217,7 @@ export function createLegacyDesignBridge(env) {
   }
   function samePose(a,b) { return ['width','height','x','y','rotation'].every(key=>Math.abs(a[key]-b[key])<1e-7); }
   function sameFrame(a,b) { return a&&b&&['cx','cy','mmX','mmY'].every(key=>Math.abs(a[key]-b[key])<1e-7); }
-  async function applyDesign(snapshot) {
+  async function applyDesign(snapshot, { restoreProductDraft = false } = {}) {
     return locked(async()=> {
       await settle();
       const s=env.getState();
@@ -227,7 +232,9 @@ export function createLegacyDesignBridge(env) {
         if (!snapshot.print || !(part in snapshot.print)) { plans[part]={objects:current[part],preserve:true}; continue; }
         const print=validatePrint(snapshot.print[part]), capture=baseline?.captures[part];
         const matching=Boolean(capture && print.image===capture.print.image);
-        if(matching && !sameObjects(current[part],capture)) throw new Error('2D 디자인이 변경되었습니다. 현재 디자인에서 다시 3D 보기를 열어 주세요.');
+        if(matching && !sameObjects(current[part],capture) && (!restoreProductDraft || current[part].length)) {
+          throw new Error('2D 디자인이 변경되었습니다. 현재 디자인에서 다시 3D 보기를 열어 주세요.');
+        }
         plans[part]={print,capture:matching?capture:null,objects:matching?capture.objects:await loadArtwork(print,part)};
       }
       const before=env.captureState(), previousDimensions=clone(env.getDimensions()), previousCrossStrap=env.getCrossStrap?.();
