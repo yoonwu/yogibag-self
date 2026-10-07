@@ -113,7 +113,7 @@ test('legacy samples keep their inherited pocket color and receive the canvas fa
   assert.equal(changed.body.color, '#5f82a8');
 });
 
-test('independent part colors and fabric survive saving and appear in consultation specs', () => {
+test('body and pocket colors stay independent while shared handle/bottom trim survives saving and consultation', () => {
   let c = createDefaultConfig();
   for (const [path,value] of [['body.fabricId','linen'],['body.color','#5f82a8'],
     ['pocket.color','#f0c3cd'],['handle.color','#f3f1ec'],['bottomPanel.color','#171c28']]) {
@@ -125,8 +125,9 @@ test('independent part colors and fabric survive saving and appear in consultati
   assert.ok(specs.find(s => s.label === '원단 종류').value.startsWith('리넨'));
   assert.equal(specs.find(s => s.label === '주머니 색상').value, '핑크 (#f0c3cd)');
   assert.equal(specs.find(s => s.label === '몸통 색상').value, '블루 (#5f82a8)');
-  assert.equal(restored.handle.color, '#f3f1ec');
+  assert.equal(restored.handle.color, '#171c28');
   assert.equal(restored.bottomPanel.color, '#171c28');
+  assert.equal(specs.find(s => s.label === '손잡이·밑단 공통 색상').value, '블랙 (#171c28)');
   assert.deepEqual(restored.dimensions, createDefaultConfig().dimensions);
   assert.deepEqual(restored.print, createDefaultConfig().print);
   const noPocket = patchConfig(restored, 'options.pocket', false);

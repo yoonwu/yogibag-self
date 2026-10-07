@@ -1,6 +1,6 @@
-import {createEmbroideryPixels} from './embroidery.mjs?v=1.2.4';
-import {createEmbroideryReliefGeometry} from './embroidery-relief.mjs?v=1.2.4';
-import {createEmbroideryThreadMesh} from './embroidery-geometry.mjs?v=1.2.4';
+import {createEmbroideryPixels} from './embroidery.mjs?v=1.2.5';
+import {createEmbroideryReliefGeometry} from './embroidery-relief.mjs?v=1.2.5';
+import {createEmbroideryThreadMesh} from './embroidery-geometry.mjs?v=1.2.5';
 
 export function geometryPacket(geometry) {
   if(!geometry)return null;

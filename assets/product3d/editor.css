@@ -73,6 +73,7 @@
 .p3d-preset-swatch { width: 15px; height: 15px; border: 1px solid rgb(25 31 40 / 15%); border-radius: 50%; }
 .p3d-preset-name { width: 100%; overflow: hidden; font-size: 9px; font-weight: 600; white-space: nowrap; text-align: center; text-overflow: ellipsis; }
 .p3d-color-disabled .p3d-color-field { opacity: .55; }
+.p3d-color-fixed .p3d-color-field { opacity: 1; }
 .p3d-color:disabled { cursor: default; }
 .p3d-color-disabled-note { margin: 7px 0 0; color: #8b95a1; font-size: 11px; }
 .p3d-fabric-note { margin: 0; padding-top: 4px; color: #8b95a1; font-size: 11px; line-height: 1.6; }

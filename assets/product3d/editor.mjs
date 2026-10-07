@@ -1,9 +1,9 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.4';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.4';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.4';
-import { Product3DViewer } from './viewer.mjs?v=1.2.4';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.4';
-import { openProductPicker } from './product-picker.mjs?v=1.2.4';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.5';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.5';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.5';
+import { Product3DViewer } from './viewer.mjs?v=1.2.5';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.5';
+import { openProductPicker } from './product-picker.mjs?v=1.2.5';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -314,6 +314,7 @@ export class Product3DEditor {
       control.title = `${preset.name} (${preset.hex})`;
       control.dataset.p3dColor = path;
       control.dataset.p3dColorValue = preset.hex;
+      control.dataset.p3dColorName = preset.name;
       control.tabIndex = -1;
       const swatch = element('span', 'p3d-preset-swatch');
       swatch.style.backgroundColor = preset.hex;
@@ -344,7 +345,7 @@ export class Product3DEditor {
     disabledNote.hidden = true;
     group.append(row, presets, disabledNote);
     panel.append(group);
-    this.fields.set(path, { type: 'color', input, value, group, presets, presetButtons, disabledNote });
+    this.fields.set(path, { type: 'color', input, value, group, presets, presetButtons, disabledNote, labelNode, label });
   }
 
   fabricSelect(panel) {
@@ -592,7 +593,7 @@ export class Product3DEditor {
     const fabricField = this.fields.get('body.fabricId');
     if (fabricField?.row) fabricField.row.hidden = profile.clothKind === 'poly';
     this.fields.get('pocket.color').group.hidden = !profile.supportsPocket;
-    this.fields.get('bottomPanel.color').group.hidden = !profile.supportsBottomPanel;
+    this.fields.get('bottomPanel.color').group.hidden = !profile.supportsBottomPanel || Boolean(profile.linkedHandleBottomColor);
     this.fields.get('bottomPanel.height').row.hidden = !profile.supportsBottomPanel;
     this.fabricDescription.textContent = profile.clothKind === 'poly' ? '폴리 / 합성 원단의 색상을 적용해요.' : profile.supportsPocket && profile.supportsBottomPanel
       ? '몸통·주머니·밑단에 같은 원단을 적용해요.' : profile.supportsBottomPanel ? '몸통·밑단에 같은 원단을 적용해요.' : '몸통에 선택한 원단을 적용해요.';
@@ -634,17 +635,29 @@ export class Product3DEditor {
       } else if (field.type === 'select') {
         field.input.value = value;
       } else {
+        const label = path === 'handle.color' && profile.linkedHandleBottomColor ? '손잡이·밑단 색상' : field.label;
+        if (field.labelNode) {
+          field.labelNode.textContent = label;
+          field.input.setAttribute('aria-label', `${label} 선택`);
+          field.group.setAttribute('aria-label', `${label} 설정`);
+          field.presets.setAttribute('aria-label', `${label} 추천 색상`);
+          for (const control of field.presetButtons) control.setAttribute('aria-label', `${label} ${control.dataset.p3dColorName}`);
+        }
         const hex = String(value || '#ece6d9').toLowerCase();
         const polyBody = path === 'body.color' && profile.clothKind === 'poly';
         const currentPresets = polyBody ? POLY_BODY_COLOR_PRESETS : FABRIC_COLOR_PRESETS;
         const selected = currentPresets.find(preset => preset.hex.toLowerCase() === hex);
-        const disabled = path === 'pocket.color' && !this.config.options.pocket;
+        const fixed = path === 'body.color' && Boolean(profile.fixedBodyColor);
+        const disabled = fixed || (path === 'pocket.color' && !this.config.options.pocket);
         field.input.value = hex;
         field.input.disabled = disabled;
-        field.value.textContent = `${selected?.name || '직접 선택'} · ${hex.toUpperCase()}`;
+        field.value.textContent = `${selected?.name || '직접 선택'} · ${hex.toUpperCase()}${fixed ? ' · 고정' : ''}`;
         field.group.classList.toggle('p3d-color-disabled', disabled);
+        field.group.classList.toggle('p3d-color-fixed', fixed);
         field.group.setAttribute('aria-disabled', String(disabled));
         field.disabledNote.hidden = !disabled;
+        field.disabledNote.textContent = fixed ? '몸통은 아이보리로 고정되어 있어요.' : '주머니를 추가하면 색상을 고를 수 있어요.';
+        field.presets.hidden = fixed;
         const currentButtons = currentPresets.map(preset => field.presetButtons.find(control => control.dataset.p3dColorValue === preset.hex)).filter(Boolean);
         field.activePresetButtons = currentButtons;
         const mode = polyBody ? 'poly' : 'canvas';

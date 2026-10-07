@@ -258,6 +258,27 @@ function editorFixture() {
   return { editor, node, documentMock };
 }
 
+test('switching products updates the real fixed body and single trim selector without leaving other bags locked',()=>{
+  const previousDocument=globalThis.document,{editor,node,documentMock}=editorFixture();
+  globalThis.document=documentMock;
+  try{
+    editor.numeric(node(),'crossStrap.length','크로스끈 길이');
+    for(const path of ['body.color','handle.color','bottomPanel.color'])editor.color(node(),path,{'body.color':'몸통 색상','handle.color':'손잡이 색상','bottomPanel.color':'밑단 색상'}[path]);
+    for(const id of [TWO_TONE_KIDS_PRODUCT_ID,SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,'daily',TWO_TONE_KIDS_PRODUCT_ID]){
+      editor.config=createDefaultConfig(id);editor.sync();
+      const profile=getProductProfile(id),body=editor.fields.get('body.color'),handle=editor.fields.get('handle.color');
+      assert.equal(body.input.disabled,Boolean(profile.fixedBodyColor),id);
+      assert.equal(body.presets.hidden,Boolean(profile.fixedBodyColor),id);
+      if(profile.fixedBodyColor)assert.match(body.value.textContent,/아이보리.*고정/);
+      assert.equal(editor.fields.get('bottomPanel.color').group.hidden,!profile.supportsBottomPanel||Boolean(profile.linkedHandleBottomColor),id);
+      assert.equal(handle.labelNode.textContent,profile.linkedHandleBottomColor?'손잡이·밑단 색상':'손잡이 색상',id);
+      assert.equal(handle.input.attributes['aria-label'],`${handle.labelNode.textContent} 선택`,id);
+      handle.presetButtons[2].events.click();
+      if(profile.linkedHandleBottomColor)assert.equal(editor.config.handle.color,editor.config.bottomPanel.color,id);
+    }
+  }finally{globalThis.document=previousDocument;}
+});
+
 test('actual editor sync shows per-product controls and locks defaults across all product switches', () => {
   const previousDocument = globalThis.document, { editor, node, documentMock } = editorFixture();
   globalThis.document = documentMock;
