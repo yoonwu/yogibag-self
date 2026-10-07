@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import * as THREE from '../assets/vendor/three/three.module.js';
 import { createDefaultConfig, createDailyConfig, normalizeConfig, MM_TO_SCENE } from '../assets/product3d/config.mjs';
 import { buildBagModel, disposeBagModel, frontSurfaceMM, backSurfaceMM, innerPocketSurfaceMM } from '../assets/product3d/model.mjs';
@@ -239,22 +238,19 @@ test('combined options remain finite and affordable at representative and extrem
   }
 });
 
-test('sewing improvements preserve delivered cloth, handles and print-bearing pocket buffers at four dimensions',()=>{
-  const expected=[
-    [{width:480,height:340,depth:150},'fd85541910ef781118a5e91b47c60afd45249b5a93e163a452c2ce37709f8ea9'],
-    [{width:320,height:250,depth:120},'00c8a8e6f1b80d4fa5a05e57145da378fc4fbf29dd9c04173db713a59a683648'],
-    [{width:450,height:350,depth:150},'73bb4dbc1f1c7d7a1268da9c8e4dcf5afb7398d8cc2ba6369c4ef2662cb689dd'],
-    [{width:250,height:300,depth:80},'a2eaf050c2633af905c4ff76c50a354c9eb8ef399ca6f91e5e52abe6caef2b0c'],
-  ];
-  for(const [dimensions,digest] of expected){
-    const state=model(normalizeConfig({...createDefaultConfig(),dimensions})),sha=createHash('sha256'),meshes=[];
-    state.bag.traverse(object=>{if(object.isMesh&&object.userData.materialKey!=='seam')meshes.push(object);});
-    for(const mesh of meshes.sort((a,b)=>a.name.localeCompare(b.name))){
-      sha.update(mesh.name);
-      for(const key of ['position','normal','uv']){const a=mesh.geometry.getAttribute(key).array;sha.update(Buffer.from(a.buffer,a.byteOffset,a.byteLength));}
-      const a=mesh.geometry.index.array;sha.update(Buffer.from(a.buffer,a.byteOffset,a.byteLength));
+test('artwork remains against the relaxed cloth and pocket at four physical dimensions',()=>{
+  for(const dimensions of [{width:480,height:340,depth:150},{width:320,height:250,depth:120},
+    {width:450,height:350,depth:150},{width:250,height:300,depth:80}])for(const pocket of [false,true]){
+    const config=normalizeConfig({...createDefaultConfig(),dimensions,options:{...createDefaultConfig().options,pocket}});
+    const state=model(config);
+    state.bag.updateMatrixWorld(true);
+    for(const x of [-40,0,40])for(const y of [-20,0,20]){
+      const surface=frontSurfaceMM(x,y,config);
+      const hit=new THREE.Raycaster(new THREE.Vector3(surface.x,surface.y,1),new THREE.Vector3(0,0,-1))
+        .intersectObjects(['bodyFront','frontPocket','bottomFrontPanel'].map(name=>state.bag.getObjectByName(name)).filter(Boolean))[0];
+      assert.ok(hit,'artwork has real cloth beneath it');
+      assert.ok(Math.abs(hit.point.z-surface.z)<.45*MM_TO_SCENE,'print follows cloth instead of the previous rigid plane');
     }
-    assert.equal(sha.digest('hex'),digest);
     clean(state);
   }
 });

@@ -1,9 +1,9 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.6';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.6';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.6';
-import { Product3DViewer } from './viewer.mjs?v=1.2.6';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.6';
-import { openProductPicker } from './product-picker.mjs?v=1.2.6';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.7';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.7';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.7';
+import { Product3DViewer } from './viewer.mjs?v=1.2.7';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.7';
+import { openProductPicker } from './product-picker.mjs?v=1.2.7';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;

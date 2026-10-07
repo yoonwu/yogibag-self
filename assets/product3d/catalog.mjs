@@ -133,7 +133,7 @@ function product(id, name, category, construction, dimensions, defaultHandle, ex
 const dims = (width, height, depth) => ({ width, height, depth });
 export const PRODUCT3D_PROFILES = Object.freeze({
   [SAMPLE_PRODUCT_ID]: product(SAMPLE_PRODUCT_ID, '투라인 포켓 에코백 · 라지', 'sample', 'sample', dims(480, 340, 150), handle(290, 220, 38, '#171c28'),
-    { handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true,
+    { softCloth: true, handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true,
       dimensionLimits: {}, assumptions: [
         '가로 480mm는 완성 몸통의 상단 좌우 폭, 깊이 150mm는 펼친 바닥 깊이로 가정했습니다.',
         '몸통 높이에는 하단 배색이 포함되고 손잡이는 제외됩니다.',
@@ -150,7 +150,7 @@ export const PRODUCT3D_PROFILES = Object.freeze({
       '권장 인쇄 영역은 기존 2D 상품 이미지의 가이드와 같은 위치 및 비율을 사용합니다.',
     ] }),
   [TWO_TONE_SMALL_PRODUCT_ID]: product(TWO_TONE_SMALL_PRODUCT_ID, '투라인 포켓 에코백 · 스몰', 'sample', 'sample', dims(340, 240, 100), handle(190, 160, 30, '#b52b43'),
-    { handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true,
+    { softCloth: true, handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true,
       defaultBottomPanel: Object.freeze({ height: 60, color: '#b52b43' }),
       defaultPocket: Object.freeze({ width: 130, height: 135, bottom: 60, color: '#ece6d9' }),
       printGuideSize: 120, handleLoopStyle: 'folded-cloth', dimensionLimits: {}, dimensionsSource: 'user-measured', assumptions: [
@@ -161,7 +161,7 @@ export const PRODUCT3D_PROFILES = Object.freeze({
         '손잡이와 하단 배색은 하나의 공통 색상으로 제작합니다.',
       ] }),
   [TWO_TONE_KIDS_PRODUCT_ID]: product(TWO_TONE_KIDS_PRODUCT_ID, '투톤 에코백 · 키즈', 'sample', 'gusset', dims(330,330,80), photoHandle('kids'),
-    { supportsBottomPanel:true, supportsPocket:false, handleShape:'rounded', fixedBodyColor:'#ece6d9',
+    { softCloth:true, supportsBottomPanel:true, supportsPocket:false, handleShape:'rounded', fixedBodyColor:'#ece6d9',
       handleFabric:'cotton-tape', handleFabricLabel:'면 테이프',
       handleDrape:HANDLES_FROM_PHOTOS.kids.handleDrape, handleReference:HANDLES_FROM_PHOTOS.kids.handleReference,
       defaultBottomPanel:Object.freeze({height:60,color:'#171c28'}),

@@ -1,8 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.6';
-import { mmToScene, getProductProfile } from './config.mjs?v=1.2.6';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.7';
+import { mmToScene, getProductProfile } from './config.mjs?v=1.2.7';
 import { addBagOptions, getInnerPocketLayout, innerPocketHalfWidth, innerPocketContourVisible,
-  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.6';
+  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.7';
 
 // Shape coordinates are millimetres until a vertex is written. Width, depth,
 // webbing width/thickness and print size never depend on an Object3D scale.
@@ -27,6 +27,7 @@ function shape(config) {
   if (!Number.isFinite(panelHeight) || panelHeight < 0) throw new RangeError('Invalid bottom-panel height.');
   if (panelHeight >= height) throw new RangeError('Bottom panel must be shorter than the body.');
   return { width, height, depth, panelHeight, handle, profile, construction,
+    soft:profile.softCloth===true, draped:construction!=='sample'||profile.softCloth===true,
     sample:construction==='sample', flat:['flat','pouch-flat'].includes(construction)||(construction==='poly'&&profile.nominalDepth===0),
     pouch:['pouch-flat','pouch-gusset','tumbler'].includes(construction),
     pouchTaperMm:construction==='pouch-gusset'?Math.min(25,depth*.42,width*.15):0,
@@ -38,8 +39,9 @@ function sliceAt(y, s) {
   const corner = Math.min(12, s.height * 0.035, s.depth * 0.09);
   const bottomT = Math.min(1, Math.max(0, y / corner));
   const inset = corner * (1 - Math.sqrt(Math.max(0, 1 - (1 - bottomT) ** 2)));
-  const daily = !s.sample;
-  const foldDepth = Math.min(s.depth / 2, s.height * 0.2, s.width * 0.2);
+  const daily = s.draped;
+  const foldDepth = s.soft ? Math.min(s.depth*.33,s.height*.16,s.width*.14)
+    : Math.min(s.depth / 2, s.height * 0.2, s.width * 0.2);
   const foldT = THREE.MathUtils.clamp(1 - y / foldDepth, 0, 1);
   const folded = foldT * foldT * (3 - 2 * foldT);
   // The bottom-gusset pouch narrows over its full side seam; the tumbler
@@ -53,7 +55,7 @@ function sliceAt(y, s) {
   const mouthPinch = mouthT * mouthT * (3 - 2 * mouthT);
   const openingT=THREE.MathUtils.clamp(y/(s.height*.3),0,1);
   const flatSpread=s.flat?.18+.82*openingT*openingT*(3-2*openingT):1;
-  const closeMouth=s.pouch&&!s.supportsHandles?1-.78*mouthPinch:daily?1-.35*mouthPinch:1;
+  const closeMouth=s.pouch&&!s.supportsHandles?1-.78*mouthPinch:s.soft?1-.48*mouthPinch:daily?1-.35*mouthPinch:1;
   const b = Math.max(s.flat?1.85:2,(s.depth / 2 - puff - s.depth * 0.075 * Math.abs(v - 0.5) - inset * 0.6)
     * closeMouth * flatSpread);
   let r = daily ? Math.min(s.depth * 0.46, s.width * 0.16, b * 0.94)
@@ -69,15 +71,29 @@ function sliceAt(y, s) {
 }
 
 function bottomLift(x,s,sideT=null) {
-  if(s.sample)return 0;
+  if(!s.draped)return 0;
   const bottom=sliceAt(0,s),half=Math.max(1,bottom.a-bottom.r);
   const edge=Math.min(s.height*.035,s.depth*.08+2)*Math.min(1,(Math.abs(x)/half)**2);
   const gusset=sideT===null?0:Math.sin(Math.PI*sideT)**2*Math.min(s.height*.02,s.depth*.12);
   return edge+gusset;
 }
 
+// Keep the sewn handle roots at the measured height. Unsupported cloth between
+// the roots and at the corners settles a few millimetres below them.
+function mouthSag(x,s) {
+  if(!s.soft)return 0;
+  const distance=Math.abs(Math.abs(x)-s.handle.gap/2);
+  const t=THREE.MathUtils.clamp((distance-s.handle.width*1.15)/Math.max(12,s.handle.gap*.18),0,1);
+  return Math.min(7,s.height*.022)*t*t*(3-2*t);
+}
+
+function clothRowY(x,y,s) {
+  const t=THREE.MathUtils.clamp((y/s.height-.78)/.22,0,1);
+  return y-mouthSag(x,s)*t*t*(3-2*t);
+}
+
 function drapedRowPoint(fraction,rawY,s,front=true,side=false,inset=0) {
-  if(s.sample){
+  if(!s.draped){
     if(side)return sidePoint(fraction,rawY,s,front,inset);
     const {a,r}=sliceAt(rawY,s);return panelPoint((fraction*2-1)*(a-r),rawY,s,front,inset);
   }
@@ -89,8 +105,15 @@ function drapedRowPoint(fraction,rawY,s,front=true,side=false,inset=0) {
     else {const {a,r}=sliceAt(y,s);p=panelPoint((fraction*2-1)*(a-r),y,s,front,inset);}
     y=rawY+bottomLift(p.x,s,side?fraction:null)*fade;
   }
+  const baseY=y;
+  for(let step=0;step<4;step++){
+    const {a,r}=sliceAt(y,s);
+    const x=side?sidePoint(fraction,y,s,front,inset).x:(fraction*2-1)*(a-r);
+    y=clothRowY(x,baseY,s);
+  }
   if(side)return sidePoint(fraction,y,s,front,inset);
-  const {a,r}=sliceAt(y,s);return panelPoint((fraction*2-1)*(a-r),y,s,front,inset);
+  const {a,r}=sliceAt(y,s);
+  return panelPoint((fraction*2-1)*(a-r),y,s,front,inset);
 }
 
 function panelPoint(x, y, s, front = true, inset = 0) {
@@ -98,7 +121,12 @@ function panelPoint(x, y, s, front = true, inset = 0) {
   const t = THREE.MathUtils.clamp(x / Math.max(1, a - r), -1, 1);
   const edgeFade = (1 - t * t) ** 2;
   const wrinkle = Math.sin(t * Math.PI * 3) * Math.sin(v * 2.5) * Math.sin(Math.PI * v) * edgeFade * (s.poly?.25:.65);
-  const z = Math.min(s.depth / 2, b + puff * (1 - t * t) + wrinkle) - inset;
+  // Broad, shallow valleys give the canvas a relaxed surface without noisy
+  // high-frequency wrinkles. Fade to zero at side joins and the handle roots.
+  const settling=s.soft?Math.min(5,s.depth*.045)*edgeFade*Math.sin(Math.PI*v)
+    *(0.45+0.55*Math.cos(t*Math.PI*2+v*1.7)**2):0;
+  const mouthGather=s.soft?mouthSag(x,s)*.28*edgeFade*THREE.MathUtils.smoothstep(v,.72,1):0;
+  const z = Math.min(s.depth / 2, b + puff * (1 - t * t) + wrinkle-settling-mouthGather) - inset;
   return { x, y, z: front ? z : -z };
 }
 
@@ -106,8 +134,8 @@ function printableBodyPoint(x, y, s, front = true) {
   const p = panelPoint(x, y, s, front);
   // The daily tote's print may reach the rounded front corner, but should
   // never bridge empty space outside the folded bottom silhouette.
-  if (!s.sample) {
-    p.visible=y>=bottomLift(x,s)&&y<=s.height;
+  if (s.draped) {
+    p.visible=y>=bottomLift(x,s)&&y<=s.height-mouthSag(x,s);
     const { a, b, r } = sliceAt(y, s);
     if (Math.abs(x) > a - r) {
       // The recessed gusset is not a rigid quarter circle. Resolve the actual
@@ -173,7 +201,7 @@ function exteriorSurfaceMM(xMm, yMm, config, front) {
     -sign * (py1.z - py0.z) / (2 * epsilon), sign).normalize();
   const result = { x: mmToScene(p.x), y: mmToScene(p.y), z: mmToScene(p.z),
     normal: { x: normal.x, y: normal.y, z: normal.z } };
-  if (!s.sample) {
+  if (s.draped) {
     result.visible = p.visible !== false && p.y >= 0 && p.y <= s.height && Math.abs(xMm) <= sliceAt(p.y, s).a;
   }
   return result;
@@ -288,7 +316,7 @@ function sidePoint(t, y, s, right = false, inset = 0) {
     z += inset * Math.sin(angle);
   }
   // A gentle recessed gusset fold is independent of front artwork geometry.
-  const fold = Math.sin(Math.PI * t) ** 4 * (!s.sample
+  const fold = Math.sin(Math.PI * t) ** 4 * (s.draped
     ? Math.min(r * 0.6, Math.sin(Math.PI * v) * Math.min(20, s.depth * 0.18) + mouthPinch * Math.min(20, s.depth * 0.18))
     : Math.sin(Math.PI * y / s.height) * Math.min(4, s.depth * 0.025));
   x += fold;
@@ -351,7 +379,7 @@ function panelGeometry(s, y0, y1, front, inward = false) {
 
 function sideGeometry(s, y0, y1, right, inward = false) {
   const knots = verticalKnots(s, y0, y1);
-  if (!s.sample) {
+  if (s.draped) {
     const rows = knots.map(y => {
       let distance = 0, previous = null;
       return Array.from({length:SIDE_COLUMNS+1},(_,i)=>{
@@ -381,7 +409,7 @@ function floorGeometry(s, inside = false) {
   const y = inside ? 2.2 : 0;
   const inset=inside?INNER_OFFSET:0;
   let outline;
-  if(s.sample)outline=perimeter(s,y,inset);
+  if(!s.draped)outline=perimeter(s,y,inset);
   else {
     outline=[];
     for(let i=0;i<=BODY_COLUMNS;i++)outline.push(drapedRowPoint(i/BODY_COLUMNS,y,s,true,false,inset));
@@ -391,7 +419,7 @@ function floorGeometry(s, inside = false) {
   }
   const positions = [0, mmToScene(y), 0], uvs = [0, 0], indices = [];
   for (const p of outline) {
-    positions.push(mmToScene(p.x), mmToScene(s.sample?y:p.y), mmToScene(p.z));
+    positions.push(mmToScene(p.x), mmToScene(s.draped?p.y:y), mmToScene(p.z));
     uvs.push(mmToScene(p.x), mmToScene(p.z));
   }
   for (let i = 0; i < outline.length; i++) {
@@ -463,8 +491,16 @@ function ribbonGeometry(points, width, thickness) {
 }
 
 function handleLegStart(s) {
-  return s.profile.handleAttachment === 'mouth'
-    ? Math.max(2, s.height - s.profile.handleAttachmentDepth) : Math.max(2, s.panelHeight - 1);
+  if(s.profile.handleAttachment==='mouth')return Math.max(2,s.height-s.profile.handleAttachmentDepth);
+  let start=Math.max(2,s.panelHeight-1);
+  if(s.soft){
+    const edge=s.handle.gap/2+s.handle.width/2;
+    start=Math.max(start,bottomLift(edge,s)+1.5);
+    // When the contrast band is removed, stop the sewn tape at the folded
+    // cloth rather than leaving its bottom corners suspended in empty space.
+    while(start<s.height-2&&printableBodyPoint(edge,start,s).visible===false)start+=1;
+  }
+  return start;
 }
 
 function dailyHandleDepthAt(x, y, s) {
@@ -828,7 +864,7 @@ function roundedMouthHandleLoop(s,front) {
 
 function stitchGeometry(s, y, front, x0, x1) {
   return sewnThreadGeometry(x1-x0,(distance,across)=>{
-    const p=panelPoint(x0+distance,y+across,s,front);
+    const x=x0+distance,p=panelPoint(x,clothRowY(x,y+across,s),s,front);
     return {...p,nz:front?1:-1};
   },{maxCount:s.seamMaxCount});
 }
@@ -845,7 +881,8 @@ function sideStitchGeometry(s,y,right) {
   return sewnThreadGeometry(length,(distance,across)=>{
     const end=samples.findIndex(sample=>sample.distance>=distance),a=samples[Math.max(0,end-1)],b=samples[Math.max(1,end)];
     const t=THREE.MathUtils.lerp(a.t,b.t,(distance-a.distance)/Math.max(.0001,b.distance-a.distance));
-    const p=sidePoint(t,y+across,s,right),previous=sidePoint(Math.max(0,t-.001),y,s,right),next=sidePoint(Math.min(1,t+.001),y,s,right);
+    const rowPoint=sidePoint(t,y+across,s,right);
+    const p=sidePoint(t,clothRowY(rowPoint.x,y+across,s),s,right),previous=sidePoint(Math.max(0,t-.001),y,s,right),next=sidePoint(Math.min(1,t+.001),y,s,right);
     const dx=next.x-previous.x,dz=next.z-previous.z,norm=Math.max(.0001,Math.hypot(dx,dz)),sign=right?-1:1;
     return {...p,nx:sign*dz/norm,nz:-sign*dx/norm};
   },{maxCount:s.sideSeamMaxCount,rounded:false});
@@ -904,11 +941,20 @@ export function buildBagModel(config, materials) {
   add('liningBottom', floorGeometry(s, true), 'inside');
 
   // Seal the shell thickness at the mouth without filling the open top.
-  const outside = perimeter(s, s.height), inside = perimeter(s, s.height, INNER_OFFSET);
+  const mouthOutline=inset=>{
+    if(!s.soft)return perimeter(s,s.height,inset);
+    const points=[];
+    for(let i=0;i<=BODY_COLUMNS;i++)points.push(drapedRowPoint(i/BODY_COLUMNS,s.height,s,true,false,inset));
+    for(let i=1;i<=SIDE_COLUMNS;i++)points.push(drapedRowPoint(i/SIDE_COLUMNS,s.height,s,true,true,inset));
+    for(let i=1;i<=BODY_COLUMNS;i++)points.push(drapedRowPoint(1-i/BODY_COLUMNS,s.height,s,false,false,inset));
+    for(let i=SIDE_COLUMNS-1;i>0;i--)points.push(drapedRowPoint(i/SIDE_COLUMNS,s.height,s,false,true,inset));
+    return points;
+  };
+  const outside = mouthOutline(0), inside = mouthOutline(INNER_OFFSET);
   const rim = geometryFromGrid(outside.length, 1, (u, v) => {
     const index = Math.round(u * outside.length) % outside.length;
     const a = outside[index], b = inside[index];
-    return { x: THREE.MathUtils.lerp(a.x, b.x, v), y: s.height,
+    return { x: THREE.MathUtils.lerp(a.x, b.x, v), y: THREE.MathUtils.lerp(a.y,b.y,v),
       z: THREE.MathUtils.lerp(a.z, b.z, v), u: u * (s.width * 2 + s.depth * 2), v: v * INNER_OFFSET };
   });
   add('openTopRim', rim, 'body');
@@ -962,7 +1008,7 @@ export function buildBagModel(config, materials) {
     dimensions: { width: s.width, height: s.height, depth: s.depth },
     construction:s.construction,nominalDepth:s.profile.depthBasis==='opening-estimate'?0:s.depth,
     fullSideTaperMm:s.pouchTaperMm,widthBasis:s.pouch?'mouth-width':'body-maximum',
-    supportsHandles:s.supportsHandles,foldedBottom:!s.sample,
+    supportsHandles:s.supportsHandles,foldedBottom:s.draped,
     bottomPanelHeight: s.panelHeight,
     handleWidth: s.handle.width, handleThickness: s.handle.thickness,
     handleDrop: s.handle.drop, handleGap: s.handle.gap,
