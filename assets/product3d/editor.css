@@ -109,6 +109,7 @@
 .p3d-zoom-percent { min-width: 46px; color: #4e5968; font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }
 .p3d-viewer { position: relative; flex: 1; min-height: 180px; touch-action: none; }
 .p3d-viewer canvas { display: block; width: 100%; height: 100%; }
+.p3d-viewer .p3d-watermark { position: absolute; inset: 0; pointer-events: none; }
 .p3d-preparation-note { position: absolute; z-index: 1; bottom: 12px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 85%; margin: 0; padding: 8px 12px; border-radius: 9px; background: rgb(255 255 255 / 92%); color: #526170; font-size: 12px; text-align: center; pointer-events: none; }
 .p3d-viewer-error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(380px, 85%); padding: 20px; border: 1px solid var(--p3d-border); border-radius: 14px; background: #fff; color: var(--p3d-muted); text-align: center; }
 .p3d-preview-hint { margin: 0; padding: 2px 18px 8px; color: #8b95a1; font-size: 12px; text-align: center; }
