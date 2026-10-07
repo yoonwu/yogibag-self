@@ -1,14 +1,15 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.9';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.9';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.9';
-import { createProductModel } from './registry.mjs?v=1.2.9';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.9';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.9';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.9';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.9';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.9';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.10';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.10';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.10';
+import { createProductModel } from './registry.mjs?v=1.2.10';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.10';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.10';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.10';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.10';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.10';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.10';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
@@ -66,6 +67,10 @@ export class Product3DViewer {
     this.renderer.domElement.setAttribute('aria-label', '가방 3D 미리보기. 드래그로 회전하고 스크롤 또는 두 손가락으로 확대합니다.');
     this.renderer.domElement.style.touchAction = 'none';
     container.appendChild(this.renderer.domElement);
+    this.watermarkCanvas = document.createElement('canvas');
+    this.watermarkCanvas.className = 'p3d-watermark';
+    this.watermarkCanvas.setAttribute('aria-hidden', 'true');
+    container.appendChild(this.watermarkCanvas);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
@@ -732,6 +737,11 @@ export class Product3DViewer {
     const height = Math.max(1, Math.round(rect.height));
     if (this.config && this._framed) this._fitDistance = this._frameMeasurements(this.camera.position.clone().sub(this.controls.target)).distance;
     this._size = { width, height };
+    if (this.watermarkCanvas) {
+      this.watermarkCanvas.width = width;
+      this.watermarkCanvas.height = height;
+      drawWatermark(this.watermarkCanvas.getContext('2d'), width, height);
+    }
     this._applyPixelRatio();
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
@@ -840,7 +850,9 @@ export class Product3DViewer {
     this.controls.update();
     this._updateEmbroideryLOD();
     this.renderer.render(this.scene, this.camera);
-    return this.renderer.domElement.toDataURL('image/png');
+    return this.watermarkCanvas
+      ? captureWithWatermark(this.renderer.domElement, this.watermarkCanvas)
+      : this.renderer.domElement.toDataURL('image/png');
   }
 
   async captureCurrentView() {
@@ -946,6 +958,7 @@ export class Product3DViewer {
       this.renderer.dispose();
       this.renderer.forceContextLoss();
       this.renderer.domElement.remove();
+      this.watermarkCanvas?.remove();
     }
     this.scene.clear();
   }
