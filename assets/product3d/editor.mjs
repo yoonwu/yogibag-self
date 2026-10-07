@@ -1,7 +1,7 @@
 import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs';
 import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs';
-import { configForProduct, Product3DCatalog } from './registry.mjs';
-import { Product3DViewer } from './viewer.mjs';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.3';
+import { Product3DViewer } from './viewer.mjs?v=1.2.3';
 import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs';
 import { openProductPicker } from './product-picker.mjs';
 
@@ -550,6 +550,9 @@ export class Product3DEditor {
       this.config = patchConfig(this.config, otherPath, clamp(next, other.limits.min, other.limits.max));
     }
     this.apply();
+    if ((path === 'options.innerPocket' || path === 'options.innerPocketPrint') && value && this.config.options.innerPocket) {
+      this.setCameraView('inside');
+    }
   }
 
   apply({ frame = false, notify = true } = {}) {
@@ -574,6 +577,7 @@ export class Product3DEditor {
     const front = this.config.print.front;
     const profile = getProductProfile(this.config);
     this.insideViewButton.hidden = !this.config.options.innerPocket && !this.config.options.nameTag;
+    this.insideViewButton.textContent = this.config.options.innerPocket ? '안주머니 보기' : '안쪽 보기';
     const crossStrapLength = this.fields.get('crossStrap.length');
     crossStrapLength.row.hidden = !this.config.options.crossStrap;
     crossStrapLength.number.min = crossStrapLength.range.min = String(getCrossStrapLengthMin(this.config));

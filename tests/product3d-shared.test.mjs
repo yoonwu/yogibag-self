@@ -225,6 +225,20 @@ test('the inside camera remains available for an inside name tag after the pocke
   assert.equal(editor.cameraView,'initial');
 });
 
+test('enabling the pocket immediately shows its detail while unrelated edits retain the chosen camera',()=>{
+  const editor=Object.create(Product3DEditor.prototype),views=[];
+  Object.assign(editor,{config:createDailyConfig(),imageRatios:{},fields:new Map(),apply(){},
+    setCameraView(view){views.push(view);}});
+  editor.change('options.innerPocket',true);
+  assert.deepEqual(views,['inside']);
+  editor.change('body.color','#171c28');
+  editor.change('options.innerPocket',false);
+  assert.deepEqual(views,['inside']);
+  editor.change('options.innerPocketPrint',true);
+  assert.equal(editor.config.options.innerPocket,true);
+  assert.deepEqual(views,['inside','inside']);
+});
+
 test('cross strap controls use the current body minimum when typed or dragged', () => {
   const previousDocument=globalThis.document;
   const node=()=>({dataset:{},events:{},children:[],setAttribute(){},append(...children){this.children.push(...children);}});

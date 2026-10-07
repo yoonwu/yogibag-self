@@ -1,5 +1,5 @@
-import { renderEmbroideryCanvas,readEmbroiderySource,embroideryPreviewCanvas } from './embroidery.mjs';
-import { EmbroideryProcessor } from './embroidery-processor.mjs';
+import { renderEmbroideryCanvas,readEmbroiderySource,embroideryPreviewCanvas } from './embroidery.mjs?v=1.2.3';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.3';
 
 // A render-only effect keeps Fabric text, SVGs and uploaded originals editable.
 // Clones rendered by the 2D/3D bridge use another canvas and bypass this preview.

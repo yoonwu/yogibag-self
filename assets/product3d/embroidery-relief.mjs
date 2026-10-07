@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
-import * as surfaces from './model.mjs';
+import * as surfaces from './model.mjs?v=1.2.3';
 import { MM_TO_SCENE } from './config.mjs';
 
 // Sewn layers have a continuous padded body, not just a patterned decal.

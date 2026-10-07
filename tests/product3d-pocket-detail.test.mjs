@@ -35,7 +35,7 @@ test('actual 2D pocket proportions produce a broad upper band, constant-width po
   assert.deepEqual(pocket.userData.partDimensions,{width:140,height:120});
   assert.equal(band.userData.heightFraction,.2);close(band.userData.nominalHeightMm,24);
   close(mm(band.geometry.boundingBox.max.y),layout.top);
-  close(mm(band.geometry.boundingBox.min.y),layout.centerY+layout.mouthY+.4);
+  close(mm(band.geometry.boundingBox.min.y),layout.centerY+layout.mouthY+layout.openingHeight/2);
   close(mm(band.geometry.boundingBox.getSize(new THREE.Vector3()).x),140-2*5.6);
   const p=pocket.geometry.getAttribute('position');
   for(let row=8;row<=20;row++){
@@ -45,8 +45,8 @@ test('actual 2D pocket proportions produce a broad upper band, constant-width po
   close(innerPocketSurfaceMM(0,45,config).z,metrics.planeZ*MM_TO_SCENE);
   close(innerPocketSurfaceMM(0,0,config).y,layout.centerY*MM_TO_SCENE);
   assert.equal(innerPocketSurfaceMM(0,36,config).visible,false,'the opening lies below the broad mounting band');
-  assert.equal(innerPocketSurfaceMM(0,35.6,config).visible,true);
-  assert.equal(innerPocketSurfaceMM(0,36.4,config).visible,true);
+  assert.equal(innerPocketSurfaceMM(0,layout.mouthY-layout.openingHeight/2,config).visible,true);
+  assert.equal(innerPocketSurfaceMM(0,layout.mouthY+layout.openingHeight/2,config).visible,true);
   assert.equal(innerPocketSurfaceMM(70,-60,config).visible,false,'square lower corners are excluded');
   const binding=state.bag.getObjectByName('innerPocketBinding'),edge=binding.geometry.getAttribute('position');
   assert.equal(binding.material,state.materials.pocketEdge);
@@ -101,7 +101,7 @@ function clip(polygon,axis,boundary,greater){
 function openingArea(triangle,layout){
   let polygon=triangle;
   for(const [axis,boundary,greater] of [['x',-layout.width/2+layout.bindingWidth,true],
-    ['x',layout.width/2-layout.bindingWidth,false],['y',layout.mouthY-.4,true],['y',layout.mouthY+.4,false]]){
+    ['x',layout.width/2-layout.bindingWidth,false],['y',layout.mouthY-layout.openingHeight/2,true],['y',layout.mouthY+layout.openingHeight/2,false]]){
     polygon=clip(polygon,axis,boundary,greater);if(polygon.length<3)return 0;
   }
   let area=0;for(let i=0;i<polygon.length;i++){const a=polygon[i],b=polygon[(i+1)%polygon.length];area+=a.x*b.y-b.x*a.y;}
@@ -125,7 +125,7 @@ test('whole-piece artwork keeps exact mm mapping and never bridges the mouth aft
       assert.ok(Math.abs(actualY)<=layout.height/2+.0001);
       assert.ok(Math.abs(actualX)<=innerPocketHalfWidth(THREE.MathUtils.clamp(actualY,-layout.height/2,layout.height/2),layout)+.0001,'rounded lower corners clip the print');
       let surfaceX=actualX,surfaceY=actualY;
-      for(const boundary of [layout.mouthY-.4,layout.mouthY+.4])if(Math.abs(surfaceY-boundary)<.0001)surfaceY=boundary;
+      for(const boundary of [layout.mouthY-layout.openingHeight/2,layout.mouthY+layout.openingHeight/2])if(Math.abs(surfaceY-boundary)<.0001)surfaceY=boundary;
       for(const boundary of [-layout.width/2+layout.bindingWidth,layout.width/2-layout.bindingWidth])if(Math.abs(surfaceX-boundary)<.0001)surfaceX=boundary;
       const point=innerPocketSurfaceMM(surfaceX,surfaceY,config);
       close(p.getZ(index),point.z+.65*MM_TO_SCENE,1e-7);

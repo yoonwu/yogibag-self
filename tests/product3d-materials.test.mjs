@@ -258,10 +258,9 @@ test('same-color inside pockets retain the chosen hue while their edges stay vis
       if (color === '#ffffff' || color === '#ece6d9' || color === '#e32727') {
         assert.ok(edge < face);
         assert.equal(materials.pocketStitch.emissiveIntensity, 0);
-        const bodyChannels = materials.body.color.toArray();
-        materials.seam.color.toArray().forEach((channel, index) =>
-          assert.ok(Math.abs(channel - bodyChannels[index] * 0.78) < 1e-12,
-            `${color}: the established pale sewing color must remain unchanged.`));
+        assert.ok(luminance(materials.seam.color)<luminance(materials.body.color)*.65,
+          `${color}: raised stitches must contrast with pale or bright body cloth.`);
+        assert.ok(Math.abs(materials.seam.color.getHSL({}).h-base.h)<1e-9);
         assert.equal(materials.seam.emissiveIntensity, 0);
       } else {
         assert.ok(edge > face);
