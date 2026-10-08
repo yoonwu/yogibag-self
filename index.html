@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="assets/product3d/editor.css?v=1.2.11">
-<link rel="stylesheet" href="assets/product3d/consultation.css?v=1.2.11">
+<link rel="stylesheet" href="assets/product3d/editor.css?v=1.2.12">
+<link rel="stylesheet" href="assets/product3d/consultation.css?v=1.2.12">
 <title>요기백 · 셀프 시안 에디터</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316a34a'/%3E%3Cpath d='M11 12v-2a5 5 0 0 1 10 0v2' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M7 12h18l-1.5 13.4a1.3 1.3 0 0 1-1.3 1.1H9.8a1.3 1.3 0 0 1-1.3-1.1z' fill='white'/%3E%3Ctext x='16' y='22.4' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='8.5' font-weight='bold' fill='%2316a34a'%3EYO%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -931,7 +931,7 @@
 <div class="toast" id="toast"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span id="toastMsg">저장되었어요</span></div>
 
 <!-- 버전 표시 — 배포할 때마다 아래 숫자를 올려주세요 (캐시로 옛 버전인지 바로 확인용) -->
-<div id="appVersion">v1.2.11 · 2026.10.07</div>
+<div id="appVersion">v1.2.12 · 2026.10.08</div>
 
 <!-- ORDER CONFIRM MODAL -->
 <div class="order-overlay" id="orderModal">
@@ -1385,7 +1385,7 @@ const SHAPES = [
   { type:'star', emoji:'★' }, { type:'heart', emoji:'♥' }, { type:'line', emoji:'╱' },
 ];
 const DESIGNS = ['🌻','🐻','🍋','🌊','🎨','🌵','🍰','🐰','🌹'];
-const OPTIONS = ['안주머니','안주머니인쇄','똑딱이','자석','지퍼','크로스끈','이름표','OPP개별포장'];
+const OPTIONS = ['안주머니','안주머니인쇄','똑딱이','자석','지퍼','크로스끈','이름표','OPP개별포장','앞주머니','앞주머니 인쇄','뒷면 주머니(양면)','뒷면 주머니 인쇄'];
 
 const IMG_BASE = "https://ghkstlr2.cafe24.com/editor/ecobag-type/";
 const BAG_IMAGES = {
@@ -1497,19 +1497,83 @@ const activeOptions = new Set();
 const linkedDesignDimensions = new Map();
 const linkedCrossStrapSettings = new Map();
 const linkedCustomParts = new Map();
+function isPocket2DBag() { return ['sample-two-line-large','sample-two-line-small'].includes(currentBag.id); }
+function bagOptionConfig() { return BAG_OPT_CONF[isPocket2DBag()?'pocket':bagCategory(currentBag)] || BAG_OPT_CONF.ecobag; }
+function pocketPrintOption(side) { return side==='back'?'뒷면 주머니 인쇄':'앞주머니 인쇄'; }
+function refreshPocketArtworkVisibility() {
+  if (!isPocket2DBag() || !canvas) return;
+  const visible=activeOptions.has(pocketPrintOption(currentSide));
+  canvas.getObjects().filter(o=>o.isUserObject&&!isInnerPocketObj(o)).forEach(o=>o.set('visible',visible&&!o.p3dPrintDisabled));
+  canvas.requestRenderAll();
+}
+function setPocket2DOption(option, enabled) {
+  if (!isPocket2DBag()) return;
+  if (!enabled && option==='뒷면 주머니(양면)') {
+    if(currentSide==='back') switchSide('front');
+    activeOptions.delete('뒷면 주머니 인쇄');
+  }
+  if(enabled)activeOptions.add(option);else activeOptions.delete(option);
+  if(enabled && option==='뒷면 주머니 인쇄')activeOptions.add('뒷면 주머니(양면)');
+  twoSided=activeOptions.has('뒷면 주머니(양면)');
+  sideTabs.style.display=twoSided?'flex':'none';
+  if(option==='뒷면 주머니(양면)' || (option==='뒷면 주머니 인쇄' && enabled))drawBag();
+  updateOptionsForBag(); updateSideTabUI(); refreshPocketArtworkVisibility(); saveState();
+}
+function renderPocketUploadControls() {
+  const genericUpload=document.getElementById('uploadBtn');
+  genericUpload.hidden=isPocket2DBag();genericUpload.style.display=isPocket2DBag()?'none':'';
+  let controls=document.getElementById('pocketPrintUploads');
+  if(!controls){
+    controls=document.createElement('div'); controls.id='pocketPrintUploads';
+    controls.style.cssText='display:flex;flex-direction:column;gap:8px;margin:12px 0;';
+    document.getElementById('uploadBtn').after(controls);
+    for(const side of ['front','back']){
+      const button=document.createElement('button');button.type='button';
+      button.style.cssText='padding:12px 10px;border:1px solid #dbe7fa;border-radius:10px;background:#f5f9ff;color:#1764cc;font-weight:700;cursor:pointer;font-size:13px;';
+      button.textContent=side==='front'?'앞주머니 도안 올리기':'뒷면 주머니 도안 올리기';
+      button.addEventListener('click',()=>{
+        setPocket2DOption(pocketPrintOption(side),true);
+        if(currentSide!==side)switchSide(side);
+        document.getElementById('fileInput').click();
+      });controls.appendChild(button);
+    }
+    const note=document.createElement('p'); note.style.cssText='font-size:12px;color:var(--gray-2);line-height:1.6;margin:0;';
+    note.textContent='JPG, PNG, SVG, PDF · 앞·뒷주머니 도안을 각각 보관합니다. 앞면/뒷면 탭에서 크기와 위치를 조정하세요.';
+    controls.appendChild(note);
+  }
+  controls.hidden=!isPocket2DBag();controls.style.display=isPocket2DBag()?'flex':'none';
+}
+function placePocketUpload(object, target, finish) {
+  const deadline=Date.now()+15000;
+  const place=()=>{
+    if(currentBag.id!==target.productId){showToast('도안을 올리던 가방이 바뀌었습니다. 해당 가방에서 다시 올려 주세요.');return;}
+    if(drawBagPending || !printArea){
+      if(Date.now()>deadline){showToast('가방을 불러오지 못했습니다. 다시 올려 주세요.');return;}
+      setTimeout(place,30);return;
+    }
+    const option=pocketPrintOption(target.side);
+    activeOptions.add(option);
+    if(target.side==='back' && !activeOptions.has('뒷면 주머니(양면)'))setPocket2DOption('뒷면 주머니(양면)',true);
+    if(currentSide!==target.side)switchSide(target.side);
+    if(drawBagPending){setTimeout(place,30);return;}
+    const guide=printArea.getBoundingRect(),scale=Math.min(guide.width*.85/object.width,guide.height*.85/object.height,1);
+    object.set({left:guide.left+guide.width/2,top:guide.top+guide.height/2,originX:'center',originY:'center',scaleX:scale,scaleY:scale,legacyPrintPart:target.side});
+    updateOptionsForBag();finish();refreshPocketArtworkVisibility();
+  };place();
+}
 function getCustom2DParts() {
   if(!isCustom2DBag())return {};
   const stored=linkedCustomParts.get(currentBag.id)||{};
   const bottomPanel={...currentBag.defaultBottomPanel,...stored.bottomPanel};
   if(currentBag.linkedTrim)bottomPanel.color=webbingColor||currentBag.defaultHandleColor;
-  return {bottomPanel,...(currentBag.defaultPocket?{pocket:{...currentBag.defaultPocket,...stored.pocket},pocketEnabled:stored.pocketEnabled!==false}:{})};
+  return {bottomPanel,...(currentBag.defaultPocket?{pocket:{...currentBag.defaultPocket,...stored.pocket},pocketEnabled:true}:{})};
 }
 function getCustom2DConfig() {
   const parts=getCustom2DParts();
   return {productId:currentBag.id,dimensions:getBagRealSize(),...parts,
     body:{fabricId:bagFabricId,color:currentBag.fixedBodyColor||bagBodyColor||'#ece6d9'},
     handle:{color:webbingColor||currentBag.defaultHandleColor},crossStrap:getCrossStrapSettings(),
-    options:{pocket:parts.pocketEnabled!==false,doubleSided:twoSided,...Object.fromEntries(Object.entries({innerPocket:'안주머니',innerPocketPrint:'안주머니인쇄',snap:'똑딱이',magnet:'자석',zipper:'지퍼',crossStrap:'크로스끈',nameTag:'이름표',individualPackaging:'OPP개별포장'}).map(([key,label])=>[key,activeOptions.has(label)]))}};
+    options:{pocket:parts.pocketEnabled!==false,doubleSided:twoSided&&!isPocket2DBag(),...Object.fromEntries(Object.entries({innerPocket:'안주머니',innerPocketPrint:'안주머니인쇄',snap:'똑딱이',magnet:'자석',zipper:'지퍼',crossStrap:'크로스끈',nameTag:'이름표',individualPackaging:'OPP개별포장',frontPocketPrint:'앞주머니 인쇄',backPocket:'뒷면 주머니(양면)',backPocketPrint:'뒷면 주머니 인쇄'}).map(([key,label])=>[key,activeOptions.has(label)]))}};
 }
 function consultCustom2DDesign() {
   if(drawBagPending||!customKakaoConsultation){showToast('가방을 불러오는 중입니다. 잠시 후 눌러 주세요.');return;}
@@ -1542,7 +1606,6 @@ function renderCustom2DControls() {
   if(!currentBag.linkedTrim)add('밑단 색상','color',parts.bottomPanel.color,value=>setCustom2DParts({bottomPanel:{...getCustom2DParts().bottomPanel,color:value}}));
   add('밑단 높이 (mm)','number',parts.bottomPanel.height,value=>setCustom2DParts({bottomPanel:{...getCustom2DParts().bottomPanel,height:Math.max(0,Math.min(getBagRealSize().height-10,Number(value)||0))}}));
   if(parts.pocket){
-    add('앞면 포켓 추가','checkbox',parts.pocketEnabled,value=>setCustom2DParts({pocketEnabled:value}));
     add('포켓 색상','color',parts.pocket.color,value=>setCustom2DParts({pocket:{...getCustom2DParts().pocket,color:value}}));
   }
   const note=document.createElement('p');note.style.cssText='font-size:12px;line-height:1.6;color:var(--gray-2)';
@@ -1648,6 +1711,17 @@ function initCanvas() {
   canvas.on('object:rotating', checkPrintBounds);
   canvas.on('object:added', checkPrintBounds);
   canvas.on('object:added', updateDesignViewToggle);
+  canvas.on('object:added', event=>{
+    const object=event.target;
+    if(!isPocket2DBag() || isRestoring || !object?.isUserObject || object.legacyPrintPart || !printArea
+      || sideDesigns.front.includes(object) || sideDesigns.back.includes(object))return;
+    object.legacyPrintPart=currentSide;
+    activeOptions.add(pocketPrintOption(currentSide));
+    const guide=printArea.getBoundingRect();
+    const scale=Math.min(object.scaleX||1,guide.width*.85/object.width,guide.height*.85/object.height);
+    object.set({left:guide.left+guide.width/2,top:guide.top+guide.height/2,originX:'center',originY:'center',scaleX:scale,scaleY:scale});
+    updateOptionsForBag();
+  });
   canvas.on('object:removed', updateDesignViewToggle);
   for(const event of ['object:added','object:removed','object:modified','selection:created','selection:updated','selection:cleared']) canvas.on(event,updateEmbroideryButton);
   canvas.on('object:modified',refreshEmbroideryPreview);
@@ -1743,6 +1817,7 @@ function drawBag() {
     });
     canvas.add(printArea);
     drawBagPending = false;
+    refreshPocketArtworkVisibility();
     reorderBag();
     updatePrintSizeHint();
     if (typeof activeOptions !== 'undefined') activeOptions.forEach(opt => addOptionVisual(opt));
@@ -2045,6 +2120,7 @@ function captureDesignState() {
     bagBodyColor, webbingColor, bagTexture, bagFabricId, polyBodyKey,
     bagScale, bagOffX, bagOffY, options: [...activeOptions],
     twoSided, currentSide,
+    pocketOptionSchema: typeof isPocket2DBag==='function' && isPocket2DBag() ? 1 : null,
     hiddenObjects: sideDesigns[hiddenSide].map(o => o.toObject(DESIGN_PROPS)),
     sideMeasured: {...sideMeasured},
     linkedDimensions: typeof linkedDesignDimensions === 'undefined' ? [] : [...linkedDesignDimensions],
@@ -2102,6 +2178,11 @@ function restore(json, onDone) {
   bagScale = state.bagScale; bagOffX = state.bagOffX; bagOffY = state.bagOffY;
   activeOptions.clear();
   state.options.forEach(o => activeOptions.add(o));
+  if(typeof isPocket2DBag==='function' && isPocket2DBag() && !state.pocketOptionSchema){
+    if((state.json?.objects||[]).some(o=>o.isUserObject && o.legacyPrintPart!=='innerPocket'))activeOptions.add(state.currentSide==='back'?'뒷면 주머니 인쇄':'앞주머니 인쇄');
+    if(state.twoSided || state.currentSide==='back')activeOptions.add('뒷면 주머니(양면)');
+    if((state.hiddenObjects||[]).some(o=>o.isUserObject))activeOptions.add(state.currentSide==='back'?'앞주머니 인쇄':'뒷면 주머니 인쇄');
+  }
   twoSided = state.twoSided;
   currentSide = state.currentSide;
   if (POLY_BODY[currentBag.id]) BAG_IMAGES[currentBag.id + '_body'] = POLY_BODY[currentBag.id][polyBodyKey];
@@ -2237,7 +2318,7 @@ function extFromMime(mime) {
 }
 
 // 캔버스에 이미지(dataURL)를 디자인 객체로 추가. uploadId가 있으면 고객 업로드로 표시
-function addUploadedImage(dataURL, msg, uploadId) {
+function addUploadedImage(dataURL, msg, uploadId, target) {
   // 편집용 사본은 최대 2000px로 다운스케일 → 되돌리기 히스토리 메모리 절약.
   // (고객 원본 풀해상도는 originalUploads에 그대로 보관돼 주문 메일에 첨부됨)
   const MAXU = 2000;
@@ -2248,11 +2329,8 @@ function addUploadedImage(dataURL, msg, uploadId) {
     img.set({ left: ctr.x, top: ctr.y, originX:'center', originY:'center', scaleX:scale, scaleY:scale });
     img.isUserObject = true;
     if (uploadId) { img.uploadId = uploadId; img.isCustomerUpload = true; }
-    canvas.add(img);
-    canvas.setActiveObject(img);
-    canvas.requestRenderAll();
-    saveState();
-    showToast(msg || '이미지를 올렸어요');
+    const finish=()=>{canvas.add(img);canvas.setActiveObject(img);canvas.requestRenderAll();saveState();showToast(msg || '이미지를 올렸어요');};
+    if(target?.pocket)placePocketUpload(img,target,finish);else finish();
   }
   fabric.Image.fromURL(dataURL, (img) => {
     if (!img) { showToast('이미지를 불러오지 못했어요'); return; }
@@ -2293,6 +2371,7 @@ async function pdfFileToDataURL(file) {
 document.getElementById('fileInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
+  const target={productId:currentBag.id,side:currentSide,pocket:isPocket2DBag()};
   const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
   const isSvg = file.type === 'image/svg+xml' || /\.svg$/i.test(file.name);
 
@@ -2307,7 +2386,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
     showToast('PDF를 불러오는 중…');
     try {
       const dataURL = await pdfFileToDataURL(file);
-      addUploadedImage(dataURL, 'PDF를 올렸어요 (1페이지)', uploadId);
+      addUploadedImage(dataURL, 'PDF를 올렸어요 (1페이지)', uploadId, target);
     } catch (err) {
       console.error(err);
       showToast('PDF를 불러오지 못했어요. 이미지로 변환해 올려주세요');
@@ -2324,11 +2403,8 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
         obj.set({ left: ctr.x, top: ctr.y, originX:'center', originY:'center', scaleX:scale, scaleY:scale });
         obj.isUserObject = true;
         obj.uploadId = uploadId; obj.isCustomerUpload = true;
-        canvas.add(obj);
-        canvas.setActiveObject(obj);
-        canvas.requestRenderAll();
-        saveState();
-        showToast('SVG를 올렸어요 (벡터)');
+        const finish=()=>{canvas.add(obj);canvas.setActiveObject(obj);canvas.requestRenderAll();saveState();showToast('SVG를 올렸어요 (벡터)');};
+        if(target.pocket)placePocketUpload(obj,target,finish);else finish();
       });
     } catch (err) {
       console.error(err);
@@ -2336,10 +2412,10 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
     }
   } else {
     const orig = originalUploads.get(uploadId);
-    if (orig && orig.dataURL) addUploadedImage(orig.dataURL, undefined, uploadId);
+    if (orig && orig.dataURL) addUploadedImage(orig.dataURL, undefined, uploadId, target);
     else {
       const reader = new FileReader();
-      reader.onload = (ev) => addUploadedImage(ev.target.result, undefined, uploadId);
+      reader.onload = (ev) => addUploadedImage(ev.target.result, undefined, uploadId, target);
       reader.readAsDataURL(file);
     }
   }
@@ -2449,6 +2525,7 @@ function removeBackground(imgObj) {
     ni.set({ left:imgObj.left, top:imgObj.top, scaleX:imgObj.scaleX, scaleY:imgObj.scaleY,
              angle:imgObj.angle, originX:imgObj.originX, originY:imgObj.originY, opacity:imgObj.opacity });
     ni.isUserObject = true;
+    ni.legacyPrintPart=imgObj.legacyPrintPart; ni.p3dPrintDisabled=imgObj.p3dPrintDisabled;
     // 배경제거 후에도 '고객 원본' 연결을 유지 (직원 재작업용). 원본 자체는 원본Map에 그대로 보관
     if (imgObj.uploadId) {
       ni.uploadId = imgObj.uploadId; ni.isCustomerUpload = true;
@@ -2943,6 +3020,10 @@ function renderOptionPreviews() {
 const OPTION_META = {
   '안주머니': { emoji:'👜', desc:'안쪽 포켓', use:'소지품 정리용 포켓' },
   '안주머니인쇄': { emoji:'🖨️', desc:'안주머니 인쇄', use:'안쪽에도 로고·문구' },
+  '앞주머니': { use:'기본으로 달려 있어요' },
+  '앞주머니 인쇄': { use:'앞주머니에 별도 도안' },
+  '뒷면 주머니(양면)': { use:'뒷면에도 같은 크기의 주머니' },
+  '뒷면 주머니 인쇄': { use:'뒷주머니에 별도 도안' },
   '똑딱이':   { emoji:'🔘', desc:'스냅 단추', use:'입구 톡 여밈' },
   '자석':     { emoji:'🧲', desc:'자석 잠금', use:'간편 자석 여밈' },
   '지퍼':     { emoji:'🤐', desc:'지퍼 잠금', use:'완전 잠금·보안' },
@@ -2973,6 +3054,10 @@ OPTIONS.forEach(opt => {
   optButtons[opt] = el;
   el.addEventListener('click', () => {
     if (el.dataset.locked === '1') { showToast('기본 옵션이에요 (해제 불가)'); return; }
+    if(isPocket2DBag() && ['앞주머니 인쇄','뒷면 주머니(양면)','뒷면 주머니 인쇄'].includes(opt)){
+      setPocket2DOption(opt,!activeOptions.has(opt));
+      showToast(opt+(activeOptions.has(opt)?' 선택':' 해제'));return;
+    }
     el.classList.toggle('active');
     if (el.classList.contains('active')) {
       // 여밈 방식(똑딱이·자석·지퍼)은 물리적으로 하나만 → 나머지 자동 해제
@@ -3009,7 +3094,8 @@ function bagCategory(bag) {
 /* 가방별 사용 가능 옵션 구성
    available: 표시할 옵션 / locked: 기본 장착(해제 불가) / rename: 표시 라벨 */
 const BAG_OPT_CONF = {
-  ecobag: { available: OPTIONS.slice(), locked: [], rename: {} },
+  ecobag: { available: OPTIONS.filter(opt=>!['앞주머니','앞주머니 인쇄','뒷면 주머니(양면)','뒷면 주머니 인쇄'].includes(opt)), locked: [], rename: {} },
+  pocket: { available: ['앞주머니','앞주머니 인쇄','뒷면 주머니(양면)','뒷면 주머니 인쇄','똑딱이','자석','지퍼','크로스끈','이름표','OPP개별포장'], locked: ['앞주머니'], rename: {'앞주머니':'앞주머니 · 기본 포함'} },
   poly:   { available: ['안주머니인쇄','크로스끈','이름표','OPP개별포장'], locked: ['이름표'], rename: { '이름표':'이름표(기본옵션)' } },
   pouch:  { available: ['지퍼','OPP개별포장'], locked: ['지퍼'], rename: { '지퍼':'지퍼(기본옵션)' } },
 };
@@ -3018,7 +3104,9 @@ const BAG_OPT_CONF = {
 function updateOptionsForBag() {
   const dualPrice=dualBtn.querySelector('.op-price');
   if(dualPrice)dualPrice.hidden=isCustom2DBag();
-  const conf = BAG_OPT_CONF[bagCategory(currentBag)] || BAG_OPT_CONF.ecobag;
+  const conf = bagOptionConfig();
+  dualBtn.hidden=isPocket2DBag();dualBtn.style.display=isPocket2DBag()?'none':'';
+  renderPocketUploadControls();
   const curColor = (typeof bagColorName === 'function') ? bagColorName().replace(/[●\s]/g,'') : '아이보리';
   OPTIONS.forEach(opt => {
     const pill = optButtons[opt];
@@ -3043,11 +3131,15 @@ function updateOptionsForBag() {
         pill.dataset.locked = '';
         pill.style.opacity = '';
       }
+      pill.classList.toggle('active',activeOptions.has(opt));
     } else {
       pill.style.display = 'none';
       pill.dataset.locked = '';
     }
   });
+  if(isPocket2DBag())refreshPocketArtworkVisibility();
+  conf.available.forEach(opt=>{if(optButtons[opt])optToggles.appendChild(optButtons[opt]);});
+  optToggles.appendChild(dualBtn);
   renderOptionChips();
 }
 
@@ -3099,6 +3191,7 @@ function switchSide(side) {
   currentSide = side;
   if(isCustom2DBag())drawBag();
   sideDesigns[side].forEach(o => canvas.add(o));
+  refreshPocketArtworkVisibility();
   canvas.discardActiveObject();
   canvas.requestRenderAll();
   updateSideTabUI();
@@ -4548,9 +4641,9 @@ function showToast(msg) {
 // originals remain in this editor and are referenced by a short session token.
 let legacyDesignAPI = null;
 let customKakaoConsultation=null,customConfigFrom2D=null;
-const customTotes2DReady=Promise.all([import('./assets/product3d/custom-totes-2d.mjs?v=1.2.11'),import('./assets/product3d/kakao-consultation.mjs?v=1.2.11'),import('./assets/product3d/sync.mjs?v=1.2.11')])
+const customTotes2DReady=Promise.all([import('./assets/product3d/custom-totes-2d.mjs?v=1.2.12'),import('./assets/product3d/kakao-consultation.mjs?v=1.2.12'),import('./assets/product3d/sync.mjs?v=1.2.12')])
   .then(([photos,consultation,sync])=>{customKakaoConsultation=consultation.openKakaoConsultation;customConfigFrom2D=sync.configFrom2D;return photos;});
-const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mjs?v=1.2.11'),import('./assets/product3d/catalog.mjs?v=1.2.11'),import('./assets/product3d/embroidery-fabric.mjs')]).then(([{createLegacyDesignBridge},{PRODUCT3D_PROFILES},{installFabricEmbroideryPreview}]) => {
+const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mjs?v=1.2.12'),import('./assets/product3d/catalog.mjs?v=1.2.12'),import('./assets/product3d/embroidery-fabric.mjs')]).then(([{createLegacyDesignBridge},{PRODUCT3D_PROFILES},{installFabricEmbroideryPreview}]) => {
   embroideryPreview=installFabricEmbroideryPreview({fabric,getCanvas:()=>canvas,
     getAppearance:object=>printAppearances[artworkAppearancePart(object)],getMmPerPixel:()=>getCmPerPx()*10,designProps:DESIGN_PROPS});
   refreshEmbroideryPreview();
@@ -4590,7 +4683,7 @@ const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mj
         bagFabricId=fab.id; bagBodyColor=originalAppearance.bodyColor; bagTexture=originalAppearance.texture;
       } else applyFabricColor(fab,{hex:/^#[0-9a-f]{6}$/i.test(body?.color||'')?body.color:'#ece6d9'});
       webbingColor=preserveHandle ? originalAppearance.handleColor : /^#[0-9a-f]{6}$/i.test(handle?.color||'')?handle.color:'#ece6d9';
-      const optionConf=BAG_OPT_CONF[bagCategory(currentBag)] || BAG_OPT_CONF.ecobag;
+      const optionConf=typeof bagOptionConfig==='function'?bagOptionConfig():BAG_OPT_CONF[bagCategory(currentBag)] || BAG_OPT_CONF.ecobag;
       activeOptions.clear(); options.filter(option=>optionConf.available.includes(option)).forEach(option=>activeOptions.add(option));
       optionConf.locked.forEach(option=>activeOptions.add(option));
       if(activeOptions.has('안주머니인쇄') && optionConf.available.includes('안주머니')) activeOptions.add('안주머니');
@@ -4651,6 +4744,6 @@ window.addEventListener('load', () => {
   updateDesignViewToggle();
 });
 </script>
-<script type="module" src="assets/product3d/bridge.mjs?v=1.2.11"></script>
+<script type="module" src="assets/product3d/bridge.mjs?v=1.2.12"></script>
 </body>
 </html>

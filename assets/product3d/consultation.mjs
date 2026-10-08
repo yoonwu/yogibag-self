@@ -1,6 +1,6 @@
-import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings, getProductProfile } from './config.mjs?v=1.2.11';
-import { dataURLBytes } from './zip.mjs?v=1.2.11';
-import { openKakaoConsultation } from './kakao-consultation.mjs?v=1.2.11';
+import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings, getProductProfile, printSideLabel } from './config.mjs?v=1.2.12';
+import { dataURLBytes } from './zip.mjs?v=1.2.12';
+import { openKakaoConsultation } from './kakao-consultation.mjs?v=1.2.12';
 
 const EMAIL_ENDPOINT = 'https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email';
 const STAFF_EMAIL = 'thdghkstlr@gmail.com';
@@ -80,9 +80,9 @@ export async function buildConsultationFiles(config, views, customer = {}, refer
     {name:`${reference}_상담표.xlsx`,data:await workbook(c,views,customerInfo,reference)},
   ];
   for (const view of views) files.push({name:`${reference}_시안_${safeName(view.label)}.png`,data:dataURLBytes(view.dataURL)});
-  const sides = ['front', ...(c.options.doubleSided ? ['back'] : []), ...(c.options.innerPocketPrint ? ['innerPocket'] : [])];
+  const sides = ['front', ...(c.options.doubleSided || c.options.backPocket ? ['back'] : []), ...(c.options.innerPocketPrint ? ['innerPocket'] : [])];
   for (const side of sides) {
-    const p = c.print[side], sideName = { front: '앞면', back: '뒷면', innerPocket: '안주머니' }[side];
+    const p = c.print[side], sideName = printSideLabel(c,side);
     if (!p.image) continue;
     const ext = /^data:image\/png;/i.test(p.image) ? '.png' : '.jpg';
     files.push({name:`${reference}_${sideName}_인쇄원본_${safeName(p.imageName || 'logo').replace(/\.(png|jpe?g)$/i,'')}${ext}`,data:dataURLBytes(p.image)});

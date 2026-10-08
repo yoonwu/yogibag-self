@@ -56,7 +56,7 @@ test('embroidery choices survive saving on each side without altering artwork or
   const specs = getConsultationSpecs(restored);
   for (const side of sides) {
     assert.deepEqual(restored.print[side], { ...original.print[side], appearance: 'embroidery' });
-    const sideLabel = {front:'앞면',back:'뒷면',innerPocket:'안주머니'}[side];
+    const sideLabel = {front:'앞주머니',back:'뒷면',innerPocket:'안주머니'}[side];
     assert.match(specs.find(spec => spec.label === `${sideLabel} 인쇄`).value, /^자수 미리보기 · /);
     config = patchConfig(config, `print.${side}.appearance`, 'print');
   }
@@ -72,7 +72,7 @@ test('older and malformed preview choices fall back to print without losing the 
   const restored = parseConfig(JSON.stringify(config));
   assert.equal(restored.print.front.image, config.print.front.image);
   for (const side of ['front','back','innerPocket']) assert.equal(restored.print[side].appearance, 'print');
-  assert.match(getConsultationSpecs(restored).find(spec => spec.label === '앞면 인쇄').value, /^인쇄 미리보기 · /);
+  assert.match(getConsultationSpecs(restored).find(spec => spec.label === '앞주머니 인쇄').value, /^인쇄 미리보기 · /);
 });
 
 test('shorter cross straps restore old drafts and retain custom lengths while deselected', () => {

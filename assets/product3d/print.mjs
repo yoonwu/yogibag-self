@@ -1,11 +1,11 @@
 import * as THREE from '../vendor/three/three.module.js';
-import * as surfaces from './model.mjs?v=1.2.11';
-import { MM_TO_SCENE } from './config.mjs?v=1.2.11';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.11';
-import { renderEmbroideryCanvas,readEmbroiderySource,embroideryCanvases } from './embroidery.mjs?v=1.2.11';
-import { createEmbroideryThreadMesh,createEmbroideryThreadObject } from './embroidery-geometry.mjs?v=1.2.11';
-import { embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.11';
-import { createEmbroideryReliefGeometry, createEmbroideryContactShadow } from './embroidery-relief.mjs?v=1.2.11';
+import * as surfaces from './model.mjs?v=1.2.12';
+import { MM_TO_SCENE, isPrintSideActive } from './config.mjs?v=1.2.12';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.12';
+import { renderEmbroideryCanvas,readEmbroiderySource,embroideryCanvases } from './embroidery.mjs?v=1.2.12';
+import { createEmbroideryThreadMesh,createEmbroideryThreadObject } from './embroidery-geometry.mjs?v=1.2.12';
+import { embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.12';
+import { createEmbroideryReliefGeometry, createEmbroideryContactShadow } from './embroidery-relief.mjs?v=1.2.12';
 
 function clipPolygon(polygon, axis, boundary, keepGreater) {
   const output=[];
@@ -27,10 +27,9 @@ function clipPolygon(polygon, axis, boundary, keepGreater) {
 export function createPrintMesh(config, texture, side = 'front', embroidery = null) {
   const print = config.print[side];
   if (!print) return null;
-  if (side === 'back' && !config.options.doubleSided) return null;
-  if (side === 'innerPocket' && !config.options.innerPocketPrint) return null;
+  if (!isPrintSideActive(config, side)) return null;
   if (!print.enabled || !texture) return null;
-  const surface = side === 'back' ? surfaces.backSurfaceMM : side === 'innerPocket' ? surfaces.innerPocketSurfaceMM : surfaces.frontSurfaceMM;
+  const surface = (x,y,c) => surfaces.printSurfaceMM(x,y,c,side);
   if (!surface) return null;
   const stitched = print.appearance === 'embroidery' && embroidery;
   const reliefGeometry = Boolean(stitched && embroidery.plan);

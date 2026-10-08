@@ -1,14 +1,14 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { MM_TO_SCENE } from './config.mjs?v=1.2.11';
-import * as surfaces from './model.mjs?v=1.2.11';
-import { stitchLift } from './embroidery-plan.mjs?v=1.2.11';
-import { sampleEmbroideryElevation } from './embroidery-relief.mjs?v=1.2.11';
+import { MM_TO_SCENE } from './config.mjs?v=1.2.12';
+import * as surfaces from './model.mjs?v=1.2.12';
+import { stitchLift } from './embroidery-plan.mjs?v=1.2.12';
+import { sampleEmbroideryElevation } from './embroidery-relief.mjs?v=1.2.12';
 
 export const MAX_THREAD_TRIANGLES = 120000;
 
 export function createEmbroideryThreadMesh(config,side,plan,roughnessMap=null) {
   if(!plan?.stitches?.length)return null;
-  const print=config.print[side],surface=side==='back'?surfaces.backSurfaceMM:side==='innerPocket'?surfaces.innerPocketSurfaceMM:surfaces.frontSurfaceMM;
+  const print=config.print[side],surface=(x,y,c)=>surfaces.printSurfaceMM(x,y,c,side);
   const angle=print.rotation*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle),bounds=side==='innerPocket'?print.partDimensions:config.dimensions;
   const positions=[],normals=[],colors=[],tangents=[],uvs=[],indices=[],valid=[];
   const radial=4;

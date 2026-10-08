@@ -61,11 +61,11 @@ test('a print on the front pocket remains in front of that independent fabric su
   texture.dispose();
 });
 
-test('out-of-body artwork is clipped while its original requested width is retained', () => {
+test('pocket artwork is clipped at the actual pocket edge while its original requested width is retained', () => {
   const texture = new THREE.Texture();
   const dimensions = { width: 480, height: 340, depth: 150 };
   const centered = createPrintMesh(configuration(dimensions), texture);
-  const partlyOutside = createPrintMesh(configuration(dimensions, { x: 220 }), texture);
+  const partlyOutside = createPrintMesh(configuration(dimensions, { x: 80 }), texture);
   const outside = createPrintMesh(configuration(dimensions, { x: 300, width: 60 }), texture);
   assert.ok(partlyOutside.geometry.index.count > 0);
   assert.ok(partlyOutside.geometry.index.count < centered.geometry.index.count);
@@ -73,7 +73,7 @@ test('out-of-body artwork is clipped while its original requested width is retai
   assert.equal(outside.geometry.index.count, 0);
   for (const index of partlyOutside.geometry.index.array) {
     // Normal offset is less than 1 mm; no rendered vertex floats past an edge.
-    assert.ok(Math.abs(partlyOutside.geometry.attributes.position.getX(index)) <= 241 * MM_TO_SCENE);
+    assert.ok(Math.abs(partlyOutside.geometry.attributes.position.getX(index)) <= 91 * MM_TO_SCENE);
   }
   [centered, partlyOutside, outside].forEach(disposePrintMesh);
   texture.dispose();

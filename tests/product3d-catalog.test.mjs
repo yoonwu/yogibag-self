@@ -10,7 +10,8 @@ import { Product3DEditor } from '../assets/product3d/editor.mjs';
 import { FABRIC_COLOR_PRESETS } from '../assets/product3d/fabrics.mjs';
 
 const source = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-const literal = name => JSON.parse(JSON.stringify(runInNewContext(`(${source.match(new RegExp(`const ${name} = (\\{[\\s\\S]*?\\n\\});`))[1]})`, { OPTIONS: Object.values(DESIGN_OPTION_LABELS).filter(label => label !== '양면 인쇄').map(label => label.replaceAll(' ', '')) })));
+const actualOptions=runInNewContext(source.match(/const OPTIONS = (\[[^;]+\]);/)[1]);
+const literal = name => JSON.parse(JSON.stringify(runInNewContext(`(${source.match(new RegExp(`const ${name} = (\\{[\\s\\S]*?\\n\\});`))[1]})`, { OPTIONS: actualOptions })));
 const bags2D = literal('BAG_MODELS'), options2D = literal('BAG_OPT_CONF'), guides2D = literal('PRINT_AREAS');
 const labels = Object.fromEntries(Object.entries(DESIGN_OPTION_LABELS).map(([key, name]) => [name.replaceAll(' ', ''), key]));
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`);

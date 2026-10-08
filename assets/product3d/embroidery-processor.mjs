@@ -1,11 +1,11 @@
-import {embroideryTransferables} from './embroidery-job.mjs?v=1.2.11';
+import {embroideryTransferables} from './embroidery-job.mjs?v=1.2.12';
 
 const aborted=()=>Object.assign(new Error('자수 미리보기 작업을 바꿨어요.'),{name:'AbortError'});
 
 // One reusable worker per editor. New pose/size requests cancel obsolete work
 // rather than building every intermediate slider value on the UI thread.
 export class EmbroideryProcessor {
-  constructor({workerFactory=()=>new Worker(new URL('./embroidery-worker.mjs?v=1.2.11',import.meta.url),{type:'module'})}={}) {
+  constructor({workerFactory=()=>new Worker(new URL('./embroidery-worker.mjs?v=1.2.12',import.meta.url),{type:'module'})}={}) {
     this.workerFactory=workerFactory;this.queue=[];this.serial=0;this.disposed=false;
   }
   run(job,{signal}={}) {
