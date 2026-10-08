@@ -1,4 +1,4 @@
-import { createDefaultConfig, normalizeConfig, getProductProfile, getProductPrintArea } from './config.mjs?v=1.2.11';
+import { createDefaultConfig, normalizeConfig, getProductProfile, getProductPrintArea } from './config.mjs?v=1.2.12';
 
 export const CUSTOM_2D_IDS=Object.freeze(['sample-two-line-large','sample-two-line-small','two-tone-kids']);
 export const isCustom2DTote=id=>CUSTOM_2D_IDS.includes(id);
@@ -85,7 +85,7 @@ export async function customPhotoLayers(config,side,legacyImages){
   const trim=sheet(t.width,t.height),trimContext=trim.getContext('2d');
   trimContext.save();trimContext.beginPath();trimContext.rect(0,0,t.width,bandY);trimContext.clip();trimContext.drawImage(t.handle,0,0);trimContext.restore();
   const layers=[{part:'body',url:t.body.toDataURL(),color:c.body.color},{part:'band',url:band.toDataURL(),color:c.bottomPanel.color}];
-  if(t.profile.supportsPocket&&c.options.pocket&&side!=='back'){
+  if(t.profile.supportsPocket&&(side==='back'?c.options.backPocket:c.options.pocket)){
     const pocket=sheet(t.width,t.height),ctx=pocket.getContext('2d'),p=c.pocket;
     const px=r.width/c.dimensions.width,py=r.height/c.dimensions.height;
     const x=r.left+(r.width-p.width*px)/2,y=r.top+r.height-(p.bottom+p.height)*py,w=p.width*px,h=p.height*py;

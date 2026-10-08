@@ -1,6 +1,8 @@
-import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.11';
-import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.11';
-export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.11';
+import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.12';
+import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.12';
+import { POCKET_OPTION_LABELS, isPocketTote, isPrintSideActive, printSideLabel } from './pocket-options.mjs?v=1.2.12';
+export { isPocketTote, isPrintSideActive, printSideLabel };
+export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.12';
 
 // Customer dimensions are millimetres. Only this boundary converts to scene units.
 export const MM_TO_SCENE = 0.001;
@@ -9,6 +11,7 @@ export const SCHEMA_VERSION = 1;
 export const DESIGN_OPTION_LABELS = Object.freeze({
   innerPocket: '안주머니', innerPocketPrint: '안주머니 인쇄', snap: '똑딱이', magnet: '자석',
   zipper: '지퍼', crossStrap: '크로스끈', nameTag: '이름표', individualPackaging: 'OPP 개별포장', doubleSided: '양면 인쇄',
+  ...POCKET_OPTION_LABELS,
 });
 export const PRINT_SIDES = Object.freeze(['front', 'back', 'innerPocket']);
 export const PRINT_APPEARANCES = Object.freeze(['print', 'embroidery']);
@@ -93,7 +96,7 @@ export function createDefaultConfig(product = SAMPLE_PRODUCT_ID) {
       back: { enabled: true, image: null, imageName: '', appearance: 'print', width: 100, height: 100, x: 0, y: 0, rotation: 0, lockAspect: true },
       innerPocket: { enabled: true, image: null, imageName: '', appearance: 'print', width: 70, height: 40, x: 0, y: 0, rotation: 0, lockAspect: true,
         partDimensions: { width: 140, height: 120 } } },
-    options: { pocket: profile.supportsPocket, lining: false, ...Object.fromEntries(Object.keys(DESIGN_OPTION_LABELS).map(key => [key, profile.lockedOptions.includes(key)])) },
+    options: { pocket: profile.supportsPocket, lining: false, ...Object.fromEntries(Object.keys(DESIGN_OPTION_LABELS).map(key => [key, profile.lockedOptions.includes(key)])), frontPocketPrint: profile.supportsPocket },
     measurementBasis: 'finished-body-outer-mm',
     assumptions: [...profile.assumptions],
   };
@@ -146,6 +149,10 @@ export function normalizeConfig(input = {}) {
     if (profile.lockedOptions.includes(option)) c.options[option] = true;
   }
   if (c.options.innerPocketPrint) c.options.innerPocket = true;
+  if (isPocketTote(c)) {
+    c.options.frontPocketPrint = bool(input.options?.frontPocketPrint, true);
+    if (c.options.backPocketPrint) c.options.backPocket = true;
+  }
   c.nominalDepth = profile.depthBasis === 'opening-estimate' ? 0 : c.dimensions.depth;
   for (const side of PRINT_SIDES) {
     const p = input.print?.[side] || (side === 'innerPocket' ? input.print?.inner : null) || {};
@@ -199,6 +206,7 @@ export function patchConfig(config, path, value) {
     c.handle.color = c.bottomPanel.color = value;
   }
   if (path === 'options.innerPocket' && value === false) c.options.innerPocketPrint = false;
+  if (path === 'options.backPocket' && value === false) c.options.backPocketPrint = false;
   if (['options.snap', 'options.magnet', 'options.zipper'].includes(path) && value === true) {
     for (const key of ['snap', 'magnet', 'zipper']) c.options[key] = path === `options.${key}`;
   }
@@ -247,8 +255,8 @@ function sidePrintBoundsWarnings(c, side) {
 
 export function getPrintBoundsWarnings(config, selectedSide) {
   const c = normalizeConfig(config);
-  const sides = selectedSide ? [selectedSide] : ['front', ...(c.options.doubleSided ? ['back'] : [])];
-  return sides.flatMap(side => sidePrintBoundsWarnings(c, side)
+  const sides = selectedSide ? [selectedSide] : ['front', ...(c.options.doubleSided || c.options.backPocket ? ['back'] : [])];
+  return sides.filter(side=>selectedSide || isPrintSideActive(c,side)).flatMap(side => sidePrintBoundsWarnings(c, side)
     .map(message => side === 'back' ? `뒷면: ${message}` : message));
 }
 
@@ -294,13 +302,14 @@ export function getConsultationSpecs(config) {
       ...(profile.referenceHandleLength ? [{ label: '기본 상품 참고 손잡이 두른길이', value: `${profile.referenceHandleLength} mm · 시접 제외, 입구에서 손잡이 위끝까지의 길이와 다른 측정값` }] : []),
     ] : []),
     { label: '앞면 포켓', value: c.options.pocket ? `${c.pocket.width} × ${c.pocket.height} mm · 바닥에서 ${c.pocket.bottom} mm` : '없음' },
+    ...(c.options.backPocket ? [{ label:'뒷면 주머니', value:`${c.pocket.width} × ${c.pocket.height} mm · 바닥에서 ${c.pocket.bottom} mm · 앞주머니와 같은 크기` }] : []),
     ...(profile.supportsPocket ? [{ label: '주머니 색상', value: c.options.pocket ? getColorName(c.pocket.color) : '주머니 없음' }] : []),
     { label: '추가 옵션', value: Object.entries(DESIGN_OPTION_LABELS).filter(([key]) => c.options[key]).map(([, name]) => name).join(', ') || '없음' },
     ...(c.options.crossStrap ? [{ label: '크로스끈 길이', value: `${c.crossStrap.length} mm` }] : []),
-    ...['front', ...(c.options.doubleSided ? ['back'] : []), ...(c.options.innerPocketPrint ? ['innerPocket'] : [])].map(side => {
+    ...['front', ...(c.options.doubleSided || c.options.backPocket ? ['back'] : []), ...(c.options.innerPocketPrint ? ['innerPocket'] : [])].map(side => {
       const print = c.print[side];
-      return { label: `${{ front: '앞면', back: '뒷면', innerPocket: '안주머니' }[side]} 인쇄`,
-        value: print.enabled && print.image ? `${print.appearance === 'embroidery' ? '자수' : '인쇄'} 미리보기 · ${print.width} × ${print.height} mm · X ${print.x} / Y ${print.y} mm · 회전 ${print.rotation}°`
+      return { label: `${printSideLabel(c, side)} 인쇄`,
+        value: isPrintSideActive(c, side) && print.enabled && print.image ? `${print.appearance === 'embroidery' ? '자수' : '인쇄'} 미리보기 · ${print.width} × ${print.height} mm · X ${print.x} / Y ${print.y} mm · 회전 ${print.rotation}°`
           : side === 'innerPocket' ? '선택 · 도안은 상담 시 확인' : '없음' };
     }),
     { label: '인쇄 좌표 기준', value: '앞·뒷면: 각 면을 바라본 몸통 중심 / 안주머니: 안주머니 중심 (X: 오른쪽 +, Y: 위쪽 +)' },

@@ -41,7 +41,7 @@ test('embroidery consultation files record expression and export untouched sourc
   const saved = JSON.parse(decoder.decode(bundle.files.find(file => file.name.endsWith('_시안설정.json')).data));
   const consultation = JSON.parse(decoder.decode(bundle.files.find(file => file.name.endsWith('_상담정보.json')).data));
   for (const [index, side] of sides.entries()) {
-    const sideLabel = { front: '앞면', back: '뒷면', innerPocket: '안주머니' }[side];
+    const sideLabel = { front: '앞주머니', back: '뒷면', innerPocket: '안주머니' }[side];
     assert.equal(saved.print[side].appearance, config.print[side].appearance);
     assert.equal(saved.print[side].image, originalImages[index]);
     assert.equal(saved.print[side].width, config.print[side].width);

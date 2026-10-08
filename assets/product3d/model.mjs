@@ -1,8 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.11';
-import { mmToScene, getProductProfile } from './config.mjs?v=1.2.11';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.12';
+import { mmToScene, getProductProfile, isPocketTote } from './config.mjs?v=1.2.12';
 import { addBagOptions, getInnerPocketLayout, innerPocketHalfWidth, innerPocketContourVisible,
-  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.11';
+  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.12';
 
 // Shape coordinates are millimetres until a vertex is written. Width, depth,
 // webbing width/thickness and print size never depend on an Object3D scale.
@@ -149,10 +149,10 @@ function printableBodyPoint(x, y, s, front = true) {
 
 function printablePoint(x, y, s, config, front = true) {
   const p = printableBodyPoint(x, y, s, front);
-  const pocket = front && s.profile.supportsPocket && config.options?.pocket && config.pocket;
+  const pocket = s.profile.supportsPocket && (front ? config.options?.pocket : config.options?.backPocket) && config.pocket;
   if (pocket && Math.abs(x) <= pocket.width / 2 && y >= pocket.bottom && y <= pocket.bottom + pocket.height) {
     const u = x / pocket.width + 0.5, v = (y - pocket.bottom) / pocket.height;
-    p.z += 1.4 + Math.sin(Math.PI * u) * Math.sin(Math.PI * v) * 2.5;
+    p.z += (front ? 1 : -1) * (1.4 + Math.sin(Math.PI * u) * Math.sin(Math.PI * v) * 2.5);
   }
   return p;
 }
@@ -166,6 +166,16 @@ export function frontSurfaceMM(xMm, yMm, config) {
 // Rear artwork X+ points to the customer's right when viewing the rear.
 export function backSurfaceMM(xMm, yMm, config) {
   return exteriorSurfaceMM(xMm, yMm, config, false);
+}
+
+export function printSurfaceMM(xMm, yMm, config, side = 'front') {
+  if(side==='innerPocket')return innerPocketSurfaceMM(xMm,yMm,config);
+  const point=exteriorSurfaceMM(xMm,yMm,config,side!=='back');
+  if(isPocketTote(config) && (side==='front' ? config.options?.pocket : config.options?.backPocket)) {
+    const pocket=config.pocket, y=yMm+config.dimensions.height/2;
+    point.visible=point.visible!==false && Math.abs(xMm)<=pocket.width/2 && y>=pocket.bottom && y<=pocket.bottom+pocket.height;
+  }
+  return point;
 }
 
 function exteriorSurfaceMM(xMm, yMm, config, front) {
@@ -868,14 +878,14 @@ function sideStitchGeometry(s,y,right) {
   },{maxCount:s.sideSeamMaxCount,rounded:false});
 }
 
-function pocketGeometry(s, pocket) {
+function pocketGeometry(s, pocket, front = true) {
   return geometryFromGrid(20, 16, (u, v) => {
     const x = (u - 0.5) * pocket.width;
     const y = pocket.bottom + v * pocket.height;
-    const p = panelPoint(x, y, s);
-    p.z += 1.4 + Math.sin(Math.PI * u) * Math.sin(Math.PI * v) * 2.5;
+    const p = panelPoint(x, y, s, front);
+    p.z += (front ? 1 : -1) * (1.4 + Math.sin(Math.PI * u) * Math.sin(Math.PI * v) * 2.5);
     return p;
-  });
+  }, !front);
 }
 
 /** Materials are supplied/owned by the viewer; the model owns only geometry. */
@@ -968,6 +978,13 @@ export function buildBagModel(config, materials) {
     const stitch = stitchGeometry(s, p.bottom + p.height - 4, true, -p.width / 2 + 4, p.width / 2 - 4);
     stitch.translate(0, 0, mmToScene(1.5));
     add('pocketTopStitches', stitch, 'seam', seams);
+  }
+  if (s.profile.supportsPocket && config.options?.backPocket && config.pocket) {
+    add('backPocket', pocketGeometry(s, config.pocket, false), 'pocket');
+    const p = config.pocket;
+    const stitch = stitchGeometry(s, p.bottom + p.height - 4, false, -p.width / 2 + 4, p.width / 2 - 4);
+    stitch.translate(0, 0, -mmToScene(1.5));
+    add('backPocketTopStitches', stitch, 'seam', seams);
   }
 
   const optionState = addBagOptions(config, bag, { shape:s, add,

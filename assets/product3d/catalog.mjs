@@ -8,6 +8,7 @@ export const POLY_BODY_COLOR_PRESETS = Object.freeze([
   { name: '블랙', hex: '#1a1a1a' }, { name: '네이비', hex: '#1a2a4a' }, { name: '그린', hex: '#104727' },
 ].map(preset => Object.freeze(preset)));
 const ecobagOptions = ['innerPocket', 'innerPocketPrint', 'snap', 'magnet', 'zipper', 'crossStrap', 'nameTag', 'individualPackaging', 'doubleSided'];
+const pocketOptions = [...ecobagOptions, 'frontPocketPrint', 'backPocket', 'backPocketPrint'];
 const pouchOptions = ['zipper', 'individualPackaging', 'doubleSided'];
 const polyOptions = ['innerPocketPrint', 'crossStrap', 'nameTag', 'individualPackaging', 'doubleSided'];
 const handle = (drop, gap, width = 30, color = '#ece6d9') => ({ width, thickness: 2, drop, gap, color });
@@ -133,12 +134,12 @@ function product(id, name, category, construction, dimensions, defaultHandle, ex
 const dims = (width, height, depth) => ({ width, height, depth });
 export const PRODUCT3D_PROFILES = Object.freeze({
   [SAMPLE_PRODUCT_ID]: product(SAMPLE_PRODUCT_ID, '투라인 포켓 에코백 · 라지', 'sample', 'sample', dims(480, 340, 150), handle(290, 220, 38, '#171c28'),
-    { softCloth: true, handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true,
+    { softCloth: true, handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true, allowedOptions: pocketOptions,
       dimensionLimits: {}, assumptions: [
         '가로 480mm는 완성 몸통의 상단 좌우 폭, 깊이 150mm는 펼친 바닥 깊이로 가정했습니다.',
         '몸통 높이에는 하단 배색이 포함되고 손잡이는 제외됩니다.',
         '손잡이 폭 38mm, 중심 간격 220mm와 앞면 포켓 180×190mm는 사진 추정값입니다.',
-        '17×17cm 표시는 권장 인쇄 영역으로 해석했습니다. 뒷면 포켓은 없는 것으로 가정했습니다.',
+        '17×17cm 표시는 권장 인쇄 영역으로 해석했습니다. 앞주머니는 기본이며 뒷면 주머니는 선택 옵션입니다.',
         '손잡이와 하단 배색은 하나의 공통 색상으로 제작합니다.',
       ] }),
   [DAILY_PRODUCT_ID]: product(DAILY_PRODUCT_ID, '데일리 에코백', 'ecobag', 'gusset', dims(360, 360, 100), photoHandle('daily'),
@@ -150,14 +151,14 @@ export const PRODUCT3D_PROFILES = Object.freeze({
       '권장 인쇄 영역은 기존 2D 상품 이미지의 가이드와 같은 위치 및 비율을 사용합니다.',
     ] }),
   [TWO_TONE_SMALL_PRODUCT_ID]: product(TWO_TONE_SMALL_PRODUCT_ID, '투라인 포켓 에코백 · 스몰', 'sample', 'sample', dims(340, 240, 100), handle(190, 160, 30, '#b52b43'),
-    { softCloth: true, handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true,
+    { softCloth: true, handleAttachment: 'full-height', handleAttachmentDepth: null, supportsBottomPanel: true, supportsPocket: true, linkedHandleBottomColor: true, allowedOptions: pocketOptions,
       defaultBottomPanel: Object.freeze({ height: 60, color: '#b52b43' }),
       defaultPocket: Object.freeze({ width: 130, height: 135, bottom: 60, color: '#ece6d9' }),
       printGuideSize: 120, handleLoopStyle: 'folded-cloth', dimensionLimits: {}, dimensionsSource: 'user-measured', assumptions: [
         '사용자 제공 스몰 규격은 몸통 340×240×100mm, 손잡이 길이(입구에서 위끝까지) 190mm, 하단 배색 높이 60mm입니다.',
         '몸통 높이에는 하단 배색이 포함되고 손잡이는 제외됩니다.',
         '손잡이 폭 30mm, 중심 간격 160mm와 앞면 포켓 130×135mm는 사진 비율로 추정했습니다.',
-        '12×12cm 표시는 권장 인쇄 영역으로 해석했습니다. 뒷면 포켓은 없는 것으로 가정했습니다.',
+        '12×12cm 표시는 권장 인쇄 영역으로 해석했습니다. 앞주머니는 기본이며 뒷면 주머니는 선택 옵션입니다.',
         '손잡이와 하단 배색은 하나의 공통 색상으로 제작합니다.',
       ] }),
   [TWO_TONE_KIDS_PRODUCT_ID]: product(TWO_TONE_KIDS_PRODUCT_ID, '투톤 에코백 · 키즈', 'sample', 'gusset', dims(330,330,80), photoHandle('kids'),

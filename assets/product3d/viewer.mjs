@@ -1,15 +1,15 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES } from './config.mjs?v=1.2.11';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.11';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.11';
-import { createProductModel } from './registry.mjs?v=1.2.11';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.11';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.11';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.11';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.11';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.11';
-import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.11';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.12';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.12';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.12';
+import { createProductModel } from './registry.mjs?v=1.2.12';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.12';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.12';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.12';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.12';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.12';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.12';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
@@ -29,7 +29,7 @@ const printKey = (config, side = 'front') => JSON.stringify({
   dimensions: config.dimensions,
   bottomPanelHeight: config.bottomPanel.height,
   print: { ...config.print[side], image: undefined, imageName: undefined },
-  active: side === 'back' ? config.options.doubleSided : side === 'innerPocket' ? config.options.innerPocketPrint : true,
+  active: isPrintSideActive(config, side),
 });
 
 export class Product3DViewer {
@@ -231,7 +231,7 @@ export class Product3DViewer {
     const matchingTexture = state.source === this.config.print[side].image ? state.texture : null;
     const print = this.config.print[side];
     const embroideryKey = `${print.width}:${print.height}`;
-    const active = side === 'back' ? this.config.options.doubleSided : side === 'innerPocket' ? this.config.options.innerPocketPrint : true;
+    const active = isPrintSideActive(this.config, side);
     const needsEmbroidery = Boolean(matchingTexture && print.enabled && active && print.appearance === 'embroidery');
     const geometryKey=embroideryGeometryKey(this.config,side);
     const background=Boolean((globalThis.Worker||this._embroideryProcessor)&&!this._embroideryWorkerFailed);
@@ -307,8 +307,7 @@ export class Product3DViewer {
     const side = this._view === 'inside' ? 'innerPocket' : this._view === 'back' ? 'back'
       : this.camera?.position?.z < this.controls?.target?.z ? 'back' : 'front';
     const print = this.config?.print?.[side];
-    const active = side === 'back' ? this.config?.options?.doubleSided
-      : side === 'innerPocket' ? this.config?.options?.innerPocketPrint : true;
+    const active = isPrintSideActive(this.config, side);
     // A 0.38 mm stitch is subpixel on a small stage at the ordinary zoom cap.
     // Extra detail is view-only, with the same collision and near-plane limits.
     return active && print?.enabled && print.image && print.appearance === 'embroidery' ? 1600 : 600;
@@ -524,8 +523,7 @@ export class Product3DViewer {
 
   _printBounds(side) {
     const print = this.config?.print?.[side];
-    const active = side === 'back' ? this.config?.options?.doubleSided
-      : side === 'innerPocket' ? this.config?.options?.innerPocketPrint : true;
+    const active = isPrintSideActive(this.config, side);
     const mesh = this._printStates?.[side]?.mesh || (side === 'front' ? this.printMesh : null);
     if (!active || !print?.enabled || !print.image || !mesh?.geometry.index?.count) return null;
     mesh.updateWorldMatrix(true, false);

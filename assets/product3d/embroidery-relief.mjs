@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import * as surfaces from './model.mjs?v=1.2.11';
-import { MM_TO_SCENE } from './config.mjs?v=1.2.11';
+import * as surfaces from './model.mjs?v=1.2.12';
+import { MM_TO_SCENE } from './config.mjs?v=1.2.12';
 
 // Sewn layers have a continuous padded body, not just a patterned decal.
 // The rounded shoulder stays in the silhouette even when individual threads
@@ -28,7 +28,7 @@ export function sampleEmbroideryElevation(plan,mx,my) {
 export function embroiderySurfacePoint(config,side,mx,my,z,width,height) {
   const print=config.print[side],angle=print.rotation*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
   const lx=mx-width/2,ly=height/2-my,x=print.x+lx*c-ly*s,y=print.y+lx*s+ly*c;
-  const surface=side==='back'?surfaces.backSurfaceMM:side==='innerPocket'?surfaces.innerPocketSurfaceMM:surfaces.frontSurfaceMM;
+  const surface=(x,y,c)=>surfaces.printSurfaceMM(x,y,c,side);
   const p=surface(x,y,config),n=side==='innerPocket'?new THREE.Vector3(0,0,1):new THREE.Vector3(p.normal?.x||0,p.normal?.y||0,p.normal?.z??(side==='back'?-1:1)).normalize();
   const bounds=side==='innerPocket'?print.partDimensions:config.dimensions;
   return {point:new THREE.Vector3(p.x,p.y,p.z).addScaledVector(n,z*MM_TO_SCENE),normal:n,

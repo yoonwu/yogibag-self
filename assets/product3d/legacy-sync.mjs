@@ -1,5 +1,5 @@
-import { normalizeConfig, getProductProfile } from './config.mjs?v=1.2.11';
-import { isSharedProduct, SHARED_OPTIONS } from './sync.mjs?v=1.2.11';
+import { normalizeConfig, getProductProfile } from './config.mjs?v=1.2.12';
+import { isSharedProduct, SHARED_OPTIONS } from './sync.mjs?v=1.2.12';
 
 const PARTS = ['front', 'back', 'innerPocket'];
 const EMPTY_PRINT = { image: null, imageName: '', width: 100, height: 100, x: 0, y: 0, rotation: 0, enabled: true, lockAspect: true, appearance: 'print' };
@@ -192,7 +192,7 @@ export function createLegacyDesignBridge(env) {
       const snapshot={schemaVersion:1,productId:s.currentBag.id,dimensions:clone(env.getDimensions()),
         ...clone(env.getCustomParts?.()||{}),
         body:{color:env.getBodyColor?.(s) || s.bagBodyColor || env.defaultBodyColor(s.bagFabricId),fabricId:s.bagFabricId},
-        handle:{color:env.getHandleColor?.(s) || s.webbingColor || '#ece6d9'},options:[...s.options,...(s.twoSided?['양면인쇄']:[])],
+        handle:{color:env.getHandleColor?.(s) || s.webbingColor || '#ece6d9'},options:[...s.options,...(s.twoSided&&!s.options.includes('뒷면 주머니(양면)')?['양면인쇄']:[])],
         crossStrap:clone(normalizeConfig({productId:s.currentBag.id,dimensions:env.getDimensions(),crossStrap:env.getCrossStrap?.()}).crossStrap),
         twoSided:s.twoSided,currentSide:s.currentSide,
         print:Object.fromEntries(PARTS.map(part=>[part,clone(captures[part].print)])),legacyToken:token};

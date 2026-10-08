@@ -1,9 +1,10 @@
-import { createDefaultConfig, normalizeConfig, getProductProfile, isSupportedProduct } from './config.mjs?v=1.2.11';
+import { createDefaultConfig, normalizeConfig, getProductProfile, isSupportedProduct } from './config.mjs?v=1.2.12';
 
 export const SHARED_OPTIONS = Object.freeze({
   innerPocket: '안주머니', innerPocketPrint: '안주머니인쇄',
   snap: '똑딱이', magnet: '자석', zipper: '지퍼', crossStrap: '크로스끈',
   nameTag: '이름표', individualPackaging: 'OPP개별포장', doubleSided: '양면인쇄',
+  frontPocketPrint: '앞주머니 인쇄', backPocket: '뒷면 주머니(양면)', backPocketPrint: '뒷면 주머니 인쇄',
 });
 const clone = value => structuredClone(value);
 
@@ -30,7 +31,7 @@ export function configFrom2D(snapshot, previous) {
   if(snapshot.pocket)base.pocket={...base.pocket,...snapshot.pocket};
   if(typeof snapshot.pocketEnabled==='boolean')base.options.pocket=snapshot.pocketEnabled;
   for (const [key, label] of Object.entries(SHARED_OPTIONS)) base.options[key] = selected.has(label);
-  base.options.doubleSided = Boolean(snapshot.twoSided || selected.has('양면인쇄'));
+  base.options.doubleSided = Boolean(snapshot.twoSided && !selected.has('뒷면 주머니(양면)') || selected.has('양면인쇄'));
   for (const side of ['front', 'back', 'innerPocket']) {
     const artwork = snapshot.print?.[side];
     if (artwork) base.print[side] = { ...base.print[side], ...clone(artwork), image: artwork.image || null };
@@ -49,8 +50,8 @@ export function snapshotFrom3D(config, previous = {}) {
     ...(profile.supportsBottomPanel?{bottomPanel:clone(c.bottomPanel)}:{}),
     ...(profile.supportsPocket?{pocket:clone(c.pocket),pocketEnabled:c.options.pocket}:{}),
     options: Object.entries(SHARED_OPTIONS).filter(([key]) => c.options[key] && profile.allowedOptions.includes(key)).map(([, label]) => label),
-    twoSided: c.options.doubleSided,
-    currentSide: c.options.doubleSided && previous.currentSide === 'back' ? 'back' : 'front',
+    twoSided: c.options.doubleSided || c.options.backPocket,
+    currentSide: (c.options.doubleSided || c.options.backPocket) && previous.currentSide === 'back' ? 'back' : 'front',
     print: clone(c.print),
   };
 }

@@ -1,9 +1,9 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS } from './config.mjs?v=1.2.11';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.11';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.11';
-import { Product3DViewer } from './viewer.mjs?v=1.2.11';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.11';
-import { openProductPicker } from './product-picker.mjs?v=1.2.11';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.12';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.12';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.12';
+import { Product3DViewer } from './viewer.mjs?v=1.2.12';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.12';
+import { openProductPicker } from './product-picker.mjs?v=1.2.12';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -460,7 +460,7 @@ export class Product3DEditor {
   }
 
   buildPrintSide(parent, side) {
-    const label = { front: '앞면', back: '뒷면', innerPocket: '안주머니' }[side];
+    const label = printSideLabel(this.config,side);
     const print = element('section', 'p3d-print-side');
     print.dataset.p3dSidePanel = side;
     parent.append(print);
@@ -520,8 +520,8 @@ export class Product3DEditor {
     this.numeric(print, path('rotation'), `${label} 인쇄 회전`);
     const center = button('권장 영역 가운데 맞추기', 'p3d-button p3d-center-button');
     this.listen(center, 'click', () => {
-      this.config = patchConfig(this.config, path('x'), side === 'front' ? this.config.printArea.x : 0);
-      this.config = patchConfig(this.config, path('y'), side === 'front' ? this.config.printArea.y : 0);
+      this.config = patchConfig(this.config, path('x'), side === 'front' || isPocketTote(this.config) && side==='back' ? this.config.printArea.x : 0);
+      this.config = patchConfig(this.config, path('y'), side === 'front' || isPocketTote(this.config) && side==='back' ? this.config.printArea.y : 0);
       this.apply();
     });
     print.append(element('p', 'p3d-panel-description p3d-coordinate-hint', `${side === 'innerPocket' ? '안주머니' : '해당 면의 몸통'} 중심 기준이에요. 그 면을 바라봤을 때 좌우 +는 오른쪽, 상하 +는 위쪽입니다.`));
@@ -586,6 +586,12 @@ export class Product3DEditor {
     this.productSelect.disabled = this.busy || (this.linked && !this.onSelectProduct);
     if (this.productPickerButton) this.productPickerButton.disabled = this.busy;
     this.pocketPanel.hidden = !profile.supportsPocket;
+    const outerPocket=this.fields.get('options.pocket');
+    if(outerPocket?.input){
+      outerPocket.input.disabled=profile.supportsPocket;
+      outerPocket.input.setAttribute('aria-label','앞주머니 · 기본 포함');
+      if(outerPocket.labelNode)outerPocket.labelNode.textContent='앞주머니 · 기본 포함';
+    }
     if (this.handlePanel) this.handlePanel.hidden = !profile.supportsHandles;
     if (this.handleFabricNote) this.handleFabricNote.textContent = `손잡이 원단: ${profile.handleFabricLabel}`;
     const handleColor = this.fields.get('handle.color');
@@ -612,6 +618,16 @@ export class Product3DEditor {
     const limits = getProductLimits(this.config);
     for (const [path, field] of this.fields) {
       const value = readPath(this.config, path);
+      const printPart=path.match(/^print\.(front|back|innerPocket)\./)?.[1];
+      if(printPart && field.labelNode){
+        const suffix=field.labelNode.textContent.split(' 인쇄 ').pop();
+        const label=`${printSideLabel(this.config,printPart)} 인쇄 ${suffix}`;
+        field.labelNode.textContent=label;
+        if(field.type==='number'){
+          field.number.setAttribute('aria-label',`${label} ${path.endsWith('rotation')?'도':'밀리미터'} 입력`);
+          field.range.setAttribute('aria-label',`${label} 슬라이더`);
+        }else if(field.input)field.input.setAttribute('aria-label',label);
+      }
       if (field.type === 'number') {
         if (limits[path]) {
           field.limits = limits[path];
@@ -678,15 +694,19 @@ export class Product3DEditor {
     }
     this.lastAspectRatio = front.width / front.height;
     this.title.textContent = this.config.productName;
-    const availableSides = ['front', ...(this.config.options.doubleSided ? ['back'] : []), ...(this.config.options.innerPocketPrint ? ['innerPocket'] : [])];
+    const availableSides = ['front', ...(this.config.options.doubleSided || this.config.options.backPocket ? ['back'] : []), ...(this.config.options.innerPocketPrint ? ['innerPocket'] : [])];
     if (!availableSides.includes(this.printSide)) this.printSide = 'front';
     this.printSideSelect.replaceChildren(...availableSides.map(side => {
-      const option = element('option', '', { front: '앞면 인쇄', back: '뒷면 인쇄', innerPocket: '안주머니 인쇄' }[side]);
+      const option = element('option', '', `${printSideLabel(this.config,side)} 인쇄`);
       option.value = side; return option;
     }));
     this.printSideSelect.value = this.printSide;
     for (const [side, controls] of this.printControls) {
       const p = this.config.print[side];
+      const sideLabel=printSideLabel(this.config,side);
+      controls.uploadButton.setAttribute('aria-label',`${sideLabel} 인쇄 이미지 올리기 또는 교체`);
+      controls.uploadInput.setAttribute('aria-label',`${sideLabel} 인쇄 PNG 또는 JPG 이미지 업로드`);
+      controls.deleteImageButton.setAttribute('aria-label',`${sideLabel} 인쇄 이미지 삭제`);
       controls.panel.hidden = side !== this.printSide;
       controls.imagePreview.hidden = !p.image;
       if (p.image) controls.imageThumbnail.src = p.image;
@@ -839,6 +859,7 @@ export class Product3DEditor {
       this.config = patchConfig(this.config, `print.${side}.image`, dataURL);
       this.config = patchConfig(this.config, `print.${side}.imageName`, file.name);
       this.config = patchConfig(this.config, `print.${side}.enabled`, true);
+      if(isPocketTote(this.config)&&side!=='innerPocket')this.config=patchConfig(this.config,`options.${side==='back'?'backPocketPrint':'frontPocketPrint'}`,true);
       if (this.config.print[side].lockAspect) {
         const limits = this.fields.get(`print.${side}.height`).limits;
         this.config = patchConfig(this.config, `print.${side}.height`, clamp(this.config.print[side].width / ratio, limits.min, limits.max));
@@ -885,6 +906,7 @@ export class Product3DEditor {
     this.config = patchConfig(this.config, `print.${side}.image`, canvas.toDataURL('image/png'));
     this.config = patchConfig(this.config, `print.${side}.imageName`, '샘플 로고.png');
     this.config = patchConfig(this.config, `print.${side}.enabled`, true);
+      if(isPocketTote(this.config)&&side!=='innerPocket')this.config=patchConfig(this.config,`options.${side==='back'?'backPocketPrint':'frontPocketPrint'}`,true);
     const limits = this.fields.get(`print.${side}.height`).limits;
     this.config = patchConfig(this.config, `print.${side}.height`, clamp(this.config.print[side].width / this.imageRatios[side], limits.min, limits.max));
     this.apply();
@@ -900,7 +922,7 @@ export class Product3DEditor {
 
   selectPrintSide(side) {
     if (!PRINT_SIDES.includes(side)) return;
-    if (side === 'back' && !this.config.options.doubleSided || side === 'innerPocket' && !this.config.options.innerPocketPrint) return;
+    if (side === 'back' && !this.config.options.doubleSided && !this.config.options.backPocket || side === 'innerPocket' && !this.config.options.innerPocketPrint) return;
     this.printSide = side;
     this.sync();
     this.readImageRatio(side);

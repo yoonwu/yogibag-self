@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../assets/vendor/three/three.module.js';
-import { createDefaultConfig, createDailyConfig, normalizeConfig, patchConfig, serializeConfig, parseConfig, DESIGN_OPTION_LABELS, PRINT_SIDES } from '../assets/product3d/config.mjs';
+import { createDefaultConfig, createDailyConfig, normalizeConfig, patchConfig, serializeConfig, parseConfig, DESIGN_OPTION_LABELS, PRINT_SIDES, getProductProfile } from '../assets/product3d/config.mjs';
 import { createPrintMesh, disposePrintMesh } from '../assets/product3d/print.mjs';
 import { Product3DViewer } from '../assets/product3d/viewer.mjs';
 import { Product3DEditor } from '../assets/product3d/editor.mjs';
@@ -42,7 +42,7 @@ test('all nine options persist while closures are exclusive and inner print requ
   const config = createDailyConfig();
   for (const key of Object.keys(DESIGN_OPTION_LABELS)) config.options[key] = true;
   const normalized = normalizeConfig(config);
-  for (const key of Object.keys(DESIGN_OPTION_LABELS)) assert.equal(normalized.options[key], true);
+  for (const key of Object.keys(DESIGN_OPTION_LABELS)) assert.equal(normalized.options[key], getProductProfile(config).allowedOptions.includes(key));
   assert.equal(normalized.options.pocket, false);
   const magnet = patchConfig(normalized, 'options.magnet', true);
   assert.equal(magnet.options.magnet, true);
