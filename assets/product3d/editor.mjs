@@ -1,10 +1,11 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.14';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.14';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.14';
-import { Product3DViewer } from './viewer.mjs?v=1.2.14';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.14';
-import { openProductPicker } from './product-picker.mjs?v=1.2.14';
-import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.14';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.15';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.15';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.15';
+import { Product3DViewer } from './viewer.mjs?v=1.2.15';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.15';
+import { openProductPicker } from './product-picker.mjs?v=1.2.15';
+import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.15';
+import { CARRY_LABELS } from './wearing.mjs?v=1.2.15';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -227,7 +228,11 @@ export class Product3DEditor {
       this.changeSizeComparison(true, Number(this.comparisonHeightRange.value));
     });
     this.comparisonHeightControl.append(this.comparisonHeightDown, this.comparisonHeightRange, this.comparisonHeightUp, this.comparisonHeightOutput);
-    this.comparisonControls.append(this.comparisonToggle, this.comparisonHeightControl);
+    this.comparisonCarrySelect = element('select', 'p3d-comparison-carry');
+    this.comparisonCarrySelect.setAttribute('aria-label', '가방 착용 방법');
+    this.comparisonCarrySelect.hidden = true;
+    this.listen(this.comparisonCarrySelect, 'change', () => this.changeSizeComparison(true, undefined, this.comparisonCarrySelect.value));
+    this.comparisonControls.append(this.comparisonToggle, this.comparisonCarrySelect, this.comparisonHeightControl);
     this.viewerContainer = element('div', 'p3d-viewer');
     this.viewerContainer.setAttribute('aria-label', '마우스나 손가락으로 회전할 수 있는 3D 가방');
     this.embroideryPreparation=element('p','p3d-preparation-note','자수 질감을 준비하고 있어요. 화면은 계속 움직일 수 있어요.');
@@ -803,13 +808,14 @@ export class Product3DEditor {
       : this.cameraView === 'front' ? 'front' : this.printSide || 'front';
   }
 
-  changeSizeComparison(enabled, heightCm) {
+  changeSizeComparison(enabled, heightCm, carryMode) {
     if (!this.viewer || this.disposed) return;
     if (this._comparisonHeightFrame) cancelAnimationFrame(this._comparisonHeightFrame);
     this._comparisonHeightFrame = 0;
     try {
-      this.viewer.setSizeComparison(enabled, heightCm);
-      this.cameraView = enabled ? 'front' : 'initial';
+      this.viewer.setSizeComparison(enabled, heightCm, carryMode);
+      this.cameraView = this.viewer.getCameraView();
+      if(this.viewer.getCarryError())this.setStatus(this.viewer.getCarryError(),true);
       this.syncZoomToolbar();
     } catch (error) { this.setStatus(error.message, true); }
   }
@@ -827,6 +833,14 @@ export class Product3DEditor {
     this.comparisonToggle.setAttribute('aria-pressed', String(state.enabled));
     this.comparisonToggle.textContent = state.enabled ? '가방만 보기' : '사람과 크기 비교';
     this.comparisonHeightControl.hidden = !state.enabled;
+    const modes=this.viewer?.getAvailableCarryModes?.()||['hand'];
+    this.comparisonCarrySelect.hidden = !state.enabled || modes.length < 2;
+    const key=modes.join(',');
+    if(this._carryOptionsKey!==key) {
+      this.comparisonCarrySelect.replaceChildren(...modes.map(mode=>{const option=element('option','',CARRY_LABELS[mode]);option.value=mode;return option;}));
+      this._carryOptionsKey=key;
+    }
+    this.comparisonCarrySelect.value=state.carryMode||'hand';
     this.comparisonHeightRange.disabled = !available;
     if (!this._comparisonHeightFrame) {
       this.comparisonHeightRange.value = String(state.heightCm);

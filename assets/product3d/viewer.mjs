@@ -1,16 +1,17 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.14';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.14';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.14';
-import { createProductModel } from './registry.mjs?v=1.2.14';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.14';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.14';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.14';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.14';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.14';
-import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.14';
-import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.14';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.15';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.15';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.15';
+import { createProductModel } from './registry.mjs?v=1.2.15';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.15';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.15';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.15';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.15';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.15';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.15';
+import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.15';
+import { availableCarryModes, wearingPose, applyWearingDrape, restoreWearingDrape, CARRY_LABELS } from './wearing.mjs?v=1.2.15';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
@@ -149,6 +150,7 @@ export class Product3DViewer {
       if (resetDetail) this._setMagnifierState(false);
       if (this.model && this._framed) this._fitDistance = this._frameMeasurements(this.camera.position.clone().sub(this.controls.target)).distance;
       if (this.model) {
+        restoreWearingDrape(this.model);
         (this.bagRoot || this.scene).remove(this.model);
         disposeBagModel(this.model);
       }
@@ -269,29 +271,46 @@ export class Product3DViewer {
   _markShadowDirty() {if(this.renderer?.shadowMap)this.renderer.shadowMap.needsUpdate=true;}
 
   getSizeComparison() {
-    return { enabled: Boolean(this._comparisonEnabled), heightCm: this._comparisonHeight || 160 };
+    return { enabled: Boolean(this._comparisonEnabled), heightCm: this._comparisonHeight || 160, carryMode:this._comparisonCarry || 'hand' };
   }
 
-  setSizeComparison(enabled, heightCm = this._comparisonHeight || 160) {
+  getAvailableCarryModes() { return availableCarryModes(this.model); }
+  getCarryError() { return this._carryError; }
+  getCameraView() { return this._view; }
+
+  setSizeComparison(enabled, heightCm = this._comparisonHeight || 160, carryMode = this._comparisonCarry || 'hand') {
     if (!this.renderer || !this.model || this.disposed) return this.getSizeComparison();
+    const previous=this.getSizeComparison();
     this._comparisonHeight = comparisonHeight(heightCm);
+    this._comparisonCarry = this.getAvailableCarryModes().includes(carryMode)?carryMode:'hand';
     this._comparisonEnabled = Boolean(enabled);
     this._updateComparisonPose();
     this._bounds = new THREE.Box3().setFromObject(this.model);
     this._drawOverlay();
-    this.setView(this._comparisonEnabled ? 'front' : 'initial');
+    if (previous.enabled && enabled && previous.carryMode===this._comparisonCarry) {
+      this._setMagnifierState(false);
+      this._reframePreservingDirection({resetZoom:true});this.requestRender();
+    } else this.setView(this._comparisonEnabled && this._comparisonCarry==='hand' ? 'front' : 'initial');
     return this.getSizeComparison();
   }
 
   _updateComparisonPose() {
+    if(this.model)restoreWearingDrape(this.model);
     if (this.comparisonPerson) {
       this.scene.remove(this.comparisonPerson);
       disposeComparisonPerson(this.comparisonPerson);
       this.comparisonPerson = null;
     }
     if (this.bagRoot) this.bagRoot.position.set(0, 0, 0);
+    if (this.bagRoot) this.bagRoot.quaternion.identity();
+    this._carryError=null;
     if (this._comparisonEnabled && this.bagRoot && this.model) {
-      const pose = holdingPose(this._comparisonHeight || 160, this.model, this.config);
+      if(!this.getAvailableCarryModes().includes(this._comparisonCarry))this._comparisonCarry='hand';
+      let pose;
+      try {pose=wearingPose(this._comparisonHeight || 160,this.model,this.config,this._comparisonCarry);}
+      catch(error){this._comparisonCarry='hand';this._carryError=error.message;pose=holdingPose(this._comparisonHeight || 160,this.model,this.config);}
+      applyWearingDrape(this.model,this.config,pose);
+      if(pose.bagRotation)this.bagRoot.quaternion.copy(pose.bagRotation);
       this.bagRoot.position.copy(pose.bagPosition);
       this.comparisonPerson = createComparisonPerson(pose);
       this.scene.add(this.comparisonPerson);
@@ -304,7 +323,7 @@ export class Product3DViewer {
     if (!this.watermarkCanvas || !this._size) return;
     const context = this.watermarkCanvas.getContext('2d');
     drawWatermark(context, this._size.width, this._size.height);
-    if (this._comparisonEnabled) drawComparisonLabel(context, this._size.width, this._comparisonHeight || 160);
+    if (this._comparisonEnabled) drawComparisonLabel(context, this._size.width, this._comparisonHeight || 160, CARRY_LABELS[this._comparisonCarry]);
   }
 
   _prepareEmbroidery(side,texture,key,geometryKey) {
@@ -942,7 +961,7 @@ export class Product3DViewer {
     this._captureInProgress = true;
     try {
       if (originalComparison.enabled) {
-        captures.push({ label:`키 ${originalComparison.heightCm}cm 크기 비교`, dataURL:this.capture() });
+        captures.push({ label:`키 ${originalComparison.heightCm}cm 크기 비교${originalComparison.carryMode==='hand'?'':` · ${CARRY_LABELS[originalComparison.carryMode]}`}`, dataURL:this.capture() });
         this._comparisonEnabled = false;
         this._updateComparisonPose();
         this._bounds = new THREE.Box3().setFromObject(this.model);
@@ -997,7 +1016,7 @@ export class Product3DViewer {
     this.controls?.dispose();
     this._embroideryProcessor?.dispose();
     if(this._printStates)Object.values(this._printStates).forEach(state=>state.embroideryPending?.controller.abort());
-    if (this.model) disposeBagModel(this.model);
+    if (this.model) { restoreWearingDrape(this.model); disposeBagModel(this.model); }
     disposeComparisonPerson(this.comparisonPerson);
     if (this._printStates) Object.values(this._printStates).forEach(state => {
       disposePrintMesh(state.mesh);

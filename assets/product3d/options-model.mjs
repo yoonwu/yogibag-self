@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.14';
-import { mmToScene, getProductProfile } from './config.mjs?v=1.2.14';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.15';
+import { mmToScene, getProductProfile } from './config.mjs?v=1.2.15';
 
 // Option sizes are visual references in millimetres. Options share the
 // viewer-owned materials; the inner pocket hangs as an independent pouch.
@@ -453,6 +453,7 @@ function addCrossStrap(config, s, h, optionGroup) {
   const points=strapPoints(s,anchors[0],anchors[1],(lo+hi)/2,compact);
   const strap=h.add('crossStrap',h.ribbonGeometry(points,s.handle.width,s.handle.thickness),'handle',optionGroup);
   strap.userData.centerlineMm=points.map(({x,y,z})=>({x,y,z}));
+  strap.userData.centerlineFramesMm=points.map(({tangent,lateral})=>({tangent,lateral}));
   strap.userData.widthMm=s.handle.width;strap.userData.thicknessMm=s.handle.thickness;
   const edgeWidth=Math.min(.7,s.handle.width*.025);
   for(const edge of [-1,1])h.add(`crossStrap${edge<0?'Lower':'Upper'}Edge`,grid(1,points.length-1,(u,v)=>

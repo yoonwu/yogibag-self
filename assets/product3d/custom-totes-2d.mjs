@@ -1,4 +1,4 @@
-import { createDefaultConfig, normalizeConfig, getProductProfile, getProductPrintArea } from './config.mjs?v=1.2.14';
+import { createDefaultConfig, normalizeConfig, getProductProfile, getProductPrintArea } from './config.mjs?v=1.2.15';
 
 export const CUSTOM_2D_IDS=Object.freeze(['sample-two-line-large','sample-two-line-small','two-tone-kids']);
 export const isCustom2DTote=id=>CUSTOM_2D_IDS.includes(id);
