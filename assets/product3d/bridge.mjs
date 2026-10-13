@@ -1,4 +1,4 @@
-import { configFrom2D, snapshotFrom3D, isSharedProduct } from './sync.mjs?v=1.2.12';
+import { configFrom2D, snapshotFrom3D, isSharedProduct } from './sync.mjs?v=1.2.13';
 
 // Each product owns its editor and reversible 2D token. Switching products
 // cannot reuse another bag's artwork, inner-pocket frame or custom structure.
@@ -10,18 +10,21 @@ export function createProductBridge(env) {
   const linkedEditors = new Map();
   const standaloneEditors = new Map();
   const standaloneConfigs = new Map();
+  let comparisonState;
 
   function releaseOtherEditors(productId, linked) {
     for (const [id, editor] of linkedEditors) {
       if (linked && id === productId) continue;
       const session = sessions.get(id);
       if (session && editor.getConfig) session.config = editor.getConfig();
+      comparisonState = editor.getViewer?.()?.getSizeComparison?.() || comparisonState;
       editor.dispose();
       linkedEditors.delete(id);
     }
     for (const [id, editor] of standaloneEditors) {
       if (!linked && id === productId) continue;
       if (editor.getConfig) standaloneConfigs.set(id, editor.getConfig());
+      comparisonState = editor.getViewer?.()?.getSizeComparison?.() || comparisonState;
       editor.dispose();
       standaloneEditors.delete(id);
     }
@@ -112,6 +115,7 @@ export function createProductBridge(env) {
         await editor.replaceConfig(config);
         editor.open();
         editor.selectPrintSide?.(snapshot.currentSide === 'back' && snapshot.twoSided ? 'back' : 'front');
+        if (comparisonState?.enabled) editor.changeSizeComparison?.(true, comparisonState.heightCm);
       } else {
         releaseOtherEditors(productId, false);
         let editor = standaloneEditors.get(productId);
@@ -123,6 +127,7 @@ export function createProductBridge(env) {
           standaloneEditors.set(productId, editor);
         }
         editor.openProduct(productId);
+        if (comparisonState?.enabled) editor.changeSizeComparison?.(true, comparisonState.heightCm);
       }
       return true;
     } catch (error) {
@@ -161,7 +166,7 @@ export function createProductBridge(env) {
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   const releaseQuery = new URL(import.meta.url).search;
   const bridge = createProductBridge({
-    load: () => Promise.all([import(`./editor.mjs${releaseQuery}`), import(`./consultation.mjs${releaseQuery}`), import('./registry.mjs?v=1.2.12')]),
+    load: () => Promise.all([import(`./editor.mjs${releaseQuery}`), import(`./consultation.mjs${releaseQuery}`), import('./registry.mjs?v=1.2.13')]),
     legacy: () => window.yogibagDesignBridge,
     currentProductId: () => window.getYogibagCurrentBag?.()?.id,
     selectProduct: id => window.selectYogibagBagFor3D(id),

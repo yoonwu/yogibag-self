@@ -27,6 +27,9 @@ function fixture() {
       {createProduct3DEditor:hooks=>{
         alive++;maxAlive=Math.max(maxAlive,alive);
         const editor={hooks,config:clone(hooks.initialConfig),side:'front',disposed:false,
+          comparison:{enabled:false,heightCm:160},
+          getViewer(){return {getSizeComparison:()=>clone(this.comparison)};},
+          changeSizeComparison(enabled,heightCm){this.comparison={enabled,heightCm};},
           async replaceConfig(config){assert.equal(config.productId,this.config.productId);this.config=clone(config);},
           open(){},openProduct(id){assert.equal(id,this.config.productId);},
           getPrintSide(){return this.side;},selectPrintSide(side){this.side=side;},getConfig(){return clone(this.config);},
@@ -40,6 +43,17 @@ function fixture() {
   return {env,bridge:createProductBridge(env),ids,snapshots,editors,messages,returnedURLs,applied,
     setCurrent:id=>{current=id;},get alive(){return alive;},get maxAlive(){return maxAlive;}};
 }
+
+test('changing bags preserves the comparison height without adding it to customer bag settings',async()=>{
+  const f=fixture();await f.bridge.openProduct('daily',{from2D:true});
+  f.editors.at(-1).changeSizeComparison(true,130);
+  await f.editors.at(-1).hooks.onSelectProduct('sample-two-line-large');
+  assert.deepEqual(f.editors.at(-1).comparison,{enabled:true,heightCm:130});
+  assert.equal(f.editors.at(-1).config.comparison,undefined);
+  f.editors.at(-1).changeSizeComparison(false,130);
+  await f.editors.at(-1).hooks.onSelectProduct('sample-two-line-small');
+  assert.equal(f.editors.at(-1).comparison.enabled,false);
+});
 
 test('all twelve linked products preserve separate sessions while keeping only one live 3D editor',async()=>{
   const f=fixture();

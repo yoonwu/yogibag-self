@@ -1,15 +1,16 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.12';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.12';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.12';
-import { createProductModel } from './registry.mjs?v=1.2.12';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.12';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.12';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.12';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.12';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.12';
-import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.12';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.13';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.13';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.13';
+import { createProductModel } from './registry.mjs?v=1.2.13';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.13';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.13';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.13';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.13';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.13';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.13';
+import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.13';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
@@ -47,6 +48,8 @@ export class Product3DViewer {
     this._activePointers = new Set();
     this._raycaster = new THREE.Raycaster();
     this.scene = new THREE.Scene();
+    this.bagRoot = new THREE.Group();
+    this.scene.add(this.bagRoot);
     this.scene.background = new THREE.Color(BACKGROUND);
     this.camera = new THREE.PerspectiveCamera(PRODUCT_FOV, 1, 0.01, 12);
     try {
@@ -102,7 +105,7 @@ export class Product3DViewer {
     key.position.set(-1.2, 2.4, 1.8);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
-    Object.assign(key.shadow.camera, { left: -1.15, right: 1.15, top: 1.5, bottom: -1.15, near: 0.1, far: 5 });
+    Object.assign(key.shadow.camera, { left: -1.15, right: 1.15, top: 2.1, bottom: -1.15, near: 0.1, far: 5 });
     key.shadow.bias = -0.00008;
     key.shadow.normalBias = 0.001;
     key.shadow.radius = 3;
@@ -146,11 +149,12 @@ export class Product3DViewer {
       if (resetDetail) this._setMagnifierState(false);
       if (this.model && this._framed) this._fitDistance = this._frameMeasurements(this.camera.position.clone().sub(this.controls.target)).distance;
       if (this.model) {
-        this.scene.remove(this.model);
+        (this.bagRoot || this.scene).remove(this.model);
         disposeBagModel(this.model);
       }
       this.model = createProductModel(this.config, this.materials);
-      this.scene.add(this.model);
+      (this.bagRoot || this.scene).add(this.model);
+      this._updateComparisonPose();
       this._bounds = new THREE.Box3().setFromObject(this.model);
       this._structuralKey = nextStructure;
       this._markShadowDirty();
@@ -224,7 +228,7 @@ export class Product3DViewer {
     this._ensurePrintStates();
     const state = this._printStates[side];
     if (state.mesh) {
-      this.scene.remove(state.mesh);
+      state.mesh.removeFromParent();
       disposePrintMesh(state.mesh);
       state.mesh = null;
     }
@@ -256,13 +260,52 @@ export class Product3DViewer {
     if(!background&&state.embroidery?.geometryData&&state.embroidery.geometryKey!==geometryKey)delete state.embroidery.geometryData;
     const display=state.embroideryPending&&state.embroidery?{...state.embroidery,plan:null}:state.embroidery;
     state.mesh = createPrintMesh(this.config, matchingTexture, side, display);
-    if (state.mesh) this.scene.add(state.mesh);
+    if (state.mesh) (this.bagRoot || this.scene).add(state.mesh);
     state.key = printKey(this.config, side);
     if (side === 'front') { this.printMesh = state.mesh; this._printKey = state.key; }
     this._markShadowDirty();
   }
 
   _markShadowDirty() {if(this.renderer?.shadowMap)this.renderer.shadowMap.needsUpdate=true;}
+
+  getSizeComparison() {
+    return { enabled: Boolean(this._comparisonEnabled), heightCm: this._comparisonHeight || 160 };
+  }
+
+  setSizeComparison(enabled, heightCm = this._comparisonHeight || 160) {
+    if (!this.renderer || !this.model || this.disposed) return this.getSizeComparison();
+    this._comparisonHeight = comparisonHeight(heightCm);
+    this._comparisonEnabled = Boolean(enabled);
+    this._updateComparisonPose();
+    this._bounds = new THREE.Box3().setFromObject(this.model);
+    this._drawOverlay();
+    this.setView(this._comparisonEnabled ? 'front' : 'initial');
+    return this.getSizeComparison();
+  }
+
+  _updateComparisonPose() {
+    if (this.comparisonPerson) {
+      this.scene.remove(this.comparisonPerson);
+      disposeComparisonPerson(this.comparisonPerson);
+      this.comparisonPerson = null;
+    }
+    if (this.bagRoot) this.bagRoot.position.set(0, 0, 0);
+    if (this._comparisonEnabled && this.bagRoot && this.model) {
+      const pose = holdingPose(this._comparisonHeight || 160, this.model, this.config);
+      this.bagRoot.position.copy(pose.bagPosition);
+      this.comparisonPerson = createComparisonPerson(pose);
+      this.scene.add(this.comparisonPerson);
+    }
+    if (this.contact) this.contact.visible = !this._comparisonEnabled;
+    this._markShadowDirty();
+  }
+
+  _drawOverlay() {
+    if (!this.watermarkCanvas || !this._size) return;
+    const context = this.watermarkCanvas.getContext('2d');
+    drawWatermark(context, this._size.width, this._size.height);
+    if (this._comparisonEnabled) drawComparisonLabel(context, this._size.width, this._comparisonHeight || 160);
+  }
 
   _prepareEmbroidery(side,texture,key,geometryKey) {
     const state=this._printStates[side];
@@ -346,6 +389,7 @@ export class Product3DViewer {
   _frameMeasurements(direction) {
     if (this._view === 'inside') return this._insideFrameMeasurements(direction);
     const box = new THREE.Box3().setFromObject(this.model);
+    if (this._comparisonEnabled && this.comparisonPerson) box.union(new THREE.Box3().setFromObject(this.comparisonPerson));
     return this._fitBoxMeasurements(box, direction);
   }
 
@@ -450,6 +494,14 @@ export class Product3DViewer {
 
   _setView(view, { resetMagnifier = true } = {}) {
     if (!this.renderer || !this.config || this.disposed) return;
+    // Inside detail uses the original bag coordinates. Returning here removes
+    // only the comparison pose, never the customer's bag or artwork settings.
+    if (view === 'inside' && this._comparisonEnabled) {
+      this._comparisonEnabled = false;
+      this._updateComparisonPose();
+      this._bounds = new THREE.Box3().setFromObject(this.model);
+      this._drawOverlay();
+    }
     if (resetMagnifier) this._setMagnifierState(false);
     this._view = view;
     const inside = view === 'inside';
@@ -738,7 +790,7 @@ export class Product3DViewer {
     if (this.watermarkCanvas) {
       this.watermarkCanvas.width = width;
       this.watermarkCanvas.height = height;
-      drawWatermark(this.watermarkCanvas.getContext('2d'), width, height);
+      this._drawOverlay();
     }
     this._applyPixelRatio();
     this.camera.aspect = width / height;
@@ -810,6 +862,7 @@ export class Product3DViewer {
       embroideryPreparing: Object.values(this._printStates||{}).some(state=>Boolean(state.embroideryPending)),
       embroideryWorker: Boolean(this._embroideryProcessor&&!this._embroideryWorkerFailed),
       zoom: this.getZoomMetrics(),
+      comparison: this.getSizeComparison(),
     };
     if (globalThis.location && new URLSearchParams(location.search).get('debug3d') === '1') {
       const state = this._printStates?.innerPocket;
@@ -872,6 +925,7 @@ export class Product3DViewer {
     const position = this.camera.position.clone();
     const target = this.controls.target.clone();
     const originalView = this._view;
+    const originalComparison = this.getSizeComparison();
     const originalFitDistance = this._fitDistance;
     const originalMagnifier = this._magnifier;
     const originalPanMode = this._panMode;
@@ -887,12 +941,25 @@ export class Product3DViewer {
     const captures = [];
     this._captureInProgress = true;
     try {
+      if (originalComparison.enabled) {
+        captures.push({ label:`키 ${originalComparison.heightCm}cm 크기 비교`, dataURL:this.capture() });
+        this._comparisonEnabled = false;
+        this._updateComparisonPose();
+        this._bounds = new THREE.Box3().setFromObject(this.model);
+        this._drawOverlay();
+      }
       const views = [['initial', '입체'], ['front', '앞면'], ['back', '뒷면'], ...(this.config.options.innerPocket || this.config.options.nameTag ? [['inside', '안쪽']] : [])];
       for (const [view, label] of views) {
         this._setView(view, { resetMagnifier: false });
         captures.push({ label, dataURL: this.capture() });
       }
     } finally {
+      if (originalComparison.enabled) {
+        this._comparisonEnabled = true;
+        this._updateComparisonPose();
+        this._bounds = new THREE.Box3().setFromObject(this.model);
+        this._drawOverlay();
+      }
       const direction = position.clone().sub(target);
       const distance = direction.length();
       this._magnifier = originalMagnifier;
@@ -931,6 +998,7 @@ export class Product3DViewer {
     this._embroideryProcessor?.dispose();
     if(this._printStates)Object.values(this._printStates).forEach(state=>state.embroideryPending?.controller.abort());
     if (this.model) disposeBagModel(this.model);
+    disposeComparisonPerson(this.comparisonPerson);
     if (this._printStates) Object.values(this._printStates).forEach(state => {
       disposePrintMesh(state.mesh);
       disposeEmbroideryTextures(state.embroidery);
