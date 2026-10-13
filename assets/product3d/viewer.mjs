@@ -1,16 +1,16 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.13';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.13';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.13';
-import { createProductModel } from './registry.mjs?v=1.2.13';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.13';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.13';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.13';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.13';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.13';
-import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.13';
-import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.13';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.14';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.14';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.14';
+import { createProductModel } from './registry.mjs?v=1.2.14';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.14';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.14';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.14';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.14';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.14';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.14';
+import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.14';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;

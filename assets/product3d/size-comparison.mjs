@@ -1,10 +1,12 @@
 import * as THREE from '../vendor/three/three.module.js';
 
 export const COMPARISON_HEIGHTS = Object.freeze([130, 140, 150, 160, 170, 180]);
+export const COMPARISON_HEIGHT_LIMITS = Object.freeze({ min:130, max:180, step:1 });
 
 export function comparisonHeight(value = 160) {
   const height = Number(value);
-  if (!COMPARISON_HEIGHTS.includes(height)) throw new Error('키는 130~180cm 중에서 선택해 주세요.');
+  if (!Number.isInteger(height) || height < COMPARISON_HEIGHT_LIMITS.min || height > COMPARISON_HEIGHT_LIMITS.max)
+    throw new Error('키는 130~180cm 사이에서 1cm 단위로 조절해 주세요.');
   return height;
 }
 
@@ -134,11 +136,7 @@ export function disposeComparisonPerson(group) {
 
 export function drawComparisonLabel(context, width, heightCm) {
   context.save();
-  const compact=width<500;
-  context.fillStyle='rgba(255,255,255,.92)'; context.fillRect(12,12,Math.min(compact?140:214,width-24),49);
-  context.fillStyle='#333d4b'; context.font='600 14px "Malgun Gothic", sans-serif';
-  context.fillText(compact?`키 ${heightCm}cm · 비교`:`키 ${heightCm}cm · 가방 크기 비교`,22,33);
-  context.fillStyle='#6b7684'; context.font='11px "Malgun Gothic", sans-serif';
-  context.fillText(compact?'사람·가방은 같은 비율':'사람과 가방은 같은 실측 비율',22,51);
+  context.fillStyle='#6b7684'; context.font='12px "Malgun Gothic", sans-serif';
+  context.fillText(`키 ${heightCm}cm · 실측 비율`,18,26);
   context.restore();
 }

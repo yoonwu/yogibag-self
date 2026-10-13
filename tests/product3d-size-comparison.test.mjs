@@ -14,11 +14,12 @@ function modelFor(config) {
 
 test('every preset person has the selected real height, bounded geometry and a hand on the unchanged bag',()=>{
   assert.deepEqual(COMPARISON_HEIGHTS,[130,140,150,160,170,180]);
-  assert.throws(()=>comparisonHeight(165));
+  assert.equal(comparisonHeight(165),165);
+  for(const invalid of [129,181,165.5,NaN,Infinity])assert.throws(()=>comparisonHeight(invalid));
   for(const profile of Object.values(PRODUCT3D_PROFILES)) {
     const config=createDefaultConfig(profile.id), before=JSON.stringify(config);
     const {model,material}=modelFor(config),originalBounds=new THREE.Box3().setFromObject(model);
-    for(const height of COMPARISON_HEIGHTS) {
+    for(const height of [...COMPARISON_HEIGHTS,135,165,179]) {
       const pose=holdingPose(height,model,config),person=createComparisonPerson(pose);
       const bounds=new THREE.Box3().setFromObject(person);
       assert.ok(Math.abs(bounds.max.y-height/100)<1e-6,`${profile.id} ${height}: crown`);
