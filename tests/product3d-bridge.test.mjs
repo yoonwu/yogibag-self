@@ -29,7 +29,7 @@ function fixture() {
         const editor={hooks,config:clone(hooks.initialConfig),side:'front',disposed:false,
           comparison:{enabled:false,heightCm:160},
           getViewer(){return {getSizeComparison:()=>clone(this.comparison)};},
-          changeSizeComparison(enabled,heightCm){this.comparison={enabled,heightCm};},
+          changeSizeComparison(enabled,heightCm,carryMode){this.comparison={enabled,heightCm,...(carryMode?{carryMode}:{})};},
           async replaceConfig(config){assert.equal(config.productId,this.config.productId);this.config=clone(config);},
           open(){},openProduct(id){assert.equal(id,this.config.productId);},
           getPrintSide(){return this.side;},selectPrintSide(side){this.side=side;},getConfig(){return clone(this.config);},
@@ -53,6 +53,14 @@ test('changing bags preserves the comparison height without adding it to custome
   f.editors.at(-1).changeSizeComparison(false,130);
   await f.editors.at(-1).hooks.onSelectProduct('sample-two-line-small');
   assert.equal(f.editors.at(-1).comparison.enabled,false);
+});
+
+test('changing bags carries the selected wearing mode as view state only',async()=>{
+  const f=fixture();await f.bridge.openProduct('daily',{from2D:true});
+  f.editors.at(-1).changeSizeComparison(true,165,'shoulder');
+  await f.editors.at(-1).hooks.onSelectProduct('sample-two-line-small');
+  assert.deepEqual(f.editors.at(-1).comparison,{enabled:true,heightCm:165,carryMode:'shoulder'});
+  assert.equal(f.editors.at(-1).config.carryMode,undefined);
 });
 
 test('all twelve linked products preserve separate sessions while keeping only one live 3D editor',async()=>{

@@ -6,6 +6,7 @@ import { createProductModel } from '../assets/product3d/registry.mjs';
 import { disposeBagModel } from '../assets/product3d/model.mjs';
 import { Product3DViewer } from '../assets/product3d/viewer.mjs';
 import { COMPARISON_HEIGHTS, comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson } from '../assets/product3d/size-comparison.mjs';
+import { restoreWearingDrape } from '../assets/product3d/wearing.mjs';
 
 function modelFor(config) {
   const material=new THREE.MeshBasicMaterial();
@@ -38,8 +39,8 @@ test('every preset person has the selected real height, bounded geometry and a h
   }
 });
 
-function viewerFor(t) {
-  const config=createDefaultConfig('daily'),{model,material}=modelFor(config);
+function viewerFor(t,config=createDefaultConfig('daily')) {
+  const {model,material}=modelFor(config);
   const root=new THREE.Group(),scene=new THREE.Scene(); root.add(model);scene.add(root);
   const viewer=Object.create(Product3DViewer.prototype);
   Object.assign(viewer,{config,model,bagRoot:root,scene,
@@ -48,7 +49,7 @@ function viewerFor(t) {
     container:{getBoundingClientRect(){return {width:600,height:500};}},
     controls:{target:new THREE.Vector3(),update(){},enableDamping:true,enablePan:false},
     _bounds:new THREE.Box3().setFromObject(model),_activePointers:new Set(),requestRender(){},_framed:true});
-  t.after(()=>{disposeComparisonPerson(viewer.comparisonPerson);disposeBagModel(model);material.dispose();});
+  t.after(()=>{disposeComparisonPerson(viewer.comparisonPerson);restoreWearingDrape(model);disposeBagModel(model);material.dispose();});
   return viewer;
 }
 
@@ -72,11 +73,38 @@ test('comparison keeps bag and print under one transform and fits the whole pers
   assert.equal(JSON.stringify(viewer.config),before);
 });
 
+test('shoulder and cross modes frame their actual geometry and restore a neutral bag with artwork unchanged',t=>{
+  const config=createDefaultConfig('daily');config.options.crossStrap=true;
+  const viewer=viewerFor(t,config),before=JSON.stringify(config),original=viewer.model.getObjectByName('crossStrap').geometry;
+  for(const mode of ['shoulder','cross','hand','cross']) {
+    viewer.setSizeComparison(true,165,mode);assert.equal(viewer.getSizeComparison().carryMode,mode);
+    assert.equal(JSON.stringify(config),before);
+    const box=new THREE.Box3().setFromObject(viewer.bagRoot).union(new THREE.Box3().setFromObject(viewer.comparisonPerson));
+    viewer.camera.updateMatrixWorld();
+    for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){
+      const p=new THREE.Vector3(x,y,z).project(viewer.camera);assert.ok(Math.abs(p.x)<.86&&Math.abs(p.y)<.86&&Math.abs(p.z)<1);
+    }
+  }
+  viewer.setSizeComparison(false);assert.ok(viewer.bagRoot.quaternion.angleTo(new THREE.Quaternion())<1e-10);
+  assert.equal(viewer.model.getObjectByName('crossStrap').geometry,original);
+});
+
+test('shoulder capture retains selected wearing mode, both loops and exact restored camera',async t=>{
+  const prior=globalThis.window;globalThis.window={devicePixelRatio:1,matchMedia:()=>({matches:false})};
+  t.after(()=>{if(prior===undefined)delete globalThis.window;else globalThis.window=prior;});
+  const viewer=viewerFor(t);viewer.config.options.innerPocket=true;viewer.setSizeComparison(true,165,'shoulder');
+  const q=viewer.bagRoot.quaternion.clone(),p=viewer.camera.position.clone(),target=viewer.controls.target.clone();
+  const captures=await viewer.captureViews();assert.match(captures[0].label,/어깨에 메기/);
+  assert.deepEqual(viewer.getSizeComparison(),{enabled:true,heightCm:165,carryMode:'shoulder'});
+  assert.ok(viewer.bagRoot.quaternion.angleTo(q)<1e-10);assert.ok(viewer.camera.position.distanceTo(p)<1e-9);
+  assert.ok(viewer.controls.target.distanceTo(target)<1e-9);
+});
+
 test('inside detail removes the comparison without changing the chosen height or customer design',t=>{
   const viewer=viewerFor(t);viewer.config.options.innerPocket=true;
   const before=JSON.stringify(viewer.config);
   viewer.setSizeComparison(true,140);viewer.setView('inside');
-  assert.deepEqual(viewer.getSizeComparison(),{enabled:false,heightCm:140});
+  assert.deepEqual(viewer.getSizeComparison(),{enabled:false,heightCm:140,carryMode:'hand'});
   assert.deepEqual(viewer.bagRoot.position.toArray(),[0,0,0]);
   assert.equal(JSON.stringify(viewer.config),before);
 });
@@ -101,7 +129,7 @@ test('consultation captures comparison plus bag detail and restores the exact pe
   const captures=await viewer.captureViews();
   assert.equal(captures[0].label,'키 180cm 크기 비교');
   assert.deepEqual(captures.map(c=>c.label),['키 180cm 크기 비교','입체','앞면','뒷면','안쪽']);
-  assert.deepEqual(viewer.getSizeComparison(),{enabled:true,heightCm:180});
+  assert.deepEqual(viewer.getSizeComparison(),{enabled:true,heightCm:180,carryMode:'hand'});
   assert.ok(viewer.bagRoot.position.distanceTo(bagPosition)<1e-9);
   assert.ok(viewer.camera.position.distanceTo(position)<1e-9);
   assert.ok(viewer.controls.target.distanceTo(target)<1e-9);

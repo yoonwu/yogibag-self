@@ -44,13 +44,47 @@ export function holdingPose(heightCm, bag, config) {
   // The same two-link arm calculation follows a taller bag without stretching its mesh.
   const direction = hand.clone().sub(shoulder), distance = direction.length();
   direction.normalize();
-  const upper = .20 * h, lower = .19 * h;
+  const upper = .19 * h, lower = .18 * h;
   const along = (upper * upper - lower * lower + distance * distance) / (2 * distance);
   const bend = Math.sqrt(Math.max(0, upper * upper - along * along));
-  const normal = new THREE.Vector3(0, 0, 1).addScaledVector(direction, -direction.z).normalize();
+  // The elbow stays behind the wrist: the forearm bends forwards to the bag.
+  const normal = new THREE.Vector3(0, 0, -1).addScaledVector(direction, direction.z).normalize();
   const elbow = shoulder.clone().addScaledVector(direction, along).addScaledVector(normal, bend);
   return { heightCm: heightCm, height: h, body, shoulder, elbow, hand, anchor,
-    bagPosition: hand.clone().sub(anchor), hasHandle: Boolean(handle) };
+    bagPosition: hand.clone().sub(anchor), hasHandle: Boolean(handle), carryMode:'hand' };
+}
+
+export function armGeometry(cuff, elbow, wrist, height) {
+  const curve=new THREE.CatmullRomCurve3([cuff,cuff.clone().lerp(elbow,.55),elbow,elbow.clone().lerp(wrist,.30),wrist],false,'centripetal');
+  const rings=36,sides=16,frames=curve.computeFrenetFrames(rings,false),positions=[],indices=[];
+  const elbowT=cuff.distanceTo(elbow)/(cuff.distanceTo(elbow)+elbow.distanceTo(wrist));
+  const radius=t=>{
+    const knots=[[0,.031],[elbowT,.0225],[elbowT+(1-elbowT)*.30,.025],[1,.0155]];
+    for(let i=1;i<knots.length;i++)if(t<=knots[i][0]){
+      const [a,ra]=knots[i-1],[b,rb]=knots[i],u=THREE.MathUtils.smoothstep(t,a,b);
+      return THREE.MathUtils.lerp(ra,rb,u)*height;
+    }
+    return .0155*height;
+  };
+  for(let i=0;i<=rings;i++) {
+    const p=curve.getPointAt(i/rings),r=radius(i/rings);
+    for(let j=0;j<sides;j++) {
+      const a=j/sides*Math.PI*2;
+      const v=p.clone().addScaledVector(frames.normals[i],r*Math.cos(a)).addScaledVector(frames.binormals[i],r*Math.sin(a));
+      positions.push(v.x,v.y,v.z);
+      if(i<rings){const k=i*sides+j,n=i*sides+(j+1)%sides;indices.push(k,n,k+sides,n,n+sides,k+sides);}
+    }
+  }
+  // End caps own their vertices so their flat normals cannot kink the skin.
+  for(const ring of [0,rings]) {
+    const start=positions.length/3,center=curve.getPointAt(ring/rings);positions.push(center.x,center.y,center.z);
+    for(let j=0;j<sides;j++){const k=(ring*sides+j)*3;positions.push(positions[k],positions[k+1],positions[k+2]);}
+    for(let j=0;j<sides;j++){const a=start+1+j,b=start+1+(j+1)%sides;if(ring===0)indices.push(start,b,a);else indices.push(start,a,b);}
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);
+  geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  return geometry;
 }
 
 export function createComparisonPerson(pose) {
@@ -104,11 +138,9 @@ export function createComparisonPerson(pose) {
     const cuff=shoulder.clone().lerp(elbow,.45),wrist=hand.clone().lerp(elbow,.12);
     ellipsoid(`comparisonShoulder${side}`,shoulder,[.041*h,.041*h,.038*h],'shirt');
     segment(`comparisonSleeve${side}`,shoulder,cuff,.041*h,.037*h,'shirt');
-    segment(`comparisonUpperArm${side}`,cuff,elbow,.031*h,.024*h,'skin');
-    ellipsoid(`comparisonElbow${side}`,elbow,[.025*h,.025*h,.024*h],'skin');
-    segment(`comparisonForearm${side}`,elbow,wrist,.026*h,.016*h,'skin');
+    add(`comparisonArm${side}`,armGeometry(cuff,elbow,wrist,h),'skin');
     const palm=ellipsoid(`comparisonPalm${side}`,hand,[.022*h,.031*h,.012*h],'skin');
-    if(side==='Right') {
+    if(side==='Right' && pose.carryMode==='hand') {
       palm.position.y += .008*h; palm.position.z -= .012*h;
       for(let i=0;i<4;i++) {
         const x=hand.x+(i-1.5)*.009*h;
@@ -134,9 +166,10 @@ export function disposeComparisonPerson(group) {
   geometries.forEach(geometry=>geometry.dispose()); materials.forEach(material=>material.dispose());
 }
 
-export function drawComparisonLabel(context, width, heightCm) {
+export function drawComparisonLabel(context, width, heightCm, carryLabel) {
   context.save();
   context.fillStyle='#6b7684'; context.font='12px "Malgun Gothic", sans-serif';
   context.fillText(`키 ${heightCm}cm · 실측 비율`,18,26);
+  if(carryLabel && carryLabel!=='손에 들기')context.fillText(carryLabel,18,44);
   context.restore();
 }
