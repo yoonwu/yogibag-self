@@ -1,10 +1,10 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.13';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.13';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.13';
-import { Product3DViewer } from './viewer.mjs?v=1.2.13';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.13';
-import { openProductPicker } from './product-picker.mjs?v=1.2.13';
-import { COMPARISON_HEIGHTS } from './size-comparison.mjs?v=1.2.13';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.14';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.14';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.14';
+import { Product3DViewer } from './viewer.mjs?v=1.2.14';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.14';
+import { openProductPicker } from './product-picker.mjs?v=1.2.14';
+import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.14';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -193,22 +193,41 @@ export class Product3DEditor {
     this.comparisonControls = element('div', 'p3d-comparison-controls');
     this.comparisonToggle = button('사람과 크기 비교', 'p3d-button p3d-comparison-toggle');
     this.comparisonToggle.setAttribute('aria-pressed', 'false');
+    this.comparisonToggle.title = '일반 체형의 참고 모델과 가방을 같은 실측 비율로 비교합니다.';
     this.listen(this.comparisonToggle, 'click', () => this.changeSizeComparison(!this.viewer?.getSizeComparison().enabled));
-    const heightChoices = element('div', 'p3d-comparison-heights');
-    heightChoices.setAttribute('role', 'group');
-    heightChoices.setAttribute('aria-label', '비교할 사람의 키');
-    this.comparisonHeightButtons = new Map();
-    for (const height of COMPARISON_HEIGHTS) {
-      const choice = button(`${height}cm`, 'p3d-button p3d-comparison-height');
-      choice.setAttribute('aria-label', `키 ${height}cm로 크기 비교`);
-      choice.setAttribute('aria-pressed', 'false');
-      this.listen(choice, 'click', () => this.changeSizeComparison(true, height));
-      this.comparisonHeightButtons.set(height, choice);
-      heightChoices.append(choice);
-    }
-    this.comparisonNote = element('p', 'p3d-comparison-note', '키를 고르면 가방을 든 모습을 볼 수 있어요.');
-    this.comparisonNote.setAttribute('role', 'status');
-    this.comparisonControls.append(this.comparisonToggle, heightChoices, this.comparisonNote);
+    this.comparisonHeightControl = element('div', 'p3d-comparison-height-control');
+    this.comparisonHeightControl.setAttribute('role', 'group');
+    this.comparisonHeightControl.setAttribute('aria-label', '비교할 사람의 키 조절');
+    this.comparisonHeightControl.hidden = true;
+    this.comparisonHeightDown = button('−', 'p3d-button p3d-height-step');
+    this.comparisonHeightDown.setAttribute('aria-label', '키 1cm 줄이기');
+    this.comparisonHeightUp = button('+', 'p3d-button p3d-height-step');
+    this.comparisonHeightUp.setAttribute('aria-label', '키 1cm 늘리기');
+    this.comparisonHeightRange = element('input', 'p3d-height-slider');
+    this.comparisonHeightRange.type = 'range';
+    this.comparisonHeightRange.min = String(COMPARISON_HEIGHT_LIMITS.min);
+    this.comparisonHeightRange.max = String(COMPARISON_HEIGHT_LIMITS.max);
+    this.comparisonHeightRange.step = String(COMPARISON_HEIGHT_LIMITS.step);
+    this.comparisonHeightRange.value = '160';
+    this.comparisonHeightRange.setAttribute('aria-label', '비교할 사람의 키');
+    this.comparisonHeightOutput = element('output', 'p3d-height-value', '160cm');
+    this.listen(this.comparisonHeightDown, 'click', () => this.adjustComparisonHeight(-1));
+    this.listen(this.comparisonHeightUp, 'click', () => this.adjustComparisonHeight(1));
+    this.listen(this.comparisonHeightRange, 'input', () => {
+      this._pendingComparisonHeight = Number(this.comparisonHeightRange.value);
+      this.comparisonHeightOutput.textContent = `${this._pendingComparisonHeight}cm`;
+      if (!this._comparisonHeightFrame) this._comparisonHeightFrame = requestAnimationFrame(() => {
+        this._comparisonHeightFrame = 0;
+        this.changeSizeComparison(true, this._pendingComparisonHeight);
+      });
+    });
+    this.listen(this.comparisonHeightRange, 'change', () => {
+      if (this._comparisonHeightFrame) cancelAnimationFrame(this._comparisonHeightFrame);
+      this._comparisonHeightFrame = 0;
+      this.changeSizeComparison(true, Number(this.comparisonHeightRange.value));
+    });
+    this.comparisonHeightControl.append(this.comparisonHeightDown, this.comparisonHeightRange, this.comparisonHeightUp, this.comparisonHeightOutput);
+    this.comparisonControls.append(this.comparisonToggle, this.comparisonHeightControl);
     this.viewerContainer = element('div', 'p3d-viewer');
     this.viewerContainer.setAttribute('aria-label', '마우스나 손가락으로 회전할 수 있는 3D 가방');
     this.embroideryPreparation=element('p','p3d-preparation-note','자수 질감을 준비하고 있어요. 화면은 계속 움직일 수 있어요.');
@@ -774,6 +793,8 @@ export class Product3DEditor {
       ? '드래그로 화면 이동 · 화면 이동을 끄면 회전'
       : zoom.enabled
       ? '드래그로 회전 · 화면 이동으로 위치 조절'
+      : this.viewer?.getSizeComparison?.().enabled
+      ? '같은 실측 비율 · 체형과 드는 자세는 참고용입니다.'
       : '드래그해서 회전 · 휠이나 두 손가락으로 확대';
   }
 
@@ -784,11 +805,18 @@ export class Product3DEditor {
 
   changeSizeComparison(enabled, heightCm) {
     if (!this.viewer || this.disposed) return;
+    if (this._comparisonHeightFrame) cancelAnimationFrame(this._comparisonHeightFrame);
+    this._comparisonHeightFrame = 0;
     try {
       this.viewer.setSizeComparison(enabled, heightCm);
       this.cameraView = enabled ? 'front' : 'initial';
       this.syncZoomToolbar();
     } catch (error) { this.setStatus(error.message, true); }
+  }
+
+  adjustComparisonHeight(step) {
+    const next = clamp(Number(this.comparisonHeightRange.value) + step, COMPARISON_HEIGHT_LIMITS.min, COMPARISON_HEIGHT_LIMITS.max);
+    this.changeSizeComparison(true, next);
   }
 
   syncSizeComparison() {
@@ -798,13 +826,15 @@ export class Product3DEditor {
     this.comparisonToggle.disabled = !available;
     this.comparisonToggle.setAttribute('aria-pressed', String(state.enabled));
     this.comparisonToggle.textContent = state.enabled ? '가방만 보기' : '사람과 크기 비교';
-    for (const [height, choice] of this.comparisonHeightButtons) {
-      choice.disabled = !available;
-      choice.setAttribute('aria-pressed', String(state.enabled && height === state.heightCm));
+    this.comparisonHeightControl.hidden = !state.enabled;
+    this.comparisonHeightRange.disabled = !available;
+    if (!this._comparisonHeightFrame) {
+      this.comparisonHeightRange.value = String(state.heightCm);
+      this.comparisonHeightRange.setAttribute('aria-valuetext', `${state.heightCm}cm`);
+      this.comparisonHeightOutput.textContent = `${state.heightCm}cm`;
     }
-    this.comparisonNote.textContent = state.enabled
-      ? `키 ${state.heightCm}cm · 가방 실측 비율 · 체형과 드는 자세는 참고용입니다.`
-      : '키를 고르면 가방을 든 모습을 볼 수 있어요.';
+    this.comparisonHeightDown.disabled = !available || state.heightCm <= COMPARISON_HEIGHT_LIMITS.min;
+    this.comparisonHeightUp.disabled = !available || state.heightCm >= COMPARISON_HEIGHT_LIMITS.max;
   }
 
   changeZoom(action) {
@@ -1108,6 +1138,7 @@ export class Product3DEditor {
     if (this.disposed) return;
     this.hide();
     this.disposed = true;
+    if (this._comparisonHeightFrame) cancelAnimationFrame(this._comparisonHeightFrame);
     this.uploadGeneration++;
     this.controller.abort();
     this.viewer?.dispose();
