@@ -1,8 +1,8 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { sewnThreadGeometry } from './sewing.mjs?v=1.2.15';
-import { mmToScene, getProductProfile, isPocketTote } from './config.mjs?v=1.2.15';
+import { sewnThreadGeometry } from './sewing.mjs?v=1.2.16';
+import { mmToScene, getProductProfile, isPocketTote } from './config.mjs?v=1.2.16';
 import { addBagOptions, getInnerPocketLayout, innerPocketHalfWidth, innerPocketContourVisible,
-  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.15';
+  innerPocketRegion, innerPocketBindingDistance } from './options-model.mjs?v=1.2.16';
 
 // Shape coordinates are millimetres until a vertex is written. Width, depth,
 // webbing width/thickness and print size never depend on an Object3D scale.
@@ -49,7 +49,7 @@ function sliceAt(y, s) {
   const taper = s.pouchTaperMm ? s.pouchTaperMm*(1-v) : daily
     ? (s.flat ? Math.min(5,s.width*.018) : Math.max(0, foldDepth - corner)) * folded
     : (1 - v) * Math.min(20, s.width * 0.042);
-  const a = s.width / 2 - taper - inset;
+  const a = s.width / 2 - taper - inset - (s.profile.bodyTaperRatio || 0)*s.width*(1-v);
   const puff = Math.sin(Math.PI * v) * Math.min(s.poly?3:7, s.depth * 0.04);
   const mouthT = THREE.MathUtils.clamp((v - 0.72) / 0.28, 0, 1);
   const mouthPinch = mouthT * mouthT * (3 - 2 * mouthT);
@@ -912,19 +912,35 @@ export function buildBagModel(config, materials) {
     return mesh;
   };
 
-  add('bodyFront', panelGeometry(s, s.panelHeight, s.height, true), 'body');
-  add('bodyBack', panelGeometry(s, s.panelHeight, s.height, false), 'body');
+  const topTrim=s.profile.trimPosition==='top';
+  const bodyMin=topTrim?0:s.panelHeight,bodyMax=topTrim?s.height-s.panelHeight:s.height;
+  const trimMin=topTrim?s.height-s.panelHeight:0,trimMax=topTrim?s.height:s.panelHeight;
+  add('bodyFront', panelGeometry(s, bodyMin, bodyMax, true), 'body');
+  add('bodyBack', panelGeometry(s, bodyMin, bodyMax, false), 'body');
   if (s.panelHeight > 0) {
-    add('bottomFrontPanel', panelGeometry(s, 0, s.panelHeight, true), 'bottom');
-    add('bottomBackPanel', panelGeometry(s, 0, s.panelHeight, false), 'bottom');
+    add('bottomFrontPanel', panelGeometry(s, trimMin, trimMax, true), 'bottom');
+    add('bottomBackPanel', panelGeometry(s, trimMin, trimMax, false), 'bottom');
   }
-  add('sideLeft', sideGeometry(s, s.panelHeight, s.height, false), 'body');
-  add('sideRight', sideGeometry(s, s.panelHeight, s.height, true), 'body');
+  add('sideLeft', sideGeometry(s, bodyMin, bodyMax, false), 'body');
+  add('sideRight', sideGeometry(s, bodyMin, bodyMax, true), 'body');
   if (s.panelHeight > 0) {
-    add('bottomSideLeftPanel', sideGeometry(s, 0, s.panelHeight, false), 'bottom');
-    add('bottomSideRightPanel', sideGeometry(s, 0, s.panelHeight, true), 'bottom');
+    add('bottomSideLeftPanel', sideGeometry(s, trimMin, trimMax, false), 'bottom');
+    add('bottomSideRightPanel', sideGeometry(s, trimMin, trimMax, true), 'bottom');
   }
-  add('bottom', floorGeometry(s), s.profile.supportsBottomPanel ? 'bottom' : 'body');
+  add('bottom', floorGeometry(s), s.profile.supportsBottomPanel && !topTrim ? 'bottom' : 'body');
+  // The square photo has a sewn binding along both side edges, continuous
+  // with the bottom trim. Follow the cloth rather than adding rigid bars.
+  if(s.profile.edgeBindingWidth){
+    for(const front of [true,false])for(const right of [true,false]){
+      const width=s.profile.edgeBindingWidth;
+      const geometry=geometryFromGrid(3,BODY_ROWS,(u,v)=>{
+        const y=THREE.MathUtils.lerp(2,s.height,v),{a,r}=sliceAt(y,s);
+        const x=(right?1:-1)*(a-r-width*(1-u));
+        const p=panelPoint(x,y,s,front);p.z+=(front?1:-1)*.9;return p;
+      },!front);
+      add(`edgeBinding${front?'Front':'Back'}${right?'Right':'Left'}`,geometry,'bottom');
+    }
+  }
   add('liningFront', panelGeometry(s, 2.2, s.height, true, true), 'inside');
   add('liningBack', panelGeometry(s, 2.2, s.height, false, true), 'inside');
   add('liningLeft', sideGeometry(s, 2.2, s.height, false, true), 'inside');
@@ -948,7 +964,7 @@ export function buildBagModel(config, materials) {
     return { x: THREE.MathUtils.lerp(a.x, b.x, v), y: THREE.MathUtils.lerp(a.y,b.y,v),
       z: THREE.MathUtils.lerp(a.z, b.z, v), u: u * (s.width * 2 + s.depth * 2), v: v * INNER_OFFSET };
   });
-  add('openTopRim', rim, 'body');
+  add('openTopRim', rim, topTrim?'bottom':'body');
 
   if (s.supportsHandles && (!config.options?.crossStrap || !s.sample)) {
     add('handleFrontLeft', handleLeg(s, -s.handle.gap / 2, true), 'handle');
@@ -964,7 +980,7 @@ export function buildBagModel(config, materials) {
   bag.add(seams);
   const seamRows = [['mouth', s.height - 5]];
   if(s.supportsHandles&&!s.poly&&!s.pouch)seamRows.push(['mouthHem',s.height-35]);
-  if (s.profile.supportsBottomPanel) seamRows.push(['bottomPanel', s.panelHeight + 2.5]);
+  if (s.profile.supportsBottomPanel) seamRows.push(['bottomPanel', topTrim?s.height-s.panelHeight-2.5:s.panelHeight+2.5]);
   for (const [name, y] of seamRows) {
     const { a, r } = sliceAt(y, s);
     add(`${name}FrontStitches`, stitchGeometry(s, y, true, -a + r + 3, a - r - 3), 'seam', seams);

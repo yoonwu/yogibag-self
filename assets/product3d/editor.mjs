@@ -1,11 +1,11 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.15';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.15';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.15';
-import { Product3DViewer } from './viewer.mjs?v=1.2.15';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.15';
-import { openProductPicker } from './product-picker.mjs?v=1.2.15';
-import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.15';
-import { CARRY_LABELS } from './wearing.mjs?v=1.2.15';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.16';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.16';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.16';
+import { Product3DViewer } from './viewer.mjs?v=1.2.16';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.16';
+import { openProductPicker } from './product-picker.mjs?v=1.2.16';
+import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.16';
+import { CARRY_LABELS } from './wearing.mjs?v=1.2.16';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -645,11 +645,18 @@ export class Product3DEditor {
     this.fields.get('pocket.color').group.hidden = !profile.supportsPocket;
     this.fields.get('bottomPanel.color').group.hidden = !profile.supportsBottomPanel || Boolean(profile.linkedHandleBottomColor);
     this.fields.get('bottomPanel.height').row.hidden = !profile.supportsBottomPanel;
-    this.fabricDescription.textContent = profile.clothKind === 'poly' ? '폴리 / 합성 원단의 색상을 적용해요.' : profile.supportsPocket && profile.supportsBottomPanel
+    const trimLabel=profile.trimPosition==='top'?'윗배색':profile.edgeBindingWidth?'밑단·옆테두리':'밑단';
+    const trimHeight=this.fields.get('bottomPanel.height');
+    if(trimHeight.labelNode){
+      trimHeight.labelNode.textContent=`${trimLabel} 높이`;
+      trimHeight.number.setAttribute('aria-label',`${trimLabel} 높이 밀리미터 입력`);
+      trimHeight.range.setAttribute('aria-label',`${trimLabel} 높이 슬라이더`);
+    }
+    this.fabricDescription.textContent = profile.trimPosition==='top'?'윗배색과 손잡이 색상을 함께 바꿀 수 있어요.':profile.clothKind === 'poly' ? '폴리 / 합성 원단의 색상을 적용해요.' : profile.supportsPocket && profile.supportsBottomPanel
       ? '몸통·주머니·밑단에 같은 원단을 적용해요.' : profile.supportsBottomPanel ? '몸통·밑단에 같은 원단을 적용해요.' : '몸통에 선택한 원단을 적용해요.';
     const flat = profile.depthBasis === 'opening-estimate';
     this.sizeDescription.textContent = flat ? '평면 봉합형이에요. 입구 벌림은 3D 형태를 보기 위한 참고값이에요.' : profile.supportsBottomPanel
-      ? '높이는 하단 배색을 포함한 전체 몸통 높이예요.' : '높이는 손잡이를 제외한 전체 몸통 높이예요.';
+      ? '높이는 배색 부분을 포함한 전체 몸통 높이예요.' : '높이는 손잡이를 제외한 전체 몸통 높이예요.';
     const depthField = this.fields.get('dimensions.depth');
     if (depthField?.labelNode) {
       const label = flat ? '3D 입구 벌림 (참고)' : '가방 바닥 깊이';
@@ -657,7 +664,7 @@ export class Product3DEditor {
       depthField.number.setAttribute('aria-label', `${label} 밀리미터 입력`);
       depthField.range.setAttribute('aria-label', `${label} 슬라이더`);
     }
-    this.estimateNote.textContent = profile.supportsPocket
+    this.estimateNote.textContent = profile.dimensionsEstimated?'사진 비율에 따른 추정 치수입니다. 실제 크기는 상담 시 확인해 주세요.':profile.supportsPocket
       ? '손잡이 폭·간격·포켓은 샘플 추정값입니다.' : '손잡이 폭·길이·간격은 샘플 추정값입니다.';
     const limits = getProductLimits(this.config);
     for (const [path, field] of this.fields) {
@@ -695,7 +702,7 @@ export class Product3DEditor {
       } else if (field.type === 'select') {
         field.input.value = value;
       } else {
-        const label = path === 'handle.color' && profile.linkedHandleBottomColor ? '손잡이·밑단 색상' : field.label;
+        const label = path === 'handle.color' && profile.linkedHandleBottomColor ? (profile.trimPosition==='top'?'손잡이·윗배색 색상':'손잡이·밑단 색상') : path==='bottomPanel.color'?`${trimLabel} 색상`:field.label;
         if (field.labelNode) {
           field.labelNode.textContent = label;
           field.input.setAttribute('aria-label', `${label} 선택`);
@@ -771,7 +778,7 @@ export class Product3DEditor {
     const h = this.config.handle;
     const p = this.config.pocket;
     const fabricName = profile.clothKind === 'poly' ? '폴리 / 합성' : FABRICS3D.find(fabric => fabric.id === this.config.body.fabricId)?.name || '기본';
-    this.dimensionSummary.textContent = `${fabricName} 원단 · ${flat ? `몸통 ${width} × ${height} mm · 입구 벌림 ${depth} mm (참고)` : `가방 ${width} × ${height} × ${depth} mm`}${profile.supportsBottomPanel ? ` · 배색 높이 ${this.config.bottomPanel.height} mm` : ''}${profile.supportsHandles ? ` · 손잡이 너비 ${h.width} / 길이 ${h.drop} / 간격 ${h.gap} mm` : ''}${profile.supportsPocket && this.config.options.pocket ? ` · 포켓 ${p.width} × ${p.height} mm` : ''}`;
+    this.dimensionSummary.textContent = `${fabricName} 원단${profile.dimensionsEstimated?' · 치수 추정':''} · ${flat ? `몸통 ${width} × ${height} mm · 입구 벌림 ${depth} mm (참고)` : `가방 ${width} × ${height} × ${depth} mm`}${profile.supportsBottomPanel ? ` · 배색 높이 ${this.config.bottomPanel.height} mm` : ''}${profile.supportsHandles ? ` · 손잡이 너비 ${h.width} / 길이 ${h.drop} / 간격 ${h.gap} mm` : ''}${profile.supportsPocket && this.config.options.pocket ? ` · 포켓 ${p.width} × ${p.height} mm` : ''}`;
     if (this.consultButton) this.consultButton.title = profile.consultationMode === 'kakao'
       ? '현재 시안을 캡쳐하고 카카오톡에서 상담합니다' : '시안과 상담 정보를 메일로 접수합니다';
     this.syncZoomToolbar();
@@ -799,7 +806,7 @@ export class Product3DEditor {
       : zoom.enabled
       ? '드래그로 회전 · 화면 이동으로 위치 조절'
       : this.viewer?.getSizeComparison?.().enabled
-      ? '같은 실측 비율 · 체형과 드는 자세는 참고용입니다.'
+      ? (getProductProfile(this.config).dimensionsEstimated?'가방 치수는 추정값 · 실측 확인이 필요합니다.':'같은 실측 비율 · 체형과 드는 자세는 참고용입니다.')
       : '드래그해서 회전 · 휠이나 두 손가락으로 확대';
   }
 

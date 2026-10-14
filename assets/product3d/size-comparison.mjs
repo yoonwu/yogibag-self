@@ -166,10 +166,10 @@ export function disposeComparisonPerson(group) {
   geometries.forEach(geometry=>geometry.dispose()); materials.forEach(material=>material.dispose());
 }
 
-export function drawComparisonLabel(context, width, heightCm, carryLabel) {
+export function drawComparisonLabel(context, width, heightCm, carryLabel, estimated=false) {
   context.save();
   context.fillStyle='#6b7684'; context.font='12px "Malgun Gothic", sans-serif';
-  context.fillText(`키 ${heightCm}cm · 실측 비율`,18,26);
+  context.fillText(`키 ${heightCm}cm · ${estimated?'가방 치수 추정':'실측 비율'}`,18,26);
   if(carryLabel && carryLabel!=='손에 들기')context.fillText(carryLabel,18,44);
   context.restore();
 }

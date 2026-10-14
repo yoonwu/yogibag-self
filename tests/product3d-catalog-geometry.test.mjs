@@ -9,7 +9,7 @@ import { ribbonSelfIntersections,ribbonCenter,ribbonRings } from './helpers/ribb
 
 const fabricKeys=['body','bottom','handle','inside','seam','pocket','snap','zipper'];
 function model(config){const materials=Object.fromEntries(fabricKeys.map(k=>[k,new THREE.MeshBasicMaterial({side:THREE.FrontSide})]));return {bag:buildBagModel(config,materials),config,dispose(){disposeBagModel(this.bag);Object.values(materials).forEach(m=>m.dispose());}};}
-function bodyMeshes(bag){return ['bodyFront','bodyBack','sideLeft','sideRight','bottom'].map(name=>bag.getObjectByName(name));}
+function bodyMeshes(bag){return ['bodyFront','bodyBack','sideLeft','sideRight','bottom','bottomFrontPanel','bottomBackPanel','bottomSideLeftPanel','bottomSideRightPanel'].map(name=>bag.getObjectByName(name)).filter(Boolean);}
 function bounds(meshes){const box=new THREE.Box3();for(const mesh of meshes)box.union(mesh.geometry.boundingBox);return box;}
 function projectedRibbonSpans(geometry,y){
   const p=geometry.attributes.position,index=geometry.index.array,spans=[];
@@ -74,7 +74,7 @@ test('flat products meet a narrow sewn bottom while gusset products have a drape
     const nominal=profile.nominalDepth;
     if(nominal===0){assert.ok(b.max.z-b.min.z<config.dimensions.depth*.35*MM_TO_SCENE,`${id} has no box bottom`);assert.equal(state.bag.userData.metrics.nominalDepth,0);}
     else assert.ok(b.max.z-b.min.z>config.dimensions.depth*.55*MM_TO_SCENE,`${id} has a real gusset footprint`);
-    const side=state.bag.getObjectByName(profile.supportsBottomPanel?'bottomSideLeftPanel':'sideLeft').geometry.attributes.position;
+    const side=state.bag.getObjectByName(profile.supportsBottomPanel&&profile.trimPosition!=='top'?'bottomSideLeftPanel':'sideLeft').geometry.attributes.position;
     assert.ok(side.getY(11)>side.getY(0)+1*MM_TO_SCENE,`${id} lower side seam lifts into a V fold`);
     assert.ok(p.array.every(Number.isFinite));state.dispose();
   }

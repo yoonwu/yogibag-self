@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { holdingPose } from './size-comparison.mjs?v=1.2.15';
+import { holdingPose } from './size-comparison.mjs?v=1.2.16';
 
 export const CARRY_LABELS = Object.freeze({hand:'손에 들기',shoulder:'어깨에 메기',cross:'크로스끈으로 메기'});
 const savedDrapes=new WeakMap(),projectionCache=new WeakMap();

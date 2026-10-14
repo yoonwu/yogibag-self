@@ -6,8 +6,8 @@ import { beginCaptureCopy, handoffCapture, KAKAO_CHAT_URL } from '../assets/prod
 
 class Item { constructor(data) { this.data = data; } static supports(type) { return type === 'image/png'; } }
 
-test('only the three unpriced custom bags route to Kakao while all twelve original bags retain email',()=>{
-  const chatIds=['sample-two-line-large','sample-two-line-small','two-tone-kids'];
+test('the five unpriced custom bags route to Kakao while all twelve original bags retain email',()=>{
+  const chatIds=['sample-two-line-large','sample-two-line-small','two-tone-kids','topline-tote','two-tone-square'];
   for(const [id,profile] of Object.entries(PRODUCT3D_PROFILES))assert.equal(profile.consultationMode,chatIds.includes(id)?'kakao':'email',id);
   assert.equal(KAKAO_CHAT_URL,'https://pf.kakao.com/_dGxlxlj/chat');
 });

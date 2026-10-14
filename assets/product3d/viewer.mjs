@@ -1,17 +1,17 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive } from './config.mjs?v=1.2.15';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.15';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.15';
-import { createProductModel } from './registry.mjs?v=1.2.15';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.15';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.15';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.15';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.15';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.15';
-import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.15';
-import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.15';
-import { availableCarryModes, wearingPose, applyWearingDrape, restoreWearingDrape, CARRY_LABELS } from './wearing.mjs?v=1.2.15';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive, getProductProfile } from './config.mjs?v=1.2.16';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.16';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.16';
+import { createProductModel } from './registry.mjs?v=1.2.16';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.16';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.16';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.16';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.16';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.16';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.16';
+import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.16';
+import { availableCarryModes, wearingPose, applyWearingDrape, restoreWearingDrape, CARRY_LABELS } from './wearing.mjs?v=1.2.16';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
@@ -323,7 +323,7 @@ export class Product3DViewer {
     if (!this.watermarkCanvas || !this._size) return;
     const context = this.watermarkCanvas.getContext('2d');
     drawWatermark(context, this._size.width, this._size.height);
-    if (this._comparisonEnabled) drawComparisonLabel(context, this._size.width, this._comparisonHeight || 160, CARRY_LABELS[this._comparisonCarry]);
+    if (this._comparisonEnabled) drawComparisonLabel(context, this._size.width, this._comparisonHeight || 160, CARRY_LABELS[this._comparisonCarry],getProductProfile(this.config).dimensionsEstimated);
   }
 
   _prepareEmbroidery(side,texture,key,geometryKey) {
