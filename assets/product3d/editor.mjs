@@ -1,11 +1,11 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.16';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.16';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.16';
-import { Product3DViewer } from './viewer.mjs?v=1.2.16';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.16';
-import { openProductPicker } from './product-picker.mjs?v=1.2.16';
-import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.16';
-import { CARRY_LABELS } from './wearing.mjs?v=1.2.16';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.17';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.17';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.17';
+import { Product3DViewer } from './viewer.mjs?v=1.2.17';
+import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.17';
+import { openProductPicker } from './product-picker.mjs?v=1.2.17';
+import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.17';
+import { CARRY_LABELS } from './wearing.mjs?v=1.2.17';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -801,13 +801,13 @@ export class Product3DEditor {
     if (this.focusPrintButton) this.focusPrintButton.disabled = !this.viewer?.canFocusPrint?.(this.focusPrintSide());
     const percent = `${Math.round(zoom.percent || 100)}%`;
     if (this.zoomPercent.textContent !== percent) this.zoomPercent.textContent = percent;
-    this.previewHint.textContent = pan
+    this.previewHint.textContent = this.viewer?.getCarryError?.() || (pan
       ? '드래그로 화면 이동 · 화면 이동을 끄면 회전'
       : zoom.enabled
       ? '드래그로 회전 · 화면 이동으로 위치 조절'
       : this.viewer?.getSizeComparison?.().enabled
       ? (getProductProfile(this.config).dimensionsEstimated?'가방 치수는 추정값 · 실측 확인이 필요합니다.':'같은 실측 비율 · 체형과 드는 자세는 참고용입니다.')
-      : '드래그해서 회전 · 휠이나 두 손가락으로 확대';
+      : '드래그해서 회전 · 휠이나 두 손가락으로 확대');
   }
 
   focusPrintSide() {
