@@ -58,7 +58,7 @@ test('small webbing folds to a narrow cloth crown, joins the outside strips and 
 test('the real bag picker exposes both two-line sizes and the separate two-tone kids product with packaged previews',async()=>{
   const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
   const bags=runInNewContext(`(${html.match(/const EXTRA_3D_BAGS = (\[[\s\S]*?\n\]);/)[1]})`);
-  assert.deepEqual(Array.from(bags,bag=>bag.id),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID]);
+  assert.deepEqual(Array.from(bags,bag=>bag.id),[SAMPLE_PRODUCT_ID,TWO_TONE_SMALL_PRODUCT_ID,TWO_TONE_KIDS_PRODUCT_ID,'topline-tote','two-tone-square']);
   const small=bags.find(bag=>bag.id===TWO_TONE_SMALL_PRODUCT_ID);
   assert.equal(small.size,'스몰 · 34×24×10cm');assert.equal(small.editorMode,'2d');
   for(const bag of bags)assert.ok((await readFile(new URL(`../${bag.preview}`,import.meta.url))).length>0);

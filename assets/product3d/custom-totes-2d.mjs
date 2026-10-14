@@ -1,14 +1,71 @@
-import { createDefaultConfig, normalizeConfig, getProductProfile, getProductPrintArea } from './config.mjs?v=1.2.15';
+import { createDefaultConfig, normalizeConfig, getProductProfile, getProductPrintArea } from './config.mjs?v=1.2.16';
 
-export const CUSTOM_2D_IDS=Object.freeze(['sample-two-line-large','sample-two-line-small','two-tone-kids']);
+export const CUSTOM_2D_IDS=Object.freeze(['sample-two-line-large','sample-two-line-small','two-tone-kids','topline-tote','two-tone-square']);
 export const isCustom2DTote=id=>CUSTOM_2D_IDS.includes(id);
 const templates=new Map();
 const sources={
   'sample-two-line-large':new URL('./pocket-large-2d-photo.png',import.meta.url).href,
   'sample-two-line-small':new URL('./pocket-small-2d-photo.png',import.meta.url).href,
 };
+export const SUPPLIED_PHOTOS=Object.freeze({
+  'sample-two-line-large':{body:'pocket-large-body',trim:'pocket-large-trim'},
+  'sample-two-line-small':{body:'pocket-small-body',trim:'pocket-small-trim'},
+  'topline-tote':{body:'topline-body',trim:'topline-trim'},
+  'two-tone-square':{body:'square-body',trim:'square-trim',handle:'square-handle'},
+});
 const sheet=(width,height)=>{const c=document.createElement('canvas');c.width=width;c.height=height;return c;};
 async function photograph(url){const image=new Image();image.crossOrigin='anonymous';image.src=url;await image.decode();return image;}
+
+// Preserve the customer's aligned alpha cutouts. Neutralize only dyed trim so
+// color changes retain the real folds, selvedges and woven thread highlights.
+function neutralTrim(image){
+  const c=sheet(image.naturalWidth,image.naturalHeight),ctx=c.getContext('2d');ctx.drawImage(image,0,0);
+  const data=ctx.getImageData(0,0,c.width,c.height),histogram=new Uint32Array(256);let count=0;
+  for(let i=0;i<data.data.length;i+=4)if(data.data[i+3]>128){histogram[Math.round((data.data[i]+data.data[i+1]+data.data[i+2])/3)]++;count++;}
+  let sum=0,reference=30;for(let l=0;l<256;l++){sum+=histogram[l];if(sum>=count*.9){reference=Math.max(20,l);break;}}
+  for(let i=0;i<data.data.length;i+=4){
+    const l=(data.data[i]+data.data[i+1]+data.data[i+2])/3;
+    const shade=Math.max(.38,Math.min(1,.65+.35*l/reference));
+    data.data[i]=data.data[i+1]=data.data[i+2]=Math.round(255*shade);
+  }
+  ctx.putImageData(data,0,0);return c;
+}
+
+async function suppliedTemplate(id,profile,base){
+  const files=SUPPLIED_PHOTOS[id],names=[files.body,files.trim,...(files.handle?[files.handle]:[])];
+  const images=await Promise.all(names.map(name=>photograph(new URL(`./supplied/${name}.png`,import.meta.url).href)));
+  const [bodyPhoto,trimPhoto,handlePhoto]=images,c=sheet(bodyPhoto.naturalWidth,bodyPhoto.naturalHeight),ctx=c.getContext('2d');
+  for(const im of images)ctx.drawImage(im,0,0);
+  const pixels=ctx.getImageData(0,0,c.width,c.height),rows=[];
+  for(let y=0;y<c.height;y++){let n=0;for(let x=0;x<c.width;x++)if(pixels.data[(y*c.width+x)*4+3]>128)n++;rows.push(n);}
+  const widest=Math.max(...rows),top=rows.findIndex(n=>n>widest*.72),rect=alphaBounds(pixels.data,c.width,c.height,top);
+  const fullTrim=neutralTrim(trimPhoto),handle=handlePhoto?neutralTrim(handlePhoto):fullTrim;
+  const trimPixels=fullTrim.getContext('2d').getImageData(0,0,c.width,c.height).data,wideRows=[];
+  for(let y=rect.top;y<rect.top+rect.height;y++){
+    let n=0;for(let x=0;x<c.width;x++)if(trimPixels[(y*c.width+x)*4+3]>128)n++;
+    if(n>rect.width*.65)wideRows.push(y);
+  }
+  const bandStart=profile.trimPosition==='top'?rect.top:(wideRows[0]??rect.top+rect.height-base.bottomPanel.height/profile.dimensions.height*rect.height);
+  const bandEnd=profile.trimPosition==='top'?(wideRows.at(-1)??bandStart)+1:rect.top+rect.height;
+  const body=sheet(c.width,c.height),bc=body.getContext('2d');
+  // Fill the parts behind the straps from the same original material rather
+  // than leaving transparent slots when a pocket or print option changes.
+  bc.save();bc.beginPath();bc.rect(0,rect.top,c.width,c.height-rect.top);bc.clip();bc.drawImage(fullTrim,0,0);bc.drawImage(bodyPhoto,0,0);bc.restore();
+  let pocketRect,pocketPhoto;
+  if(profile.supportsPocket){
+    const p=base.pocket,px=rect.width/profile.dimensions.width,py=rect.height/profile.dimensions.height;
+    pocketRect={left:rect.left+(rect.width-p.width*px)/2,top:rect.top+rect.height-(p.bottom+p.height)*py,width:p.width*px,height:p.height*py};
+    pocketPhoto=sheet(c.width,c.height);pocketPhoto.getContext('2d').drawImage(bodyPhoto,pocketRect.left,pocketRect.top,pocketRect.width,pocketRect.height,pocketRect.left,pocketRect.top,pocketRect.width,pocketRect.height);
+    // Retain the source pocket as an independent layer; restore unprinted
+    // cotton below it for a rear without the optional second pocket.
+    const cleanX=rect.left+rect.width*.075,cleanW=Math.max(8,rect.width*.07);
+    bc.save();bc.beginPath();bc.rect(pocketRect.left,pocketRect.top,pocketRect.width,pocketRect.height);bc.clip();
+    for(let x=pocketRect.left;x<pocketRect.left+pocketRect.width;x+=cleanW)
+      bc.drawImage(bodyPhoto,cleanX,pocketRect.top,cleanW,pocketRect.height,x,pocketRect.top,cleanW,pocketRect.height);
+    bc.restore();
+  }
+  return {body,handle,fullTrim,bandStart,bandEnd,supplied:true,pocketRect,pocketPhoto,width:c.width,height:c.height,rect,profile,base};
+}
 
 // Read actual alpha, including the folded corners, rather than treating the
 // full transparent photograph frame as the physical body measurement.
@@ -24,6 +81,7 @@ async function template(id,legacyImages){
   if(templates.has(id))return templates.get(id);
   const pending=(async()=>{
     const profile=getProductProfile(id),base=createDefaultConfig(id);
+    if(SUPPLIED_PHOTOS[id])return suppliedTemplate(id,profile,base);
     if(id==='two-tone-kids'){
       const [body,handle]=await Promise.all([photograph(legacyImages.kids_body),photograph(legacyImages.kids_handle)]);
       const c=sheet(body.naturalWidth,body.naturalHeight),ctx=c.getContext('2d');ctx.drawImage(body,0,0);
@@ -78,12 +136,23 @@ export function customParts(config){
 
 export async function customPhotoLayers(config,side,legacyImages){
   const c=normalizeConfig(config),t=await template(c.productId,legacyImages),r=t.rect;
-  const bandY=r.top+r.height-c.bottomPanel.height/c.dimensions.height*r.height;
+  const bandY=t.supplied&&t.profile.trimPosition!=='top'?r.top+r.height-(t.bandEnd-t.bandStart)*c.bottomPanel.height/t.base.bottomPanel.height:r.top+r.height-c.bottomPanel.height/c.dimensions.height*r.height;
   const band=sheet(t.width,t.height),bandContext=band.getContext('2d');
-  bandContext.save();bandContext.beginPath();bandContext.rect(0,bandY,t.width,t.height-bandY);bandContext.clip();
-  bandContext.drawImage(t.body,0,0);bandContext.restore();
+  const topTrim=t.profile.trimPosition==='top',actualHeight=t.supplied?(t.bandEnd-t.bandStart)*c.bottomPanel.height/t.base.bottomPanel.height:c.bottomPanel.height/c.dimensions.height*r.height;
+  if(t.supplied){
+    const originalHeight=t.bandEnd-t.bandStart;
+    const sourceY=t.bandStart,targetY=topTrim?r.top:bandY;
+    if(actualHeight>0)bandContext.drawImage(t.fullTrim,0,sourceY,t.width,originalHeight,0,targetY,t.width,actualHeight);
+    if(t.profile.edgeBindingWidth){
+      bandContext.save();bandContext.beginPath();bandContext.rect(0,0,t.width,Math.min(sourceY,bandY));bandContext.clip();bandContext.drawImage(t.fullTrim,0,0);bandContext.restore();
+    }
+    bandContext.globalCompositeOperation='destination-in';bandContext.drawImage(t.body,0,0);bandContext.globalCompositeOperation='source-over';
+  }else{
+    bandContext.save();bandContext.beginPath();bandContext.rect(0,bandY,t.width,t.height-bandY);bandContext.clip();
+    bandContext.drawImage(t.body,0,0);bandContext.restore();
+  }
   const trim=sheet(t.width,t.height),trimContext=trim.getContext('2d');
-  trimContext.save();trimContext.beginPath();trimContext.rect(0,0,t.width,bandY);trimContext.clip();trimContext.drawImage(t.handle,0,0);trimContext.restore();
+  trimContext.save();trimContext.beginPath();trimContext.rect(0,0,t.width,t.supplied&&!t.profile.supportsPocket?(SUPPLIED_PHOTOS[c.productId]?.handle?t.height:r.top):bandY);trimContext.clip();trimContext.drawImage(t.handle,0,0);trimContext.restore();
   const layers=[{part:'body',url:t.body.toDataURL(),color:c.body.color},{part:'band',url:band.toDataURL(),color:c.bottomPanel.color}];
   if(t.profile.supportsPocket&&(side==='back'?c.options.backPocket:c.options.pocket)){
     const pocket=sheet(t.width,t.height),ctx=pocket.getContext('2d'),p=c.pocket;

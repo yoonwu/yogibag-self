@@ -1,8 +1,8 @@
-import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.15';
-import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.15';
-import { POCKET_OPTION_LABELS, isPocketTote, isPrintSideActive, printSideLabel } from './pocket-options.mjs?v=1.2.15';
+import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.16';
+import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.16';
+import { POCKET_OPTION_LABELS, isPocketTote, isPrintSideActive, printSideLabel } from './pocket-options.mjs?v=1.2.16';
 export { isPocketTote, isPrintSideActive, printSideLabel };
-export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.15';
+export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.16';
 
 // Customer dimensions are millimetres. Only this boundary converts to scene units.
 export const MM_TO_SCENE = 0.001;
@@ -63,6 +63,11 @@ export function getProductPrintArea(config) {
   const profile = getProductProfile(config), dimensions = config?.dimensions || profile.dimensions;
   if (!profile.referenceLayout) {
     const size = profile.printGuideSize || 170;
+    if(profile.trimPosition==='top'){
+      const trim=config?.bottomPanel?.height??profile.defaultBottomPanel.height;
+      const width=Math.min(size,dimensions.width-40),height=Math.min(size,dimensions.height-trim-20);
+      return {width,height,x:0,y:(dimensions.height-trim)/2-dimensions.height/2};
+    }
     const bottom = config?.bottomPanel?.height ?? profile.defaultBottomPanel?.height ?? 75;
     const h = config?.handle || profile.defaultHandle;
     const width = Math.min(size, Math.max(60, profile.supportsPocket ? h.gap - h.width - 10 : dimensions.width - 40));
@@ -277,6 +282,7 @@ export function getConsultationSpecs(config) {
   const profile = getProductProfile(c);
   return [
     { label: '상품', value: c.productName },
+    ...(profile.dimensionsEstimated?[{label:'규격 확인',value:'사진 비율에 따른 추정 치수 · 제작 전 실측 확인 필요'}]:[]),
     ...(profile.depthBasis === 'opening-estimate' ? [
       { label: '몸통 가로 × 높이', value: `${c.dimensions.width} × ${c.dimensions.height} mm` },
       { label: '봉제 바닥 깊이', value: '0 mm · 평면 봉합형' },
@@ -285,15 +291,15 @@ export function getConsultationSpecs(config) {
     { label: '원단 종류', value: `${profile.clothKind === 'poly' ? '폴리 / 합성 원단' : getFabricOption(c.body.fabricId).name} · ${profile.supportsPocket ? '몸통/주머니/밑단 공통' : profile.supportsBottomPanel ? '몸통/밑단 공통' : '몸통 공통'}` },
     ...(profile.supportsBottomPanel
       ? [profile.linkedHandleBottomColor
-        ? { label: '밑단 높이', value: `${c.bottomPanel.height} mm` }
-        : { label: '밑단 높이 / 색상', value: `${c.bottomPanel.height} mm / ${getColorName(c.bottomPanel.color)}` }]
+        ? { label: profile.trimPosition==='top'?'윗배색 높이':'밑단 높이', value: `${c.bottomPanel.height} mm` }
+        : { label: profile.edgeBindingWidth?'밑단·옆테두리 높이 / 색상':'밑단 높이 / 색상', value: `${c.bottomPanel.height} mm / ${getColorName(c.bottomPanel.color)}` }]
       : [{ label: '밑단 배색', value: '없음 · 몸통과 같은 원단/색상' }]),
     { label: '몸통 색상', value: `${getColorName(c.body.color)}${profile.fixedBodyColor ? ' · 고정' : ''}` },
     ...(profile.supportsHandles ? [
       { label: '손잡이 폭 / 두께 / 길이', value: `${c.handle.width} / ${c.handle.thickness} / ${c.handle.drop} mm` },
       ...(profile.linkedHandleBottomColor ? [
         { label: '손잡이 중심 간격', value: `${c.handle.gap} mm` },
-        { label: '손잡이·밑단 공통 색상', value: getColorName(c.handle.color) },
+        { label: profile.trimPosition==='top'?'손잡이·윗배색 공통 색상':'손잡이·밑단 공통 색상', value: getColorName(c.handle.color) },
       ] : [{ label: '손잡이 중심 간격 / 색상', value: `${c.handle.gap} mm / ${getColorName(c.handle.color)}` }]),
       { label: '손잡이 원단', value: profile.handleFabricLabel },
     ] : []),
