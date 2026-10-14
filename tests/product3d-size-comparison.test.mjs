@@ -100,6 +100,18 @@ test('shoulder capture retains selected wearing mode, both loops and exact resto
   assert.ok(viewer.controls.target.distanceTo(target)<1e-9);
 });
 
+test('short handles show a fit explanation and restore hand carry without changing the design',t=>{
+  const config=createDefaultConfig('topline-tote'),viewer=viewerFor(t,config),before=JSON.stringify(config);
+  const loop=viewer.model.getObjectByName('handlesLoopFront'),original=loop.geometry;
+  viewer.setSizeComparison(true,160,'shoulder');
+  assert.equal(viewer.getSizeComparison().carryMode,'hand');
+  assert.match(viewer.getCarryError(),/손잡이.*짧아요/);
+  assert.equal(loop.geometry,original);
+  assert.equal(JSON.stringify(config),before);
+  viewer.setSizeComparison(true,160,'hand');
+  assert.equal(viewer.getCarryError(),null);
+});
+
 test('inside detail removes the comparison without changing the chosen height or customer design',t=>{
   const viewer=viewerFor(t);viewer.config.options.innerPocket=true;
   const before=JSON.stringify(viewer.config);
