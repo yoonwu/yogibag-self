@@ -1,8 +1,8 @@
-import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.17';
-import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.17';
-import { POCKET_OPTION_LABELS, isPocketTote, isPrintSideActive, printSideLabel } from './pocket-options.mjs?v=1.2.17';
+import { getFabricOption, getColorName } from './fabrics.mjs?v=1.2.18';
+import { SAMPLE_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.18';
+import { POCKET_OPTION_LABELS, isPocketTote, isPrintSideActive, printSideLabel } from './pocket-options.mjs?v=1.2.18';
 export { isPocketTote, isPrintSideActive, printSideLabel };
-export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.17';
+export { SAMPLE_PRODUCT_ID, TWO_TONE_SMALL_PRODUCT_ID, TWO_TONE_KIDS_PRODUCT_ID, DAILY_PRODUCT_ID, PRODUCT3D_PROFILES, getProductProfile, isSupportedProduct } from './catalog.mjs?v=1.2.18';
 
 // Customer dimensions are millimetres. Only this boundary converts to scene units.
 export const MM_TO_SCENE = 0.001;
