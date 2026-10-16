@@ -1,9 +1,9 @@
-import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings, getProductProfile, printSideLabel } from './config.mjs?v=1.2.17';
-import { dataURLBytes } from './zip.mjs?v=1.2.17';
-import { openKakaoConsultation } from './kakao-consultation.mjs?v=1.2.17';
+import { normalizeConfig, serializeConfig, getConsultationSpecs, getPrintBoundsWarnings, getProductProfile, printSideLabel } from './config.mjs?v=1.2.18';
+import { dataURLBytes } from './zip.mjs?v=1.2.18';
+import { openKakaoConsultation } from './kakao-consultation.mjs?v=1.2.18';
 
 const EMAIL_ENDPOINT = 'https://cnfgzjmgdwuaywqaufkt.supabase.co/functions/v1/resend-email';
-const STAFF_EMAIL = 'thdghkstlr@gmail.com';
+const STAFF_EMAIL = 'yogieco100@gmail.com';
 const encoder = new TextEncoder();
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeName = value => String(value || '이미지').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').slice(0, 100);
