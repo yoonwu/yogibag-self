@@ -4,7 +4,7 @@
 export const FABRICS3D = Object.freeze([
   { id: 'basic', name: '기본 캔버스', weave: 'plain', tileMm: 8, bumpScale: 0.00012, roughness: 0.94 },
   { id: 'twill', name: '트윌', weave: 'twill', tileMm: 8, bumpScale: 0.0002, roughness: 0.91 },
-  { id: 'heritage-10s-twill-peach', name: '더블엠 헤리티지 10수 트윌 피치', weave: 'heritage-twill',
+  { id: 'heritage-10s-twill-peach', name: '헤리티지 10수 트윌 피치', weave: 'heritage-twill',
     tileMm: 25, bumpScale: 0.00021, roughness: 0.96,
     swatch: './fabrics/heritage-10s-twill-peach.png', pitchMm: 1 },
   { id: 'denim', name: '데님', weave: 'denim', tileMm: 8, bumpScale: 0.00023, roughness: 0.93 },

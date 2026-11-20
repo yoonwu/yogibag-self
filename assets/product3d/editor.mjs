@@ -1,11 +1,11 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.19';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.19';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.19';
-import { Product3DViewer } from './viewer.mjs?v=1.2.19';
-import { FABRICS3D, FABRIC_COLOR_PRESETS, getFabricOption, createFabricDetail } from './fabrics.mjs?v=1.2.19';
-import { openProductPicker } from './product-picker.mjs?v=1.2.19';
-import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.19';
-import { CARRY_LABELS } from './wearing.mjs?v=1.2.19';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.20';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.20';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.20';
+import { Product3DViewer } from './viewer.mjs?v=1.2.20';
+import { FABRICS3D, FABRIC_COLOR_PRESETS, getFabricOption, createFabricDetail } from './fabrics.mjs?v=1.2.20';
+import { openProductPicker } from './product-picker.mjs?v=1.2.20';
+import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.20';
+import { CARRY_LABELS } from './wearing.mjs?v=1.2.20';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
