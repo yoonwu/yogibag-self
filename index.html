@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="assets/product3d/editor.css?v=1.2.18">
-<link rel="stylesheet" href="assets/product3d/consultation.css?v=1.2.18">
+<link rel="stylesheet" href="assets/product3d/editor.css?v=1.2.19">
+<link rel="stylesheet" href="assets/product3d/consultation.css?v=1.2.19">
 <title>요기백 · 셀프 시안 에디터</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316a34a'/%3E%3Cpath d='M11 12v-2a5 5 0 0 1 10 0v2' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M7 12h18l-1.5 13.4a1.3 1.3 0 0 1-1.3 1.1H9.8a1.3 1.3 0 0 1-1.3-1.1z' fill='white'/%3E%3Ctext x='16' y='22.4' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='8.5' font-weight='bold' fill='%2316a34a'%3EYO%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -344,6 +344,9 @@
   /* 상담문의 원단(트윌/데님/리넨/주트/헤링본) */
   .fabric-tab.consult { border-style: dashed; }
   .fabric-tab.consult.active { background: #f59e0b; border-color: #f59e0b; border-style: solid; color: #fff; }
+  .measured-fabric-detail { width:min(100%, 180px); margin:10px 0 14px; color:#4f493e; font-size:12px; }
+  .measured-fabric-detail img { display:block; width:100%; aspect-ratio:1; border-radius:8px; background:#e4ded2; filter:contrast(.7) brightness(1.3) sepia(.12); }
+  .measured-fabric-ruler { display:block; width:var(--swatch-scale); margin:5px 0; border-top:2px solid currentColor; text-align:center; }
   .fabric-consult-box {
     align-self: stretch; display: flex; flex-direction: column; gap: 9px;
     border: 1.5px solid #f1c98a; border-radius: 12px;
@@ -835,6 +838,7 @@
       <div id="fabricSection">
         <div class="section-label">원단 종류</div>
         <div class="fabric-tabs" id="bagFabricTabs"></div>
+        <div id="bagFabricDetail"></div>
       </div>
       <div class="section-label">가방 색상</div>
       <div id="bagColorName" style="font-size:15px;font-weight:700;color:var(--blue);margin:-4px 0 10px;"></div>
@@ -931,7 +935,7 @@
 <div class="toast" id="toast"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span id="toastMsg">저장되었어요</span></div>
 
 <!-- 버전 표시 — 배포할 때마다 아래 숫자를 올려주세요 (캐시로 옛 버전인지 바로 확인용) -->
-<div id="appVersion">v1.2.18 · 2026.10.16</div>
+<div id="appVersion">v1.2.19 · 2026.11.20</div>
 
 <!-- ORDER CONFIRM MODAL -->
 <div class="order-overlay" id="orderModal">
@@ -1353,6 +1357,8 @@ const FABRICS = [
     { name:'블루',         hex:'#5f82a8', display:'#5f82a8' },
     { name:'블랙',         hex:'#2b2b2b', display:'#2b2b2b' },
   ]},
+  { id:'heritage-10s-twill-peach', name:'더블엠 헤리티지 10수 트윌 피치', measured:true,
+    colors:[{name:'샘플색',hex:'#f3f1ec',display:'#f3f1ec'},...TEX_TINTS.slice(1)] },
   { id:'denim', name:'데님', weaveGen:'twill', ribs:85, colors:[
     { name:'블랙',   hex:'#2b2b2b', display:'#2b2b2b' },
     { name:'블루',   hex:'#5f82a8', display:'#5f82a8' },
@@ -1642,13 +1648,18 @@ async function drawCustom2DBag(token,finalize) {
     const reference=loaded[0].img,sc=Math.min(CW*.74/reference.width,CH*.64/reference.height);
     const left=(CW-reference.width*sc)/2,top=CH-reference.height*sc-CH*.12;
     const scale=sc*reference.width/photo.width;
+    const {width,height}=getBagRealSize();
+    const fabricScale={x:photo.bodyRect.width/width,y:photo.bodyRect.height/height};
+    const textures=[];
     for(const {layer,img} of loaded){
       img.set({left,top,scaleX:sc,scaleY:sc,selectable:false,evented:false,bagPart:layer.part});
+      img.measuredFabricScale=fabricScale;
       canvas.add(img);
-      if(layer.part==='body'){bagBodyRect=img;bagScale=sc;bagOffX=left;bagOffY=top;applyBodyLook(img);}
-      else if(layer.part==='pocket'||layer.part==='band')applyBodyLook(img,{tint:layer.color});
+      if(layer.part==='body'){bagBodyRect=img;bagScale=sc;bagOffX=left;bagOffY=top;textures.push(applyBodyLook(img,{fabricScale}));}
+      else if(layer.part==='pocket'||layer.part==='band')textures.push(applyBodyLook(img,{tint:layer.color,fabricScale}));
       else {applyColorTint(img,layer.color,.98);if(layer.part==='handle')webbingPaths.push(img);}
     }
+    if(FABRICS.find(option=>option.id===bagFabricId)?.measured)await Promise.all(textures);
     finalize({left:left+photo.guide.left*scale,top:top+photo.guide.top*scale,width:photo.guide.width*scale,height:photo.guide.height*scale});
   }catch(error){if(token!==drawBagToken)return;drawBagPending=false;updateDesignViewToggle();showToast(error.message);}
 }
@@ -1847,7 +1858,7 @@ function drawBag() {
   if (layers.length === 0) { finalize(); return; }
 
   layers.forEach(part => {
-    loadImg(imgMap[part], (img) => {
+    loadImg(imgMap[part], async (img) => {
       if (myToken !== drawBagToken) return; // 이미 다른 가방으로 바뀜 → 버림
       if (!img) { loaded++; if (loaded === layers.length) finalize(); return; }
       cleanEdges(img); // 검정 매트 가장자리(투명블랙) 제거
@@ -1862,18 +1873,21 @@ function drawBag() {
         left, top, scaleX: sc, scaleY: sc,
         selectable:false, evented:false, bagPart:part,
       });
+      let texture;
       if (part === 'body') {
         bagBodyRect = img;
         bagScale = sc; bagOffX = left; bagOffY = top;
         // 폴리백은 PNG 교체 방식이라 질감/틴트 미적용
         if (bagCategory(currentBag) === 'poly') applyPolyBodyLook(img);
-        else applyBodyLook(img);
+        else texture=applyBodyLook(img);
       }
       if (part === 'handle') {
         if (webbingColor) applyColorTint(img, webbingColor, 0.85);
         webbingPaths.push(img);
       }
       canvas.add(img);
+      if(texture)await texture;
+      if(myToken!==drawBagToken)return;
       loaded++;
       if (loaded === layers.length) finalize();
     });
@@ -2017,6 +2031,8 @@ function getTiledTexture(texImg, file, tiles, bodyImg) {
   _tiledCache[key] = fimg;
   return fimg;
 }
+const measuredBodyRequests = new WeakMap();
+const loadMeasuredFabrics = () => import('./assets/product3d/fabrics.mjs?v=1.2.19');
 function applyBodyLook(img,appearance={}) {
   if (!img || !img.applyFilters) return;
   const BlendColor = fabric.Image.filters.BlendColor;
@@ -2028,6 +2044,31 @@ function applyBodyLook(img,appearance={}) {
   const baseFilters = () => (img.filters || []).filter(f =>
     !(BlendColor && f instanceof BlendColor) && !(BlendImage && f instanceof BlendImage));
   const commit = (fl) => { img.filters = fl; img.applyFilters(); if (typeof canvas !== 'undefined') canvas.requestRenderAll(); };
+
+  measuredBodyRequests.delete(img);
+  if (fab?.measured) {
+    const request = {};
+    measuredBodyRequests.set(img, request);
+    const bag = currentBag;
+    const token = drawBagToken;
+    const dimensions = getBagRealSize();
+    return loadMeasuredFabrics().then(async ({getFabricOption,loadFabricSwatch,createFabricOverlay}) => {
+      const option = getFabricOption(fab.id);
+      const image = await loadFabricSwatch(option);
+      if (measuredBodyRequests.get(img)!==request || token!==drawBagToken || bag!==currentBag || bagFabricId!==fab.id) return;
+      const pixels = appearance.fabricScale || img.measuredFabricScale || (() => {
+        const bounds = getContentBBox(img._originalElement || img.getElement(), BAG_IMAGES[bag.id+'_body']);
+        return {x:bounds.w/dimensions.width,y:bounds.h/dimensions.height};
+      })();
+      const overlay = createFabricOverlay(image, img.width, img.height, option.tileMm*pixels.x, option.tileMm*pixels.y,
+        _hexToRgb(tint || '#f3f1ec'));
+      commit([...baseFilters(), new BlendImage({image:new fabric.Image(overlay),mode:'multiply',alpha:1})]);
+    }).catch(() => {
+      if (measuredBodyRequests.get(img)!==request || token!==drawBagToken || bagFabricId!==fab.id) return;
+      commit(tint ? [...baseFilters(), new BlendColor({color:tint,mode:'multiply',alpha:0.85})] : baseFilters());
+      showToast('원단 결을 불러오지 못했어요.');
+    });
+  }
 
   // 1) 절차적 짜임(트윌/데님/리넨/주트/헤링본) — 선택 색(hex) 또는 원단 기본색으로 짜임 생성
   if (fab && fab.weaveGen) {
@@ -2814,6 +2855,16 @@ function renderColorGridForBag() {
     });
     nameEl.textContent = '● ' + currentLookName();
   }
+  const detail = document.getElementById('bagFabricDetail');
+  const measured = !isPoly && FABRICS.find(f => f.id === bagFabricId && f.measured);
+  if (detail.dataset.fabricId !== (measured?.id || '')) {
+    const id = measured?.id || '';
+    detail.dataset.fabricId = id;
+    detail.replaceChildren();
+    if (measured) loadMeasuredFabrics().then(({createFabricDetail,getFabricOption}) => {
+      if (detail.dataset.fabricId === id && !detail.firstChild) detail.append(createFabricDetail(getFabricOption(id)));
+    }).catch(() => {});
+  }
   // 블랙·네이비 최소주문 상향 안내 (미리 재단하지 않는 제품 — 사각L·스몰)
   let darkNote = document.getElementById('darkMinNote');
   if (!darkNote) {
@@ -2830,7 +2881,7 @@ function renderColorGridForBag() {
 // 원단+색 선택을 전역 상태에 반영하고 몸통에 적용
 function applyFabricColor(fab, c) {
   bagFabricId = fab.id;
-  if (fab.weaveGen) {         // 트윌/데님: 절차적 짜임, 색은 hex
+  if (fab.weaveGen || fab.measured) {
     bagTexture = null;
     bagBodyColor = c ? c.hex : null;
   } else if (fab.weave) {     // 리넨/주트/헤링본: 직조 사진 위에 틴트
@@ -2848,7 +2899,7 @@ function applyFabricColor(fab, c) {
 }
 // 칩이 현재 선택 상태인지
 function isColorActive(fab, c) {
-  if (fab.weaveGen) return bagTexture === null && bagBodyColor === (c ? c.hex : null);
+  if (fab.weaveGen || fab.measured) return bagTexture === null && bagBodyColor === (c ? c.hex : null);
   if (fab.weave) return bagTexture === fab.weave && bagBodyColor === ((c && c.hex != null) ? c.hex : null);
   if (c && c.file) return bagTexture === c.file;
   return bagTexture === null && bagBodyColor === (c ? c.hex : null);
@@ -2863,7 +2914,7 @@ function currentLookName() {
     const c = fab.colors.find(x => x.hex === bagBodyColor) || fab.colors[0];
     return c.name;
   }
-  if (fab.weaveGen) {
+  if (fab.weaveGen || fab.measured) {
     const c = fab.colors.find(x => x.hex === bagBodyColor) || fab.colors[0];
     return fab.name + ' ' + c.name;
   }
@@ -4658,9 +4709,9 @@ function showToast(msg) {
 // originals remain in this editor and are referenced by a short session token.
 let legacyDesignAPI = null;
 let customKakaoConsultation=null,customConfigFrom2D=null;
-const customTotes2DReady=Promise.all([import('./assets/product3d/custom-totes-2d.mjs?v=1.2.18'),import('./assets/product3d/kakao-consultation.mjs?v=1.2.18'),import('./assets/product3d/sync.mjs?v=1.2.18')])
+const customTotes2DReady=Promise.all([import('./assets/product3d/custom-totes-2d.mjs?v=1.2.19'),import('./assets/product3d/kakao-consultation.mjs?v=1.2.19'),import('./assets/product3d/sync.mjs?v=1.2.19')])
   .then(([photos,consultation,sync])=>{customKakaoConsultation=consultation.openKakaoConsultation;customConfigFrom2D=sync.configFrom2D;return photos;});
-const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mjs?v=1.2.18'),import('./assets/product3d/catalog.mjs?v=1.2.18'),import('./assets/product3d/embroidery-fabric.mjs')]).then(([{createLegacyDesignBridge},{PRODUCT3D_PROFILES},{installFabricEmbroideryPreview}]) => {
+const legacyDesignReady = Promise.all([import('./assets/product3d/legacy-sync.mjs?v=1.2.19'),import('./assets/product3d/catalog.mjs?v=1.2.19'),import('./assets/product3d/embroidery-fabric.mjs')]).then(([{createLegacyDesignBridge},{PRODUCT3D_PROFILES},{installFabricEmbroideryPreview}]) => {
   embroideryPreview=installFabricEmbroideryPreview({fabric,getCanvas:()=>canvas,
     getAppearance:object=>printAppearances[artworkAppearancePart(object)],getMmPerPixel:()=>getCmPerPx()*10,designProps:DESIGN_PROPS});
   refreshEmbroideryPreview();
@@ -4761,6 +4812,6 @@ window.addEventListener('load', () => {
   updateDesignViewToggle();
 });
 </script>
-<script type="module" src="assets/product3d/bridge.mjs?v=1.2.18"></script>
+<script type="module" src="assets/product3d/bridge.mjs?v=1.2.19"></script>
 </body>
 </html>

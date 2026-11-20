@@ -1,11 +1,11 @@
-import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.18';
-import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.18';
-import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.18';
-import { Product3DViewer } from './viewer.mjs?v=1.2.18';
-import { FABRICS3D, FABRIC_COLOR_PRESETS } from './fabrics.mjs?v=1.2.18';
-import { openProductPicker } from './product-picker.mjs?v=1.2.18';
-import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.18';
-import { CARRY_LABELS } from './wearing.mjs?v=1.2.18';
+import { createDefaultConfig, normalizeConfig, patchConfig, getPrintBoundsWarnings, getProductProfile, getProductLimits, getCrossStrapLengthMin, PRINT_SIDES, DESIGN_OPTION_LABELS, isPocketTote, printSideLabel } from './config.mjs?v=1.2.19';
+import { POLY_BODY_COLOR_PRESETS } from './catalog.mjs?v=1.2.19';
+import { configForProduct, Product3DCatalog } from './registry.mjs?v=1.2.19';
+import { Product3DViewer } from './viewer.mjs?v=1.2.19';
+import { FABRICS3D, FABRIC_COLOR_PRESETS, getFabricOption, createFabricDetail } from './fabrics.mjs?v=1.2.19';
+import { openProductPicker } from './product-picker.mjs?v=1.2.19';
+import { COMPARISON_HEIGHT_LIMITS } from './size-comparison.mjs?v=1.2.19';
+import { CARRY_LABELS } from './wearing.mjs?v=1.2.19';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let instanceCount = 0;
@@ -410,7 +410,7 @@ export class Product3DEditor {
     this.listen(input, 'change', event => this.change(path, event.target.value));
     row.append(label, input);
     panel.append(row);
-    this.fields.set(path, { type: 'select', input, row });
+    this.fields.set(path, { type: 'select', input, row, detail: null });
   }
 
   checkbox(panel, path, label) {
@@ -641,7 +641,15 @@ export class Product3DEditor {
     const handleColor = this.fields.get('handle.color');
     if (handleColor?.group) handleColor.group.hidden = !profile.supportsHandles;
     const fabricField = this.fields.get('body.fabricId');
-    if (fabricField?.row) fabricField.row.hidden = profile.clothKind === 'poly';
+    if (fabricField?.row) {
+      fabricField.row.hidden = profile.clothKind === 'poly';
+      const option = getFabricOption(this.config.body.fabricId);
+      if (option.swatch && !fabricField.detail) {
+        fabricField.detail = createFabricDetail(option);
+        fabricField.row.append(fabricField.detail);
+      }
+      if (fabricField.detail) fabricField.detail.hidden = !option.swatch;
+    }
     this.fields.get('pocket.color').group.hidden = !profile.supportsPocket;
     this.fields.get('bottomPanel.color').group.hidden = !profile.supportsBottomPanel || Boolean(profile.linkedHandleBottomColor);
     this.fields.get('bottomPanel.height').row.hidden = !profile.supportsBottomPanel;

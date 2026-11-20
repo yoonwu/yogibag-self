@@ -38,7 +38,7 @@ after(() => {
   else globalThis.document = originalDocument;
 });
 
-test('six fabric profiles generate distinct weave pixels at their physical tile size', () => {
+test('fabric profiles generate distinct weave pixels at their physical tile size', () => {
   const config = createDefaultConfig();
   const materials = createBagMaterials(config);
   const hashes = new Set();
@@ -62,7 +62,7 @@ test('six fabric profiles generate distinct weave pixels at their physical tile 
       }
       assert.equal(materials.handle.bumpMap, webbingTexture);
     }
-    assert.equal(hashes.size, 6);
+    assert.equal(hashes.size, FABRICS3D.length);
   } finally {
     disposeBagMaterials(materials);
   }
@@ -211,7 +211,7 @@ test('600 fabric changes keep a bounded reusable cache and dispose each resource
     }
     assert.ok(materials._fabricState.cache.size <= FABRICS3D.length);
   }
-  assert.equal(materials._fabricState.cache.size, 6);
+  assert.equal(materials._fabricState.cache.size, FABRICS3D.length);
   const textures = new Set([...firstTextures.values(), materials.handle.bumpMap, materials.handle.map]);
   const uniqueMaterials = new Set(Object.values(materials));
   const disposalCounts = new Map();
@@ -221,7 +221,7 @@ test('600 fabric changes keep a bounded reusable cache and dispose each resource
   }
   disposeBagMaterials(materials);
   disposeBagMaterials(materials);
-  assert.equal(textures.size, 8);
+  assert.equal(textures.size, FABRICS3D.length + 2);
   assert.equal(materials._fabricState.cache.size, 0);
   assert.ok([...disposalCounts.values()].every(count => count === 1));
 });
