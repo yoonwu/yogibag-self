@@ -1,5 +1,5 @@
-import { normalizeConfig, getProductProfile } from './config.mjs?v=1.2.19';
-import { isSharedProduct, SHARED_OPTIONS } from './sync.mjs?v=1.2.19';
+import { normalizeConfig, getProductProfile } from './config.mjs?v=1.2.20';
+import { isSharedProduct, SHARED_OPTIONS } from './sync.mjs?v=1.2.20';
 
 const PARTS = ['front', 'back', 'innerPocket'];
 const EMPTY_PRINT = { image: null, imageName: '', width: 100, height: 100, x: 0, y: 0, rotation: 0, enabled: true, lockAspect: true, appearance: 'print' };
