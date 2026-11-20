@@ -1,17 +1,17 @@
 import * as THREE from '../vendor/three/three.module.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive, getProductProfile } from './config.mjs?v=1.2.18';
-import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.18';
-import { getInnerPocketLayout } from './options-model.mjs?v=1.2.18';
-import { createProductModel } from './registry.mjs?v=1.2.18';
-import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.18';
-import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.18';
-import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.18';
-import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.18';
-import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.18';
-import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.18';
-import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.18';
-import { availableCarryModes, wearingPose, applyWearingDrape, restoreWearingDrape, CARRY_LABELS } from './wearing.mjs?v=1.2.18';
+import { MM_TO_SCENE, normalizeConfig, PRINT_SIDES, isPrintSideActive, getProductProfile } from './config.mjs?v=1.2.19';
+import { disposeBagModel, frontSurfaceMM, innerPocketSurfaceMM } from './model.mjs?v=1.2.19';
+import { getInnerPocketLayout } from './options-model.mjs?v=1.2.19';
+import { createProductModel } from './registry.mjs?v=1.2.19';
+import { createBagMaterials, updateBagMaterials, disposeBagMaterials } from './materials.mjs?v=1.2.19';
+import { createPrintMesh, disposePrintMesh, loadPrintTexture, createEmbroideryTextures, prepareEmbroideryTextures, disposeEmbroideryTextures } from './print.mjs?v=1.2.19';
+import { EmbroideryProcessor } from './embroidery-processor.mjs?v=1.2.19';
+import { embroideryGeometryKey,embroideryGeometryConfig } from './embroidery-job.mjs?v=1.2.19';
+import { safeDetailDistance, clampDetailDistance, detailZoomMetrics } from './zoom.mjs?v=1.2.19';
+import { drawWatermark, captureWithWatermark } from './watermark.mjs?v=1.2.19';
+import { comparisonHeight, holdingPose, createComparisonPerson, disposeComparisonPerson, drawComparisonLabel } from './size-comparison.mjs?v=1.2.19';
+import { availableCarryModes, wearingPose, applyWearingDrape, restoreWearingDrape, CARRY_LABELS } from './wearing.mjs?v=1.2.19';
 
 const BACKGROUND = '#f5f4f1';
 const PRODUCT_FOV = 38;
@@ -141,7 +141,7 @@ export class Product3DViewer {
     this.config = normalizeConfig(config);
     if (!this.renderer) return;
     this._ensurePrintStates();
-    if (!this.materials) this.materials = createBagMaterials(this.config);
+    if (!this.materials) this.materials = createBagMaterials(this.config, () => this.requestRender());
     else updateBagMaterials(this.materials, this.config);
     const nextStructure = structuralKey(this.config);
     const structureChanged = nextStructure !== this._structuralKey;
@@ -172,7 +172,7 @@ export class Product3DViewer {
       this._framed = true;
     }
     this.requestRender();
-    await Promise.all(PRINT_SIDES.map(side => this._loadSidePrint(side)));
+    await Promise.all([this.materials._fabricState?.pending, ...PRINT_SIDES.map(side => this._loadSidePrint(side))]);
   }
 
   _ensurePrintStates() {
@@ -926,6 +926,7 @@ export class Product3DViewer {
   }
 
   async captureCurrentView() {
+    await this.materials?._fabricState?.pending;
     if (this._printStates) await Promise.all(Object.values(this._printStates).map(state => state.pending?.promise).filter(Boolean));
     else if (this._pendingTexture) await this._pendingTexture.promise;
     await this._waitForEmbroidery();
@@ -935,6 +936,7 @@ export class Product3DViewer {
   }
 
   async captureViews() {
+    await this.materials?._fabricState?.pending;
     if (this._printStates) await Promise.all(Object.values(this._printStates).map(state => state.pending?.promise).filter(Boolean));
     else if (this._pendingTexture) await this._pendingTexture.promise;
     await this._waitForEmbroidery();

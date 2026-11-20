@@ -1,4 +1,4 @@
-import { normalizeConfig, serializeConfig, getConsultationSpecs } from './config.mjs?v=1.2.18';
+import { normalizeConfig, serializeConfig, getConsultationSpecs } from './config.mjs?v=1.2.19';
 
 export const KAKAO_CHAT_URL = 'https://pf.kakao.com/_dGxlxlj/chat';
 

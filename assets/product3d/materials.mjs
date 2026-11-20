@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { MM_TO_SCENE, getProductProfile } from './config.mjs?v=1.2.18';
-import { getFabricOption } from './fabrics.mjs?v=1.2.18';
+import { MM_TO_SCENE, getProductProfile } from './config.mjs?v=1.2.19';
+import { getFabricOption, loadFabricSwatch } from './fabrics.mjs?v=1.2.19';
 
 // The legacy poly products use their own photos, not the canvas fabric picker.
 // Keep the shared fabric setting intact while rendering their finer synthetic
@@ -170,6 +170,10 @@ function fabricBump(option) {
         case 'twill':
           height = Math.cos((x + y) * Math.PI / 8) * 29 + warp * 9 + weft * 6;
           break;
+        case 'heritage-twill':
+          // Approximate the photographed repeat until its pixels are loaded.
+          height = Math.cos(2 * Math.PI * (22 * x + 10 * y) / canvas.width) * 23 + warp * 5 + weft * 3;
+          break;
         case 'denim':
           height = Math.cos((x * 2 + y) * Math.PI / 6) * 25 + warp * 11 + weft * 7;
           break;
@@ -209,7 +213,35 @@ function fabricBump(option) {
   return texture;
 }
 
-export function createBagMaterials(config) {
+const CLOTH_PARTS = [['body', 1], ['bottom', 4 / 3], ['pocket', 1], ['inside', 5 / 6],
+  ['innerPocket', 5 / 6], ['pocketEdge', 4 / 3], ['pocketStitch', 2 / 3], ['pocketShadow', 5 / 6]];
+
+function measuredFabricColorMap(image, bump) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    const value = 235 + (pixels.data[i] - 150) * 0.55;
+    pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = value;
+  }
+  context.putImageData(pixels, 0, 0);
+  const map = new THREE.CanvasTexture(canvas);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.repeat.copy(bump.repeat);
+  map.anisotropy = 8;
+  return map;
+}
+
+function updateClothColorMap(material, map) {
+  if (material.map === map) return;
+  const needsRecompile = Boolean(material.map) !== Boolean(map);
+  material.map = map;
+  if (needsRecompile) material.needsUpdate = true;
+}
+
+export function createBagMaterials(config, onSwatchReady) {
   const nameTagFabric = getFabricOption('basic');
   const nameTagBump = fabricBump(nameTagFabric);
   const fabric = (bumpMap, bumpScale) => new THREE.MeshStandardMaterial({
@@ -251,7 +283,8 @@ export function createBagMaterials(config) {
   // Keep implementation state out of the public material-key aliases. A cache
   // belongs to this viewer and is bounded by the fabric catalog, not by edits.
   Object.defineProperty(materials, '_fabricState', {
-    value: { cache: new Map([[nameTagFabric.id, nameTagBump]]), activeId: null, disposed: false },
+    value: { cache: new Map([[nameTagFabric.id, nameTagBump]]), activeId: null, disposed: false,
+      colorMaps: new Map(), pending: null, onSwatchReady },
     enumerable: false,
   });
   Object.defineProperty(materials, '_handleState', {
@@ -270,11 +303,29 @@ export function updateBagMaterials(materials, config) {
   if (state.activeId !== option.id) {
     if (!state.cache.has(option.id)) state.cache.set(option.id, fabricBump(option));
     const bump = state.cache.get(option.id);
-    for (const [key, thickness] of [['body', 1], ['bottom', 4 / 3], ['pocket', 1], ['inside', 5 / 6],
-      ['innerPocket', 5 / 6], ['pocketEdge', 4 / 3], ['pocketStitch', 2 / 3], ['pocketShadow', 5 / 6]]) {
+    if (option.swatch && typeof Image === 'function' && !bump.userData.photo && !bump.userData.pending) {
+      bump.userData.pending = loadFabricSwatch(option).then(image => {
+        if (state.disposed) return;
+        bump.image = image;
+        bump.anisotropy = 8;
+        bump.name = `measured-fabric:${option.id}`;
+        bump.userData.photo = true;
+        bump.userData.reference = false;
+        bump.needsUpdate = true;
+        const map = measuredFabricColorMap(image, bump);
+        state.colorMaps.set(option.id, map);
+        if (state.activeId === option.id) {
+          for (const [key] of CLOTH_PARTS) updateClothColorMap(materials[key], map);
+          state.onSwatchReady?.();
+        }
+      }).catch(() => {}).finally(() => { delete bump.userData.pending; });
+    }
+    state.pending = bump.userData.pending || null;
+    for (const [key, thickness] of CLOTH_PARTS) {
       const material = materials[key];
       const hadBump = Boolean(material.bumpMap);
       material.bumpMap = bump;
+      updateClothColorMap(material, state.colorMaps.get(option.id) || null);
       material.bumpScale = option.bumpScale * thickness;
       material.roughness = option.roughness;
       material.userData.fabricId = option.id;
@@ -325,6 +376,7 @@ export function disposeBagMaterials(materials) {
   if (state) state.disposed = true;
   const uniqueMaterials = new Set(Object.values(materials));
   const textures = new Set(state?.cache.values());
+  for (const map of state?.colorMaps.values() || []) textures.add(map);
   for (const set of materials._handleState?.cache.values() || []) {
     textures.add(set.map); textures.add(set.bumpMap);
   }
@@ -336,5 +388,6 @@ export function disposeBagMaterials(materials) {
   }
   for (const texture of textures) texture.dispose();
   state?.cache.clear();
+  state?.colorMaps.clear();
   materials._handleState?.cache.clear();
 }
